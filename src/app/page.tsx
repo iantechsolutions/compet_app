@@ -13,12 +13,12 @@ export default async function Home() {
       <div className="w-[700px] max-w-full px-10 pb-10">
         <Card className="flex">
           <CardHeader>
-            <CardTitle>Compet MRP</CardTitle>
-            <CardDescription>Sistema analisis de compras</CardDescription>
+            <CardTitle>Compet APP</CardTitle>
+            <CardDescription>Gestión de información</CardDescription>
           </CardHeader>
           <div className="flex items-center ml-auto mr-8">
             <Link href="/mrp">
-              <Button>Abrir de COMPET</Button>
+              <Button>Abrir</Button>
             </Link>
           </div>
         </Card>

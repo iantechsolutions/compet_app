@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Compet MRP",
-  description: "Sistema de analisis de compras",
+  title: "Compet APP",
+  description: "App de gestión de información",
   icons: [{ rel: "icon", url: "/icon.png" }],
 };
 
