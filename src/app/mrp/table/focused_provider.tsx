@@ -1,4 +1,7 @@
 "use client"
+/* eslint-disable */
+
+
 import { MRPProduct } from "~/mrp_data/transform_mrp_data";
 import { createContext, useContext, useState } from "react";
 

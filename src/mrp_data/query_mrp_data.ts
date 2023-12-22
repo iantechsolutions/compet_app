@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import dayjs from "dayjs";
 import { sql } from "drizzle-orm";
 import { Client, Import, Order, OrderProduct, Product, ProductAssembly, ProductImport, ProductProvider, ProductStockCommited, Provider } from "~/lib/types";

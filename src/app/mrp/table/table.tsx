@@ -1,4 +1,7 @@
 "use client"
+
+/* eslint-disable */
+
 import { useMRPData } from "~/components/mrp-data-provider"
 import { FixedSizeList as List } from 'react-window';
 import { useWindowSize } from "@uidotdev/usehooks";

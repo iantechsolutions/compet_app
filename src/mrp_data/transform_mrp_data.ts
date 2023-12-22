@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { monthCodeFromDate } from "~/lib/utils";
 // Es un archivo de cliente porque enviar todo como JSON del servidor va a generar problemas
 

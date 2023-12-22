@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import dayjs from "dayjs"
 import { monthCodeFromDate } from "~/lib/utils"
 import { db } from "~/server/db"

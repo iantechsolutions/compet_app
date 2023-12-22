@@ -8,5 +8,5 @@ export default {
   dbCredentials: {
     connectionString: env.DATABASE_URL,
   },
-  tablesFilter: ["compet_mrp_*"],
+  tablesFilter: ["compet_app_*"],
 } satisfies Config;
