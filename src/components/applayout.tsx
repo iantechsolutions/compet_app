@@ -11,12 +11,14 @@ export type AppLayoutProps = {
     user?: NavUserData
     hideMenuOnDesktop?: boolean
     noPadding?: boolean
+    noUserSection?: boolean
+    actions?: React.ReactNode
 }
 
 export default function AppLayout(props: AppLayoutProps) {
     return (
         <div>
-            <header className="h-[70px] flex items-center px-2 md:px-4 border-b backdrop-blur-md fixed left-0 right-0 top-0">
+            <header className="h-[70px] flex items-center px-2 md:px-4 border-b backdrop-blur-md fixed left-0 right-0 top-0 z-10">
                 <SidenavSheet
                     trigger={<Button variant="ghost" className={cn({
                         "md:hidden": !props.hideMenuOnDesktop
@@ -26,14 +28,15 @@ export default function AppLayout(props: AppLayoutProps) {
                 <div className="w-full">
                     {props.title}
                 </div>
-                {props.user && <NavUserSection user={props.user} />}
+                {props.actions}
+                {(props.user && !props.noUserSection) && <NavUserSection user={props.user} />}
             </header>
             <aside className={cn("fixed top-[70px] left-0 bottom-0 hidden w-[250px] border-r overflow-y-auto max-h-full", {
                 "md:block": !props.hideMenuOnDesktop
             })}>
                 {props.sidenav}
             </aside>
-            <main className={cn("mt-[70px] relative", {
+            <main className={cn("mt-[70px] relative max-w-[100vw] overflow-x-hidden", {
                 "p-10": !props.noPadding,
                 "md:ml-[250px]": !props.hideMenuOnDesktop
             })}>

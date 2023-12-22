@@ -3,16 +3,21 @@ import jsonComplete from 'json-complete'
 import { queryBaseMRPData } from "~/mrp_data/query_mrp_data";
 import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { transformMRPData } from "~/mrp_data/transform_mrp_data";
+import { encodeData } from "~/lib/utils";
+
+let data: any = null
 
 export async function GET(req: NextRequest) {
     const forecastParams = { incrementFactor: 0.01 }
 
-    const mrpRawData = await queryBaseMRPData()
-    const forecastData = await queryForecastData(forecastParams)
+    if (!data) {
+        const mrpRawData = await queryBaseMRPData()
+        const forecastData = await queryForecastData(forecastParams)
 
-    const data = transformMRPData(mrpRawData, forecastData, forecastParams)
-    
-    return new NextResponse(jsonComplete.encode(data), {
+        data = transformMRPData(mrpRawData, forecastData, forecastParams)
+    }
+
+    return new NextResponse(encodeData(data), {
         headers: {
             "Content-Type": "application/json"
         }

@@ -113,7 +113,7 @@ export type ForecastParams = {
 }
 
 export function transformMRPData(rawData: RawMRPData, forecastData: ForecastData | undefined, forecastParams: ForecastParams | undefined) {
-    console.log(">>>", forecastParams)
+    // console.log(">>>", forecastParams)
     if (!forecastData) throw new Error('No forecast data')
     const data = _transformMRPData(rawData, forecastData, forecastParams)
     const productsByCode = new Map<string, ReturnType<typeof _transformMRPData>['products'][number]>()

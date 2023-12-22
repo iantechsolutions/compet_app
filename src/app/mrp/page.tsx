@@ -13,12 +13,8 @@ export default async function Home() {
       user={session?.user}
       sidenav={<AppSidenav />}
     >
-      <div className="flex justify-center mb-10">
-        <Button>Test</Button>
-      </div>
-      <div>
-  
-      </div>
+      <Button>Tabla mrp</Button>
+      
     </AppLayout>
   );
 }

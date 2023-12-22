@@ -44,7 +44,7 @@
     "**/*.cjs",
     "**/*.js",
     ".next/types/**/*.ts",
-    "src/lib/bson.mjs",
+    "src/lib/bson.js",
     "src/scripts/loader.js"
   ],
   "exclude": [

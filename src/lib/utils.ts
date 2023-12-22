@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { nanoid } from "nanoid"
 import dayjs from "dayjs"
+import { parse, stringify } from 'flatted'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -62,3 +63,38 @@ export function compareObjects(a: any, b: any) {
 
   return true
 }
+
+export function encodeData<T>(data: T) {
+  return stringify(data, (key, value) => {
+    if (value instanceof Map) {
+      return {
+        $: "Map",
+        value: [...value.entries()],
+      }
+    }
+
+    if (value instanceof Date) {
+      return {
+        $: "Date",
+        value: value.getTime(),
+      }
+    }
+
+    return value
+  })
+}
+
+export function decodeData<T>(data: string) {
+  return parse(data, (key, value) => {
+    if (value && value.$ === 'Map') {
+      return new Map(value.value)
+    }
+
+    if (value && value.$ === 'Date') {
+      return new Date(value.value)
+    }
+
+    return value
+  })
+}
+
