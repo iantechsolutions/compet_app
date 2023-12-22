@@ -13,8 +13,8 @@ export default async function Home() {
       <div className="w-[700px] max-w-full px-10 pb-10">
         <Card className="flex">
           <CardHeader>
-            <CardTitle>Compet APP</CardTitle>
-            <CardDescription>Gestión de información</CardDescription>
+            <CardTitle>MRP APP</CardTitle>
+            <CardDescription>Analisis de flujo de productos</CardDescription>
           </CardHeader>
           <div className="flex items-center ml-auto mr-8">
             <Link href="/mrp">
