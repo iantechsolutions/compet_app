@@ -10,6 +10,7 @@ import { decodeData } from "~/lib/utils"
 
 type CTXType = {
     data: MRPData
+    broadcastUpdate: (data: MRPData) => void
 }
 
 export const dataProviderContext = createContext<CTXType | null>(null)
@@ -51,9 +52,23 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
                     data: data
                 })
             }
+
+            // If data is changed, update it for all clients
+            if (message.data.type === 'update' && message.data.action === 'broadcast') {
+                console.log("Broadcast received!")
+                setData(message.data.data)
+            }
         }
 
         setLoadingMessage('Datos listos')
+    }
+
+    function broadcastUpdate(data: MRPData) {
+        channel.postMessage({
+            action: 'broadcast',
+            type: 'update',
+            data: data
+        })
     }
 
     function tryRequestData() {
@@ -69,6 +84,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
                 if (message.data.type === 'response' && message.data.action === 'response') {
                     console.log("Data received from channel!", message.data.data)
                     setLoadingMessage('Datos recibidos')
+                    channel.onmessage = null
                     resolve(message.data.data)
 
                 } else if (message.data.type === 'status' && message.data.status === 'ready' && message.data.action === 'response') {
@@ -125,15 +141,25 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         <Button variant="secondary" disabled><Loader2Icon className="animate-spin mr-2" /> {loadingMessage}</Button>
     </div>
 
-    return <dataProviderContext.Provider value={{ data }}>
+    return <dataProviderContext.Provider value={{ data, broadcastUpdate }}>
         {props.children}
     </dataProviderContext.Provider>
 }
 
-export function useMRPData() {
+export function useMRPContext() {
     const ctx = useContext(dataProviderContext)
     if (!ctx) {
-        throw new Error('useMRPData must be used within a MRPDataProvider')
+        throw new Error('useMRPContext must be used within a MRPDataProvider')
     }
+    return ctx
+}
+
+export function useMRPData() {
+    const ctx = useMRPContext()
     return ctx.data
+}
+
+export function useMRPBroadcast() {
+    const ctx = useMRPContext()
+    return ctx.broadcastUpdate
 }
