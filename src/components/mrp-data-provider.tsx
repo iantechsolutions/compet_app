@@ -7,6 +7,7 @@ import { MRPData } from "~/mrp_data/transform_mrp_data"
 import { Loader2Icon } from "lucide-react"
 import { Button } from "./ui/button"
 import { decodeData } from "~/lib/utils"
+import { readFromCache, saveToCache } from "~/lib/cache-store"
 
 type CTXType = {
     data: MRPData
@@ -22,6 +23,8 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
 
     function dataReady(data: MRPData) {
         setData(data)
+
+        saveToCache('mrp-data', data).then(() => console.log("Data saved to cache!"))
 
         console.log("Data ready!", data)
         console.log("Ready to receive requests!")
@@ -118,6 +121,16 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
             let data = await tryRequestData()
 
             if (data) {
+                return dataReady(data)
+            }
+
+            setLoadingMessage('Buscando datos en caché')
+
+            data = await readFromCache<MRPData>('mrp-data')
+
+            if (data) {
+                console.log("Data found in cache!")
+                setLoadingMessage('Datos obtenidos de cache')
                 return dataReady(data)
             }
 

@@ -6,7 +6,7 @@ export default function AppSidenav() {
         <SidenavSeparator>Global</SidenavSeparator>
         <SidenavItem icon={<LayoutDashboardIcon />} href="/mrp">Dashboard</SidenavItem>
         <SidenavSeparator>MRP</SidenavSeparator>
-        <SidenavItem icon={<Table2Icon />} href="/mrp/table">Tabla</SidenavItem>
+        <SidenavItem icon={<Table2Icon />} href="/mrp/tabla">Tabla</SidenavItem>
         <SidenavItem icon={<BarcodeIcon />} href="/mrp/productos">Productos</SidenavItem>
         <SidenavItem icon={<ShoppingBagIcon />} href="/mrp/pedidos">Pedidos</SidenavItem>
         <SidenavItem icon={<BarChartBigIcon />} href="/mrp/forecast">Forecast</SidenavItem>

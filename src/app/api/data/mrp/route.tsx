@@ -9,6 +9,9 @@ import { encodeData } from "~/lib/utils";
 let data: any = null
 
 export async function GET(req: NextRequest) {
+    //!
+    // TODO: CHECK AUTH
+
     const forecastParams = { incrementFactor: 0.01 }
 
     if (!data) {

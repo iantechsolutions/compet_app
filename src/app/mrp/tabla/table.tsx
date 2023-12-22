@@ -205,7 +205,7 @@ export function Table(props: { user?: NavUserData }) {
             column={currentFocus.month}
             product={currentFocus.product}
             onClickOpen={() => {
-                router.push(`/producto/${encodeURIComponent(currentFocus.product.code)}`)
+                router.push(`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`)
             }}
             onClose={() => {
                 setClosedOverlay(true)
@@ -254,7 +254,7 @@ export function Table(props: { user?: NavUserData }) {
     //         column={currentFocus.month}
     //         product={currentFocus.product}
     //         onClickOpen={() => {
-    //             navigate(`/producto/${encodeURIComponent(currentFocus.product.code)}`, {
+    //             navigate(`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`, {
     //                 state: {
     //                     allowBack: true,
     //                 }
