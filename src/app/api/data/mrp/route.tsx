@@ -14,6 +14,8 @@ import { forecastProfiles } from "~/server/db/schema";
 let data: any = null
 let profileId: number | null = null
 
+export const runtime = 'edge'   
+
 export async function GET(req: NextRequest) {
     //!
     // TODO: CHECK AUTH

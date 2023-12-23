@@ -1,3 +1,14 @@
+import { configDotenv } from "dotenv";
+configDotenv()
+
+// IMPORTANTE PARA QUE FUNCIONE EN NODE,
+// SE TTIENE QUE LLAMAR A configDotenv ANTES DE IMPORTAR NADA QUE REQUIRE ENV
+const { env } = await import("~/env")
+
+console.log(env)
+
+
+
 // import { queryBaseMRPData } from "~/mrp_data/query_mrp_data"
 // import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data"
 // import { ForecastParams, transformMRPData } from "~/mrp_data/transform_mrp_data"

@@ -7,6 +7,8 @@ const inter = Inter({
   variable: "--font-sans",
 });
 
+export const runtime = "edge";
+
 export const metadata = {
   title: "Compet APP",
   description: "App de gestión de información",

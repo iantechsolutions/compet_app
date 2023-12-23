@@ -1,9 +1,9 @@
 import { createEnv } from "@t3-oss/env-nextjs";
-import { configDotenv } from "dotenv";
+// import { configDotenv } from "dotenv";
 import { z } from "zod";
 
 if (!process.env.NODE_ENV) {
-  configDotenv()
+  // configDotenv()
 }
 
 export const env = createEnv({
