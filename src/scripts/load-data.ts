@@ -1,41 +1,27 @@
-import { configDotenv } from "dotenv";
-configDotenv()
+import 'dotenv/config'
+import { utapi } from '~/server/uploadthing'
+import { readDataFromDB } from './lib/read-from-tango-db'
+import { encodeData } from '~/lib/utils'
 
-// IMPORTANTE PARA QUE FUNCIONE EN NODE,
-// SE TTIENE QUE LLAMAR A configDotenv ANTES DE IMPORTAR NADA QUE REQUIRE ENV
-const { env } = await import("~/env")
+const rawData = await readDataFromDB()
 
-console.log(env)
+console.log("Datos leidos de la base de datos")
 
+const encoded = encodeData(rawData)
 
+console.log("Datos codificados", "Tamaño:", encoded.length, `${encoded.substring(0, 100)}.....` )
 
-// import { queryBaseMRPData } from "~/mrp_data/query_mrp_data"
-// import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data"
-// import { ForecastParams, transformMRPData } from "~/mrp_data/transform_mrp_data"
-// import jsonComplete from 'json-complete'
-// import { decodeData, encodeData } from "~/lib/utils"
+console.log("Subiendo datos al servidor...")
 
-// const fdp: ForecastParams = {
-//     incrementFactor: 0.01
-// }
+await utapi.uploadFiles([
+    new File([encoded], "mrp-raw-data-export.json", { type: "application/json" }),
+], {
+    metadata: {
+        date: new Date().toISOString()
+    }
+})
 
-// const q = await queryBaseMRPData()
-// const fd = await queryForecastData(fdp)
+console.log("Datos subidos al servidor")
+console.log("Saliendo...")
 
-// const t = transformMRPData(q, fd, fdp)
-
-// console.log("A")
-// const t1 = Date.now()
-
-// const encoded = encodeData(t)
-
-// const t2 = Date.now()
-// console.log("B")
-// console.log(t2 - t1)
-
-
-// const decode = decodeData(encoded)
-
-// const t3 = Date.now()
-// console.log("C")
-// console.log(t3 - t2)
+process.exit(0)
