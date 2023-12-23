@@ -13,16 +13,26 @@ import { api } from "~/trpc/react"
 type CTXType = {
     data: MRPData
     invalidateAndReloadData: () => void
+    isUpdating: boolean
+    loadingMessage: string
 }
 
 export const dataProviderContext = createContext<CTXType | null>(null)
 
+let gloabalMRPChannel: BroadcastChannel | null = null
+
+// BroadcastChannel is not supported in server side (edge runtime)
+if (typeof window !== 'undefined') {
+    gloabalMRPChannel = new BroadcastChannel('mrp-data')
+}
+
 export default function MRPDataProvider(props: { children: React.ReactNode }) {
     const [data, setData] = useState<MRPData | null>(null)
     const [loadingMessage, setLoadingMessage] = useState<string>('Buscando información')
-    const [channel, setChannel] = useState(new BroadcastChannel('mrp-data'))
-
     const { data: currentProfile } = api.forecast.currentProfile.useQuery()
+    const [isUpdating, setIsUpdating] = useState(false)
+
+    const channel = gloabalMRPChannel!
 
     function dataReady(data: MRPData) {
         setData(data)
@@ -78,7 +88,16 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     }
 
     async function invalidateAndReloadData() {
-        initializeData({ revalidateMode: true })
+        setIsUpdating(true)
+        try {
+            await initializeData({ revalidateMode: true })
+        } catch (error) {
+            console.error(error)
+            alert('Error actualizar los datos: ' + error)
+            window.location.reload()
+        } finally {
+            setIsUpdating(false)
+        }
     }
 
     function tryRequestData() {
@@ -193,7 +212,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         <Button variant="secondary" disabled><Loader2Icon className="animate-spin mr-2" /> {loadingMessage}</Button>
     </div>
 
-    return <dataProviderContext.Provider value={{ data, invalidateAndReloadData }}>
+    return <dataProviderContext.Provider value={{ data, invalidateAndReloadData, isUpdating, loadingMessage }}>
         {props.children}
     </dataProviderContext.Provider>
 }
@@ -214,4 +233,14 @@ export function useMRPData() {
 export function useMRPInvalidateAndReloadData() {
     const ctx = useMRPContext()
     return ctx.invalidateAndReloadData
+}
+
+export function useMRPDataIsUpdating() {
+    const ctx = useMRPContext()
+    return ctx.isUpdating
+}
+
+export function useMRPLoadingMessage() {
+    const ctx = useMRPContext()
+    return ctx.loadingMessage
 }

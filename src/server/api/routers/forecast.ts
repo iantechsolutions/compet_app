@@ -45,6 +45,9 @@ export const forecastRouter = createTRPCRouter({
     })).mutation(async ({ ctx, input }) => {
         await setSetting('mrp.current_forecast_profile', input.id)
     }),
+    applyNullProfile: protectedProcedure.mutation(async ({ ctx }) => {
+        await setSetting('mrp.current_forecast_profile', null)
+    }),
     currentProfile: protectedProcedure.query(async ({ ctx }) => {
         const profileInUse = await getSetting<number>('mrp.current_forecast_profile')
 

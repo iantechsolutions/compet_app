@@ -36,8 +36,6 @@ export async function GET(req: NextRequest) {
         where: eq(forecastProfiles.id, forecastProfileId)
     }) ?? null) : null
 
-    // console.log("Forecast profile", forecastProfile)
-
     if(!forecastProfile) {
         forecastProfile = nullProfile
     }

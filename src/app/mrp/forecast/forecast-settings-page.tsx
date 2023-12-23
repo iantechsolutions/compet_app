@@ -14,14 +14,23 @@ import { Loader2Icon, Trash2Icon } from "lucide-react";
 import { Title } from "~/components/title";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
-import { useMRPInvalidateAndReloadData } from "~/components/mrp-data-provider";
+import { useMRPData, useMRPDataIsUpdating, useMRPInvalidateAndReloadData, useMRPLoadingMessage } from "~/components/mrp-data-provider";
 
 export default function ForecastSettingsPage(props: { user?: NavUserData, forecastProfiles: RouterOutputs['forecast']['listProfiles'] }) {
     const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation()
-    const { mutateAsync: applyProfile, isLoading: isApplying } = api.forecast.applyProfile.useMutation()
+    const { mutateAsync: applyProfile, isLoading: isApplyingProfile } = api.forecast.applyProfile.useMutation()
+    const { mutateAsync: applyNullProfile, isLoading: isApplyingNullProfile } = api.forecast.applyNullProfile.useMutation()
+
+    const isApplying = isApplyingProfile || isApplyingNullProfile
+
     const router = useRouter()
 
+    const data = useMRPData()
+
     const invalidateAndReloadData = useMRPInvalidateAndReloadData()
+
+    const isUpdating = useMRPDataIsUpdating()
+    const loadingMessage = useMRPLoadingMessage()
 
     function handleDeleteProfile(id: number) {
         if (confirm('¿Estás seguro de que quieres eliminar este perfil?')) {
@@ -33,19 +42,49 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
 
     function handleApplyProfile(id: number) {
         applyProfile({ id }).then(() => {
-
+            console.log("Applied profile!", id)
         }).finally(() => {
             invalidateAndReloadData()
             router.refresh()
         })
     }
 
+    function handleApplyNullProfile() {
+        applyNullProfile().then(() => {
+            console.log("Applied null profile!")
+        }).finally(() => {
+            invalidateAndReloadData()
+            router.refresh()
+        })
+    }
+
+    let appliedProfile = data.forecastData?.forecastProfile
+    if(!appliedProfile?.id) appliedProfile = undefined
+
+    console.log("---->", appliedProfile)
+
     return <AppLayout
         title={<h1>Configuración de forecast</h1>}
         user={props?.user}
         sidenav={<AppSidenav />}
     >
-        <CreateProfileForm />
+
+        {(appliedProfile && !isUpdating) && <div className="mb-3">
+            <p className="font-bold">Perfil actual: {appliedProfile.name}</p>
+            <p className="text-xs">Porcentaje de incremento de ventas: {(appliedProfile.salesIncrementFactor * 100).toFixed(1)}%</p>
+            <p className="text-xs">Porcentaje de incremento de ventas: {(appliedProfile.budgetsInclusionFactor * 100).toFixed(1)}%</p>
+        </div>}
+
+        {isUpdating && <Card className="flex py-4 px-6 items-center max-w-[600px] mb-5">
+            <Loader2Icon className="animate-spin mr-2" size={30} />
+            <div className="ml-4">
+                <p className="font-bold">Actualizando datos</p>
+                <p className="text-xs">{loadingMessage}</p>
+            </div>
+        </Card>}
+
+
+        <CreateProfileForm disabled={isUpdating} />
 
         <div className="mt-6" />
 
@@ -53,9 +92,16 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
 
         <div className="mt-2 max-w-[600px]">
             <ul>
+
+                <li className="flex items-center border-l-4 border-l-stone-500 pl-2 mb-4">
+                    <h2 className="font-semibold w-full">Sin forecast</h2>
+                    {(!isApplyingNullProfile && !isUpdating) && <Button onClick={handleApplyNullProfile} disabled={!appliedProfile}>{appliedProfile ? 'Aplicar' : 'Aplicado'}</Button>}
+                    {isApplyingNullProfile && <Button disabled><Loader2Icon className="animate-spin mr-2" />Aplicando</Button>}
+
+                </li>
                 {props.forecastProfiles.map(profile => {
 
-                    return <li role="button" className="flex items-center border-l-4 border-l-stone-500 pl-2 mb-4">
+                    return <li className="flex items-center border-l-4 border-l-stone-500 pl-2 mb-4">
                         <div className="w-full">
                             <h2 className="font-semibold">{profile.name}</h2>
                             {profile.includeSales && <p className="text-sm font-medium">
@@ -72,7 +118,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
                             <Trash2Icon size={16} className="text-red-500" />
                         </button>}
                         {!profile.current && <Button
-                            disabled={isApplying}
+                            disabled={isApplying || isUpdating}
                             onClick={() => handleApplyProfile(profile.id)}
                         >Aplicar</Button>}
                         {profile.current && <Button
@@ -86,7 +132,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
     </AppLayout>
 }
 
-function CreateProfileForm() {
+function CreateProfileForm(props: { disabled?: boolean }) {
     const { mutateAsync: createProfile, isLoading } = api.forecast.createProfile.useMutation()
 
     const [name, setName] = useState('')
@@ -189,7 +235,7 @@ function CreateProfileForm() {
 
             </CardContent>
             <CardFooter className="flex justify-end">
-                {((includeBudgets || includeSales) && name.trim() && !isLoading) && <Button type="submit">Crear y aplicar</Button>}
+                {((includeBudgets || includeSales) && name.trim() && !isLoading && !props.disabled) && <Button type="submit">Crear y aplicar</Button>}
                 {isLoading && <Button disabled><Loader2Icon className="animate-spin mr-2" />Creando</Button>}
             </CardFooter>
         </form>
