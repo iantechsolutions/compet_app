@@ -15,6 +15,7 @@ let data: any = null
 let profileId: number | null = null
 
 export const runtime = 'edge'   
+export const maxDuration = 100;
 
 export async function GET(req: NextRequest) {
     //!

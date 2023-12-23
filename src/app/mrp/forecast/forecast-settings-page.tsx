@@ -116,6 +116,7 @@ function CreateProfileForm() {
             })
             invalidateAndReloadData()
         } catch (error) {
+            console.error(error)
             alert(error)
         }
 

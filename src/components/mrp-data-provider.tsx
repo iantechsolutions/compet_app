@@ -155,6 +155,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
 
             return data
         } catch (error) {
+            console.error(error)
             alert('Error al descargar los datos: ' + error)
             window.location.reload()
         }
