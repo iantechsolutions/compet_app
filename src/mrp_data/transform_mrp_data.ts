@@ -28,7 +28,7 @@ export type ProductEvent = {
 }
 
 // Transformamos los datos en el cliente para que sean faciles de consumir y mostrar
-function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | undefined, forecastParams: ForecastParams | undefined) {
+function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | undefined, forecastParams: ForecastProfile | undefined) {
     const data = mapData(rawData, forecastData)
 
 
@@ -110,11 +110,16 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
     }
 }
 
-export type ForecastParams = {
-    incrementFactor: number
+export type ForecastProfile = {
+    name: string,
+    includeSales: boolean,
+    salesIncrementFactor: number,
+    includeBudgets: boolean,
+    budgetsInclusionFactor: number,
+    clientInclusionList: string[] | null,
 }
 
-export function transformMRPData(rawData: RawMRPData, forecastData: ForecastData | undefined, forecastParams: ForecastParams | undefined) {
+export function transformMRPData(rawData: RawMRPData, forecastData: ForecastData | undefined, forecastParams: ForecastProfile | undefined) {
     // console.log(">>>", forecastParams)
     if (!forecastData) throw new Error('No forecast data')
     const data = _transformMRPData(rawData, forecastData, forecastParams)
@@ -183,7 +188,7 @@ function listAllEvents(data: MappedData) {
         })
     }
 
-    return events.sort((a, b) => {    
+    return events.sort((a, b) => {
         return (new Date(a.date)).getTime() - (new Date(b.date)).getTime()
     })
 }

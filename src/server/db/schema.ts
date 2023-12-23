@@ -1,8 +1,11 @@
 import { relations, sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
+  float,
   index,
   int,
+  json,
   mysqlTableCreator,
   primaryKey,
   text,
@@ -90,4 +93,31 @@ export const verificationTokens = mysqlTable(
   (vt) => ({
     compoundKey: primaryKey(vt.identifier, vt.token),
   })
+);
+
+export const forecastProfiles = mysqlTable(
+  "forecastProfile",
+  {
+    id: int("id").notNull().primaryKey().autoincrement(),
+    name: varchar("name", { length: 255 }).notNull(),
+
+    includeSales: boolean("include_sales").notNull().default(true),
+    salesIncrementFactor: float("sales_increment_factor").notNull(),
+
+    includeBudgets: boolean("include_budgets").notNull().default(true),
+    budgetsInclusionFactor: float("budgets_inclusion_factor").notNull(),
+
+    clientInclusionList: json('include_clients').$type<string[] | null>().default(null),
+
+    createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).notNull().default(sql`CURRENT_TIMESTAMP(3)`),
+  }
+);
+
+export const settings = mysqlTable(
+  "setting",
+  {
+    key: varchar("key", { length: 255 }).notNull().primaryKey(),
+
+    value: json('value').$type<any>().default(null),
+  }
 );

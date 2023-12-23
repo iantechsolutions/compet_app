@@ -7,11 +7,11 @@ import { MRPData } from "~/mrp_data/transform_mrp_data"
 import { Loader2Icon } from "lucide-react"
 import { Button } from "./ui/button"
 import { decodeData } from "~/lib/utils"
-import { readFromCache, saveToCache } from "~/lib/cache-store"
+import { deleteFromCache, readFromCache, saveToCache } from "~/lib/cache-store"
 
 type CTXType = {
     data: MRPData
-    broadcastUpdate: (data: MRPData) => void
+    invalidateAndReloadData: () => void
 }
 
 export const dataProviderContext = createContext<CTXType | null>(null)
@@ -74,6 +74,16 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         })
     }
 
+    async function invalidateAndReloadData() {
+        await deleteFromCache('mrp-data')
+        console.log("Data invalidated!")
+        setData(null)
+        const newData = await handleMounted()
+        if(newData) {
+            broadcastUpdate(newData)
+        }
+    }
+
     function tryRequestData() {
         return new Promise<MRPData | null>((resolve, reject) => {
             let timer: any = -1
@@ -116,12 +126,13 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         })
     }
 
-    async function handleMounted() {
+    async function handleMounted(): Promise<MRPData | null> {
         try {
             let data = await tryRequestData()
 
             if (data) {
-                return dataReady(data)
+                dataReady(data)
+                return data
             }
 
             setLoadingMessage('Buscando datos en caché')
@@ -131,7 +142,8 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
             if (data) {
                 console.log("Data found in cache!")
                 setLoadingMessage('Datos obtenidos de cache')
-                return dataReady(data)
+                dataReady(data)
+                return data
             }
 
             setLoadingMessage('Esperando al servidor')
@@ -139,11 +151,15 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
             setLoadingMessage('Descargando datos')
             const raw = await res.text()
             setLoadingMessage('Decodificando datos')
-            return dataReady(decodeData(raw))
+            dataReady(decodeData(raw))
+
+            return data
         } catch (error) {
             alert('Error al descargar los datos: ' + error)
             window.location.reload()
         }
+
+        return null
     }
 
     useOnMounted(() => {
@@ -154,7 +170,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         <Button variant="secondary" disabled><Loader2Icon className="animate-spin mr-2" /> {loadingMessage}</Button>
     </div>
 
-    return <dataProviderContext.Provider value={{ data, broadcastUpdate }}>
+    return <dataProviderContext.Provider value={{ data, invalidateAndReloadData }}>
         {props.children}
     </dataProviderContext.Provider>
 }
@@ -172,7 +188,7 @@ export function useMRPData() {
     return ctx.data
 }
 
-export function useMRPBroadcast() {
+export function useMRPInvalidateAndReloadData() {
     const ctx = useMRPContext()
-    return ctx.broadcastUpdate
+    return ctx.invalidateAndReloadData
 }

@@ -12,6 +12,8 @@ import { Badge } from "~/components/ui/badge";
 import dayjs from "dayjs";
 import { ForecastEventsRow } from "./forecast_events_row";
 import { ProductEventRow } from "./event_row";
+import { ProductEventsChart } from "./chart";
+import { Title } from "~/components/title";
 
 export default function ProductPage(props: { user?: NavUserData }) {
 
@@ -27,11 +29,12 @@ export default function ProductPage(props: { user?: NavUserData }) {
     if (!product) {
         return (
             <AppLayout
-                title={<h1>COMPET MRP</h1>}
+                title={<h1>Error 404</h1>}
                 user={props?.user}
                 sidenav={<AppSidenav />}
             >
-                <Button>No se encontró el producto</Button>
+                <Title>No se encontró el pedido</Title>
+                <p>No encontramos ningún producto con el número "{productCode}".</p>
             </AppLayout>
         );
     }
@@ -55,7 +58,7 @@ export default function ProductPage(props: { user?: NavUserData }) {
                 return <Badge key={i} variant="secondary" className="mr-2">{data.providersByCode.get(provider.provider_code)?.name ?? provider.provider_code}</Badge>
             })}
         </div>
-        {/* <ProductEventsChart key={product.code} product={product} months={data.months} /> */}
+        <ProductEventsChart key={product.code} product={product} months={data.months} />
         <div className="max-w-full overflow-x-auto">
             <Table className="min-w-[600px]">
                 {/* <TableCaption>Lista de importaciones pedidos y armados</TableCaption> */}

@@ -5,7 +5,7 @@ import { monthCodeFromDate } from "~/lib/utils"
 import { db } from "~/server/db"
 import { sql } from "drizzle-orm"
 import { OrderProductSold, OrderSold } from "~/lib/types"
-import { ForecastParams } from "./transform_mrp_data"
+import { ForecastProfile } from "./transform_mrp_data"
 
 type ForecastDataEvent = {
     product_code: string
@@ -14,7 +14,7 @@ type ForecastDataEvent = {
 }
 
 
-export async function queryForecastData(forecastParams: ForecastParams) {
+export async function queryForecastData(forecastParams: ForecastProfile) {
 
     // const budgetProducts = await prisma.cRMBudgetProduct.findMany({
     //     where: {
@@ -123,7 +123,7 @@ export async function queryForecastData(forecastParams: ForecastParams) {
             events.push({
                 product_code,
                 date,
-                quantity: quantity * (1 + i * forecastParams.incrementFactor),
+                quantity: quantity * (1 + i * forecastParams.salesIncrementFactor),
             })
         }
     }

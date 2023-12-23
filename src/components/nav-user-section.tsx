@@ -5,7 +5,6 @@ import {
 } from "~/components/ui/popover"
 import Link from "next/link";
 import { SignOut } from "./sign-in-out-buttons";
-import { Badge } from "./ui/badge";
 import { UserAvatarCircle } from "./user-avatar-circle";
 
 export type NavUserData = {
@@ -27,7 +26,7 @@ export default function NavUserSection(props: {
 export function UserPopOver(props: { trigger: React.ReactNode, user: NavUserData }) {
     return (
         <Popover>
-            <PopoverTrigger asChild>
+            <PopoverTrigger>
                 {props.trigger}
             </PopoverTrigger>
             <PopoverContent className="w-80">

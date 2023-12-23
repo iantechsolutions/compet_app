@@ -25,3 +25,9 @@ export async function readFromCache<T>(key: string) {
 
     return decodeData<T>(text);
 }
+
+export async function deleteFromCache(key: string) {
+    const cache = await getCache();
+
+    return cache.delete('/' + key);
+}
