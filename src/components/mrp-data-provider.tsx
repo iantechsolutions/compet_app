@@ -8,6 +8,7 @@ import { Loader2Icon } from "lucide-react"
 import { Button } from "./ui/button"
 import { decodeData } from "~/lib/utils"
 import { deleteFromCache, readFromCache, saveToCache } from "~/lib/cache-store"
+import { api } from "~/trpc/react"
 
 type CTXType = {
     data: MRPData
@@ -20,6 +21,8 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     const [data, setData] = useState<MRPData | null>(null)
     const [loadingMessage, setLoadingMessage] = useState<string>('Buscando información')
     const [channel, setChannel] = useState(new BroadcastChannel('mrp-data'))
+
+    const { data: currentProfile } = api.forecast.currentProfile.useQuery()
 
     function dataReady(data: MRPData) {
         setData(data)
@@ -75,13 +78,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     }
 
     async function invalidateAndReloadData() {
-        await deleteFromCache('mrp-data')
-        console.log("Data invalidated!")
-        setData(null)
-        const newData = await handleMounted()
-        if(newData) {
-            broadcastUpdate(newData)
-        }
+        initializeData({ revalidateMode: true })
     }
 
     function tryRequestData() {
@@ -126,24 +123,44 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         })
     }
 
-    async function handleMounted(): Promise<MRPData | null> {
+    async function initializeData(opts?: { revalidateMode: boolean }): Promise<MRPData | null> {
         try {
-            let data = await tryRequestData()
+            let data: MRPData | null = null
 
-            if (data) {
-                dataReady(data)
-                return data
+            // Si no se fuerza a buscar los datos en el servidor
+            if (!opts?.revalidateMode) {
+                // Ver si hay otra pestaña abierta con los datos ya cargados
+                data = await tryRequestData()
+
+                if (data) {
+                    console.log("Data found in another tab!")
+                    dataReady(data)
+                    return data
+                }
+
+                setLoadingMessage('Buscando datos en caché')
+
+                // Buscar si existe en cache
+                data = await readFromCache<MRPData>('mrp-data')
+
+                const dataForecastProfileId = data?.forecastData?.forecastProfile.id
+
+                if (dataForecastProfileId != currentProfile?.id) {
+                    // Cache data forecast profile is not the same as the current profile
+                    console.log('Cache data forecast profile is not the same as the current profile')
+                    data = null
+                }
+
+                if (data) {
+                    console.log("Data found in cache!")
+                    setLoadingMessage('Datos obtenidos de cache')
+                    dataReady(data)
+                    return data
+                }
             }
 
-            setLoadingMessage('Buscando datos en caché')
-
-            data = await readFromCache<MRPData>('mrp-data')
-
-            if (data) {
-                console.log("Data found in cache!")
-                setLoadingMessage('Datos obtenidos de cache')
-                dataReady(data)
-                return data
+            if (opts?.revalidateMode) {
+                console.log("Forcing revalidate mode (using server)")
             }
 
             setLoadingMessage('Esperando al servidor')
@@ -151,7 +168,12 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
             setLoadingMessage('Descargando datos')
             const raw = await res.text()
             setLoadingMessage('Decodificando datos')
-            dataReady(decodeData(raw))
+            const serverData = decodeData(raw)
+            dataReady(serverData)
+
+            if (opts?.revalidateMode) {
+                broadcastUpdate(serverData)
+            }
 
             return data
         } catch (error) {
@@ -164,7 +186,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     }
 
     useOnMounted(() => {
-        void handleMounted()
+        void initializeData()
     })
 
     if (!data) return <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center">

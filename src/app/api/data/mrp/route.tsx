@@ -10,6 +10,7 @@ import { getSetting } from "~/lib/settings";
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { forecastProfiles } from "~/server/db/schema";
+import { nullProfile } from "~/server/api/routers/forecast";
 
 let data: any = null
 let profileId: number | null = null
@@ -38,14 +39,7 @@ export async function GET(req: NextRequest) {
     // console.log("Forecast profile", forecastProfile)
 
     if(!forecastProfile) {
-        forecastProfile = {
-            budgetsInclusionFactor: 0,
-            clientInclusionList: null,
-            includeSales: false,
-            name: 'default',
-            salesIncrementFactor: 0,
-            includeBudgets: false,
-        }
+        forecastProfile = nullProfile
     }
 
     if (!data) {

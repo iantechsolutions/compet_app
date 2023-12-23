@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 import * as schema from '~/server/db/schema'
 import { eq } from "drizzle-orm";
 import { getSetting, setSetting } from "~/lib/settings";
+import { ForecastProfile } from "~/mrp_data/transform_mrp_data";
 
 export const forecastRouter = createTRPCRouter({
     createProfile: protectedProcedure.input(z.object({
@@ -44,4 +45,24 @@ export const forecastRouter = createTRPCRouter({
     })).mutation(async ({ ctx, input }) => {
         await setSetting('mrp.current_forecast_profile', input.id)
     }),
+    currentProfile: protectedProcedure.query(async ({ ctx }) => {
+        const profileInUse = await getSetting<number>('mrp.current_forecast_profile')
+
+        if (!profileInUse) return nullProfile
+
+        const profile = await ctx.db.query.forecastProfiles.findFirst({
+            where: eq(schema.forecastProfiles.id, profileInUse),
+        })
+
+        return profile
+    })
 })
+
+export const nullProfile: ForecastProfile = {
+    budgetsInclusionFactor: 0,
+    clientInclusionList: null,
+    includeSales: false,
+    name: 'default',
+    salesIncrementFactor: 0,
+    includeBudgets: false,
+}

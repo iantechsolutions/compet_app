@@ -111,6 +111,7 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
 }
 
 export type ForecastProfile = {
+    id?: number,
     name: string,
     includeSales: boolean,
     salesIncrementFactor: number,

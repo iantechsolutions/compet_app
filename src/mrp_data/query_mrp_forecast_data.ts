@@ -14,7 +14,7 @@ type ForecastDataEvent = {
 }
 
 
-export async function queryForecastData(forecastParams: ForecastProfile) {
+export async function queryForecastData(forecastProfile: ForecastProfile) {
 
     // const budgetProducts = await prisma.cRMBudgetProduct.findMany({
     //     where: {
@@ -123,7 +123,7 @@ export async function queryForecastData(forecastParams: ForecastProfile) {
             events.push({
                 product_code,
                 date,
-                quantity: quantity * (1 + i * forecastParams.salesIncrementFactor),
+                quantity: quantity * (1 + i * forecastProfile.salesIncrementFactor),
             })
         }
     }
@@ -133,7 +133,7 @@ export async function queryForecastData(forecastParams: ForecastProfile) {
         productsSoldMonthlyByCode,
         productSoldAverageMonthlyByCode,
         events,
-        forecastParams,
+        forecastProfile,
     }
 }
 
