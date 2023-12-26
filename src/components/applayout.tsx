@@ -37,7 +37,7 @@ export default function AppLayout(props: AppLayoutProps) {
                 {props.sidenav}
             </aside>
             <main className={cn("mt-[70px] relative max-w-[100vw] overflow-x-hidden", {
-                "md:p-10 p-1": !props.noPadding,
+                "md:p-10 py-7 px-2": !props.noPadding,
                 "md:ml-[250px]": !props.hideMenuOnDesktop
             })}>
                 {props.children}
