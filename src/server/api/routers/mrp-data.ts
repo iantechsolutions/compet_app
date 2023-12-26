@@ -21,7 +21,13 @@ async function getMrpExportInfo() {
         throw new Error("No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.")
     }
 
-    const [file] = await utapi.getFileUrls(mrpExportFile);
+    const files = await utapi.getFileUrls(mrpExportFile);
+
+    if(files.length == 0) {
+        throw new Error("No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.")
+    }
+
+    const file = files[0]
 
     return {
         exportURL: file!.url,
