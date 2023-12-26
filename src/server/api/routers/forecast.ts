@@ -4,6 +4,7 @@ import * as schema from '~/server/db/schema'
 import { eq } from "drizzle-orm";
 import { getSetting, setSetting } from "~/lib/settings";
 import { ForecastProfile } from "~/mrp_data/transform_mrp_data";
+import { nullProfile } from "~/lib/nullForecastProfile";
 
 export const forecastRouter = createTRPCRouter({
     createProfile: protectedProcedure.input(z.object({
@@ -61,11 +62,3 @@ export const forecastRouter = createTRPCRouter({
     })
 })
 
-export const nullProfile: ForecastProfile = {
-    budgetsInclusionFactor: 0,
-    clientInclusionList: null,
-    includeSales: false,
-    name: 'default',
-    salesIncrementFactor: 0,
-    includeBudgets: false,
-}

@@ -10,7 +10,7 @@ import { getSetting } from "~/lib/settings";
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { forecastProfiles } from "~/server/db/schema";
-import { nullProfile } from "~/server/api/routers/forecast";
+import { nullProfile } from "~/lib/nullForecastProfile";
 
 let data: any = null
 let profileId: number | null = null

@@ -15,6 +15,7 @@ import { Title } from "~/components/title";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { useMRPData, useMRPDataIsUpdating, useMRPInvalidateAndReloadData, useMRPLoadingMessage } from "~/components/mrp-data-provider";
+import DataUploadingCard from "~/components/data-uploading-card";
 
 export default function ForecastSettingsPage(props: { user?: NavUserData, forecastProfiles: RouterOutputs['forecast']['listProfiles'] }) {
     const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation()
@@ -30,7 +31,6 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
     const invalidateAndReloadData = useMRPInvalidateAndReloadData()
 
     const isUpdating = useMRPDataIsUpdating()
-    const loadingMessage = useMRPLoadingMessage()
 
     function handleDeleteProfile(id: number) {
         if (confirm('¿Estás seguro de que quieres eliminar este perfil?')) {
@@ -75,14 +75,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
             <p className="text-xs">Porcentaje de incremento de ventas: {(appliedProfile.budgetsInclusionFactor * 100).toFixed(1)}%</p>
         </div>}
 
-        {isUpdating && <Card className="flex py-4 px-6 items-center max-w-[600px] mb-5">
-            <Loader2Icon className="animate-spin mr-2" size={30} />
-            <div className="ml-4">
-                <p className="font-bold">Actualizando datos</p>
-                <p className="text-xs">{loadingMessage}</p>
-            </div>
-        </Card>}
-
+        <DataUploadingCard />
 
         <CreateProfileForm disabled={isUpdating} />
 
@@ -101,7 +94,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
                 </li>
                 {props.forecastProfiles.map(profile => {
 
-                    return <li className="flex items-center border-l-4 border-l-stone-500 pl-2 mb-4">
+                    return <li key={profile.id} className="flex items-center border-l-4 border-l-stone-500 pl-2 mb-4">
                         <div className="w-full">
                             <h2 className="font-semibold">{profile.name}</h2>
                             {profile.includeSales && <p className="text-sm font-medium">

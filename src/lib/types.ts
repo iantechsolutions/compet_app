@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+const nullableDate = z.date().or(z.string()).nullable().transform((date) => date ? new Date(date) : null)
+const dateZodType = z.date().or(z.string()).transform((date) => new Date(date))
+
 export const productSchema = z.object({
     code: z.string(),
     description: z.string().catch(''),
@@ -11,7 +14,7 @@ export const productStockCommitedSchema = z.object({
     stock_quantity: z.number(),
     commited_quantity: z.number(),
     pending_quantity: z.number(),
-    last_update: z.string().transform((date) => new Date(date)),
+    last_update: dateZodType,
 })
 
 export const providerSchema = z.object({
@@ -41,8 +44,8 @@ export const importSchema = z.object({
     id: z.string(),
     provider_code: z.string(),
     enabled: z.boolean(),
-    opening_date: z.string().nullable().transform((date) => date ? new Date(date) : null),
-    validity_date: z.string().nullable().transform((date) => date ? new Date(date) : null),
+    opening_date: nullableDate,
+    validity_date: nullableDate,
     origin_currency: z.string().catch(''),
     country: z.string().catch(''),
     observations: z.string().catch(''),
@@ -59,9 +62,9 @@ export const productImportSchema = z.object({
     import_id: z.string(),
     ordered_quantity: z.number(),
     closed: z.boolean(),
-    shipping_date: z.string().transform((date) => new Date(date)),
-    national_date: z.string().transform((date) => new Date(date)),
-    arrival_date: z.string().transform((date) => new Date(date)),
+    shipping_date: dateZodType,
+    national_date: dateZodType,
+    arrival_date: dateZodType,
     national_quantity: z.number().catch(0),
 })
 
@@ -69,10 +72,10 @@ export const orderSchema = z.object({
     order_number: z.string(),
     approved_by: z.string().catch(''),
     client_code: z.string(),
-    approval_date: z.string().transform((date) => new Date(date)),
-    delivery_date: z.string().transform((date) => new Date(date)),
-    order_date: z.string().transform((date) => new Date(date)),
-    entry_date: z.string().transform((date) => new Date(date)),
+    approval_date: dateZodType,
+    delivery_date: dateZodType,
+    order_date: dateZodType,
+    entry_date: dateZodType,
     remito_number: z.string().catch(''),
     state: z.number().catch(-1),
 })
@@ -97,7 +100,7 @@ export const clientSchema = z.object({
 export const orderSoldSchema = z.object({
     N_COMP: z.string(),
     client_code: z.string(),
-    emission_date: z.string().transform((date) => new Date(date)),
+    emission_date: dateZodType,
     MON_CTE: z.boolean(),
     PORC_BONIF: z.number(),
     dollar_price: z.number(),
@@ -105,7 +108,7 @@ export const orderSoldSchema = z.object({
 
 export const orderProductSoldSchema = z.object({
     product_code: z.string(),
-    // date: z.string().transform((date) => new Date(date)),
+    // date: dateZodType,
     CANTIDAD: z.number(),
     N_COMP: z.string(),
     // PORC_DTO: z.number().catch(0),
@@ -128,8 +131,8 @@ export const crmClientSchema = z.object({
     comments: z.string().catch(''),
     cuit: z.string().catch(''),
     phone1: z.string().catch(''),
-    creation_date: z.string().nullable().transform((date) => date ? new Date(date) : null),
-    last_update: z.string().nullable().transform((date) => date ? new Date(date) : null),
+    creation_date: nullableDate,
+    last_update: nullableDate,
     attention_schedule: z.string().catch(''),
     state: z.string().catch(''),
 })
@@ -138,11 +141,11 @@ export const crmBudgetSchema = z.object({
     budget_id: z.number(),
     client_id: z.number(),
     category_id: z.number(),
-    date: z.string().nullable().transform((date) => date ? new Date(date) : null),
-    validity_date: z.string().nullable().transform((date) => date ? new Date(date) : null),
-    finished_date: z.string().nullable().transform((date) => date ? new Date(date) : null),
-    next_contact_date: z.string().nullable().transform((date) => date ? new Date(date) : null),
-    last_update: z.string().nullable().transform((date) => date ? new Date(date) : null),
+    date: nullableDate,
+    validity_date: nullableDate,
+    finished_date: nullableDate,
+    next_contact_date: nullableDate,
+    last_update: nullableDate,
     comments: z.string().catch(''),
 })
 
@@ -153,7 +156,7 @@ export const crmBudgetProductSchema = z.object({
     description: z.string().catch(''),
     quantity: z.number(),
     pending_quantity: z.number(),
-    creation_date: z.string().nullable().transform((date) => date ? new Date(date) : null),
+    creation_date: nullableDate,
 })
 
 // Export all types inferred from the schema
