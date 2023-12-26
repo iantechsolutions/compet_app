@@ -1,11 +1,11 @@
-import { NextApiRequest } from "next";
 import { env } from "~/env";
 import { getServerAuthSession } from "~/server/auth";
 import jwt from 'jwt-simple'
+import { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 
-export function GET(request: NextApiRequest) {
+export function GET(request: NextRequest) {
     const channel = env.SCALEDRONE_CHANNEL_ID
     const secret = env.SCALEDRONE_SECRET
 
