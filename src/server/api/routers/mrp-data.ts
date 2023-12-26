@@ -8,7 +8,7 @@ export const mrpDataRouter = createTRPCRouter({
     }),
     obtainDataExportInfo: protectedProcedure.mutation(({ ctx }) => {
         return getMrpExportInfo()
-    })
+    }),
 })
 
 async function getMrpExportInfo() {

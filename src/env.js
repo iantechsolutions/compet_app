@@ -38,6 +38,8 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string(),
     UPLOADTHING_SECRET: z.string(),
     UPLOADTHING_APP_ID: z.string(),
+    SCALEDRONE_CHANNEL_ID: z.string().optional(),
+    SCALEDRONE_SECRET: z.string().optional(),
   },
 
   /**
@@ -62,6 +64,8 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
+    SCALEDRONE_CHANNEL_ID: process.env.SCALEDRONE_CHANNEL_ID,
+    SCALEDRONE_SECRET: process.env.SCALEDRONE_SECRET,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

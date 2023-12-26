@@ -8,6 +8,7 @@
     "db:push": "dotenv drizzle-kit push:mysql",
     "db:studio": "dotenv drizzle-kit studio",
     "load-data": "tsx src/scripts/load-data.ts",
+    "listen-load-data": "tsx src/scripts/listen-load-data.ts",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start"
@@ -46,6 +47,7 @@
     "drizzle-zod": "^0.5.1",
     "flatted": "^3.2.9",
     "json-complete": "^2.0.1",
+    "jwt-simple": "^0.5.6",
     "lucide-react": "^0.298.0",
     "messagepack": "^1.1.12",
     "mssql": "^10.0.1",
@@ -58,6 +60,7 @@
     "react-dom": "18.2.0",
     "react-hook-form": "^7.49.2",
     "react-window": "^1.8.10",
+    "scaledrone-node": "^1.5.0",
     "serialijse": "^0.3.0",
     "server-only": "^0.0.1",
     "superjson": "^2.2.1",

@@ -20,6 +20,10 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     <html lang="es">
       <body className={`font-sans ${inter.variable}`}>
         {props.children}
+        <script
+          src="https://cdn.scaledrone.com/scaledrone-lite.min.js"
+          type="text/javascript"
+        ></script>
       </body>
     </html>
   );
