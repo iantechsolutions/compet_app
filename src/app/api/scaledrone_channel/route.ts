@@ -1,16 +1,16 @@
 import { NextApiRequest } from "next"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { env } from "~/env"
 import { getServerAuthSession } from "~/server/auth"
 
-export function GET(request: NextApiRequest) {
+export function GET(request: NextRequest) {
     const channel = env.SCALEDRONE_CHANNEL_ID
     const secret = env.SCALEDRONE_SECRET
 
     const session = getServerAuthSession()
 
     if (!session) {
-        return Response.json({
+        return NextResponse.json({
             error: 'Unauthorized'
         }, {
             status: 401
