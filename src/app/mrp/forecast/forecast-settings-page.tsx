@@ -71,8 +71,8 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
 
         {(appliedProfile && !isUpdating) && <div className="mb-3">
             <p className="font-bold">Perfil actual: {appliedProfile.name}</p>
-            <p className="text-xs">Porcentaje de incremento de ventas: {(appliedProfile.salesIncrementFactor * 100).toFixed(1)}%</p>
-            <p className="text-xs">Porcentaje de incremento de ventas: {(appliedProfile.budgetsInclusionFactor * 100).toFixed(1)}%</p>
+            <p className="text-xs">Porcentaje de incremento de prediccón de ventas: {(appliedProfile.salesIncrementFactor * 100).toFixed(1)}%</p>
+            <p className="text-xs">Porcentaje de incremento de prediccón de ventas: {(appliedProfile.budgetsInclusionFactor * 100).toFixed(1)}%</p>
         </div>}
 
         <DataUploadingCard />
@@ -176,6 +176,7 @@ function CreateProfileForm(props: { disabled?: boolean }) {
                         name="name"
                         value={name}
                         onChange={e => setName(e.target.value)}
+                        placeholder="Optimista"
                         required
                     />
                 </div>
@@ -191,7 +192,7 @@ function CreateProfileForm(props: { disabled?: boolean }) {
                 </div>
 
                 {includeSales && <div>
-                    <Label htmlFor="salesIncrementPercentage">Porcentaje de incremento de ventas</Label>
+                    <Label htmlFor="salesIncrementPercentage">Porcentaje de incremento de predicción de ventas</Label>
                     <Input
                         type="number"
                         step={0.5}
@@ -199,6 +200,7 @@ function CreateProfileForm(props: { disabled?: boolean }) {
                         name="salesIncrementPercentage"
                         value={salesIncrementPercentage}
                         onChange={e => setSalesIncrementPercentage(e.target.value)}
+                        placeholder="5"
                         required
                     />
                 </div>}
@@ -214,7 +216,7 @@ function CreateProfileForm(props: { disabled?: boolean }) {
                 </div>
 
                 {includeBudgets && <div>
-                    <Label htmlFor="budgetsInclusionPercentage">Porcentaje de incremento de ventas</Label>
+                    <Label htmlFor="budgetsInclusionPercentage">Porcentaje de inclusión de presupuestos</Label>
                     <Input
                         type="number"
                         step={0.5}
@@ -222,6 +224,7 @@ function CreateProfileForm(props: { disabled?: boolean }) {
                         name="budgetsInclusionPercentage"
                         value={budgetsInclusionPercentage}
                         onChange={e => setBudgetsInclusionPercentage(e.target.value)}
+                        placeholder="20"
                         required
                     />
                 </div>}
