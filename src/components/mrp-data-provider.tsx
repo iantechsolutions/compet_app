@@ -43,7 +43,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         const currentProfile = await obtainCurrentProfile()
         const dataExportInfo = await obtainDataExportInfo()
 
-        const forecastProfileMismatch = data?.forecastData?.forecastProfile.id != currentProfile?.id
+        const forecastProfileMismatch = data?.forecastData?.forecastProfile?.id != currentProfile?.id
         const dataExportMismatch = data.dataExportDate != dataExportInfo.exportDate
 
         return !forecastProfileMismatch && !dataExportMismatch
@@ -174,9 +174,10 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
 
                 setLoadingMessage('Buscando datos en caché')
 
+                console.log("Data not found in another tab, searching in cache...")
+
                 // Buscar si existe en cache
                 data = await readFromCache<MRPData>('mrp-data')
-
 
                 if (data) {
                     setLoadingMessage("Datos encontrados en caché, comprobando validez")
