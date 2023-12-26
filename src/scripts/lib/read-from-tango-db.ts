@@ -91,7 +91,7 @@ export async function readDataFromDB() {
     FEC_NACION as national_date,
     FEC_P_PUER as arrival_date,
     CANT_NACIO as national_quantity
-    FROM CPA66`, productImportSchema, true)
+    FROM CPA66 WHERE CANT_NACIO = 0 AND CERRADO = 0 AND COD_ARTICU <> ''`, productImportSchema, true)
     // *************
 
 

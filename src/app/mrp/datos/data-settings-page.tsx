@@ -25,6 +25,7 @@ export default function DataSettingsPage(props: {
     const dataMismatch = data.forecastData?.forecastProfile.id != forecastProfile.id || data.dataExportUrl != props.dataInfo.exportURL
 
     return <AppLayout
+        title={<h1>Config. de datos</h1>}
         user={props.user}
         sidenav={<AppSidenav />}
     >
@@ -44,12 +45,12 @@ export default function DataSettingsPage(props: {
                 {props.dataInfo.exportURL}
             </Link>
         </p>
-        <p>Perfil de forecast: <b>{forecastProfile.name} (id: {forecastProfile.id})</b></p>
+        <p>Perfil de forecast: <b>{forecastProfile.name} (id: {forecastProfile.id ?? 0})</b></p>
         <Title className="mt-5">Mostrando actualmente</Title>
         <Link href={data.dataExportUrl} className="underline font-medium text-blue-500 text-sm" target="_blank">
             {data.dataExportUrl}
         </Link>
-        <p>Perfil de forecast: <b>{data.forecastData!.forecastProfile.name} (id: {data.forecastData!.forecastProfile.id})</b></p>
+        <p>Perfil de forecast: <b>{data.forecastData!.forecastProfile.name} (id: {data.forecastData!.forecastProfile.id ?? 0})</b></p>
         <p>
             Fecha del export:{` `}
             <b>{dayjs(data.dataExportDate).format("DD/MM/YYYY")}</b>
@@ -60,7 +61,8 @@ export default function DataSettingsPage(props: {
             <p className="font-semibold text-red-500">
                 Los datos mostrados no coinciden con los datos exportados. Recargue los datos.
             </p>
-            <Button className="mt-3 w-full max-w-[600px]" onClick={() => invalidateAndReloadData()}>Recargar datos</Button>
         </div>}
+        <Button className="mt-3 w-full max-w-[600px]" onClick={() => invalidateAndReloadData()}>Recargar datos</Button>
+
     </AppLayout>
 }

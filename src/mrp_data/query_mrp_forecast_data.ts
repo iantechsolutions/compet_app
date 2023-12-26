@@ -113,20 +113,23 @@ export async function queryForecastData(forecastProfile: ForecastProfile) {
         // }
     ]
 
-    // for next 12 months
-    for (let i = 0; i < 12; i++) {
-        const date = dayjs().startOf('month').add(6, 'hours').add(i + 1, 'month').toDate()
+    if (forecastProfile.includeSales) {
+        // for next 12 months
+        for (let i = 0; i < 12; i++) {
+            const date = dayjs().startOf('month').add(6, 'hours').add(i + 1, 'month').toDate()
 
-        for(const product_code of productSoldAverageMonthlyByCode.keys()) {
+            for (const product_code of productSoldAverageMonthlyByCode.keys()) {
 
-            const quantity = productSoldAverageMonthlyByCode.get(product_code)!
-            events.push({
-                product_code,
-                date,
-                quantity: quantity * (1 + i * forecastProfile.salesIncrementFactor),
-            })
+                const quantity = productSoldAverageMonthlyByCode.get(product_code)!
+                events.push({
+                    product_code,
+                    date,
+                    quantity: quantity * (1 + i * forecastProfile.salesIncrementFactor),
+                })
+            }
         }
     }
+
 
     return {
         // soldProducts,

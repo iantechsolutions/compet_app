@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { getSetting, setSetting } from "~/lib/settings";
 import { ForecastProfile } from "~/mrp_data/transform_mrp_data";
 import { nullProfile } from "~/lib/nullForecastProfile";
+import { db } from "~/server/db";
 
 export const forecastRouter = createTRPCRouter({
     createProfile: protectedProcedure.input(z.object({
@@ -49,16 +50,22 @@ export const forecastRouter = createTRPCRouter({
     applyNullProfile: protectedProcedure.mutation(async ({ ctx }) => {
         await setSetting('mrp.current_forecast_profile', null)
     }),
-    obtainCurrentProfile: protectedProcedure.mutation(async ({ ctx }) => {
-        const profileInUse = await getSetting<number>('mrp.current_forecast_profile')
-
-        if (!profileInUse) return nullProfile
-
-        const profile = await ctx.db.query.forecastProfiles.findFirst({
-            where: eq(schema.forecastProfiles.id, profileInUse),
-        })
-
-        return profile ?? nullProfile
+    currentProfile: protectedProcedure.query(({ ctx }) => {
+        return getCurrentProfile()
+    }),
+    obtainCurrentProfile: protectedProcedure.mutation(({ ctx }) => {
+        return getCurrentProfile()
     }),
 })
 
+async function getCurrentProfile() {
+    const profileInUse = await getSetting<number>('mrp.current_forecast_profile')
+
+    if (!profileInUse) return nullProfile
+
+    const profile = await db.query.forecastProfiles.findFirst({
+        where: eq(schema.forecastProfiles.id, profileInUse),
+    })
+
+    return profile ?? nullProfile
+}
