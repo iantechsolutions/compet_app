@@ -204,9 +204,7 @@ export function Table(props: { user?: NavUserData }) {
             trackElementId={currentFocus.elementId!}
             column={currentFocus.month}
             product={currentFocus.product}
-            onClickOpen={() => {
-                router.push(`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`)
-            }}
+            productHref={`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`}
             onClose={() => {
                 setClosedOverlay(true)
             }}
@@ -236,61 +234,8 @@ export function Table(props: { user?: NavUserData }) {
             >
                 {({ ...props }) => <ListRow key={props.index} {...props} products={filtered} />}
             </List>
-        </div>    </AppLayout>
-
-    // return <div style={{ width: w }} className='relative'>
-    //     <SiteHeader
-    //         showOnDesktop
-    //         title="MRP"
-    //     >
-    //         <FiltersDialog
-    //             onApply={(f) => setFilters({ ...f })}
-    //             initialFilters={filters}
-    //             number={filtered.length}
-    //         />
-    //     </SiteHeader>
-    //     {(currentFocus && !closedOverlay) && <TargetOverlayInfoCard
-    //         trackElementId={currentFocus.elementId!}
-    //         column={currentFocus.month}
-    //         product={currentFocus.product}
-    //         onClickOpen={() => {
-    //             navigate(`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`, {
-    //                 state: {
-    //                     allowBack: true,
-    //                 }
-    //             })
-    //         }}
-    //         onClose={() => {
-    //             setClosedOverlay(true)
-    //         }}
-    //     />}
-
-    //     <ListRowContainer id={headerId} style={{ overflowX: 'hidden' }} className="shadow-md z-10">
-    //         <div className={cn(headerCellClassName, 'justify-start flex md:sticky md:left-0')}>
-    //             <p>Producto</p>
-    //         </div>
-    //         <div className={cn(headerCellClassName, 'text-sm')}>
-    //             <p>Stock</p>
-    //         </div>
-    //         <div className={cn(headerCellClassName, 'text-sm')}>
-    //             <p>Comprometido</p>
-    //         </div>
-    //         {data.months.map(month => <div key={month} className={cn(headerCellClassName, 'text-sm')}>
-    //             <p>{month}</p>
-    //         </div>)}
-    //     </ListRowContainer>
-    //     <div className='' style={{ height: h, width: w }}>
-    //         <List
-    //             className={scrollClassName}
-    //             height={h}
-    //             width={w}
-    //             itemCount={filtered.length}
-    //             itemSize={57}
-    //         >
-    //             {({ ...props }) => <ListRow key={props.index} {...props} products={filtered} />}
-    //         </List>
-    //     </div>
-    // </div>
+        </div>
+    </AppLayout>
 }
 
 function useFilters() {

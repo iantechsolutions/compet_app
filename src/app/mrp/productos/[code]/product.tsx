@@ -73,7 +73,7 @@ export default function ProductPage(props: { user?: NavUserData }) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {Array.from(productData.entries()).map(([month, p]) => {
+                    {Array.from(productData.entries()).map(([month, p], i) => {
 
                         return <>
                             <TableRow key={`header:${month}`}>
@@ -81,7 +81,7 @@ export default function ProductPage(props: { user?: NavUserData }) {
                                     {dayjs(month).format('MMMM YYYY').toUpperCase()}
                                 </TableCell>
                             </TableRow>
-                            <ForecastEventsRow events={p.supplyForecastEvents} month={month} />
+                            <ForecastEventsRow events={p.supplyForecastEvents} month={month} key={`forecast_event_row:${month}`} />
                             {p.events.map((event, i) => {
                                 return <ProductEventRow key={`row:${month}:${i}`} event={event} productCode={productCode} />
                             })}

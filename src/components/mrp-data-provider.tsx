@@ -1,14 +1,18 @@
 "use client"
 /* eslint-disable */
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useState } from "react"
 import { useOnMounted } from "~/lib/hooks"
 import { MRPData } from "~/mrp_data/transform_mrp_data"
 import { Loader2Icon } from "lucide-react"
 import { Button } from "./ui/button"
 import { decodeData } from "~/lib/utils"
-import { deleteFromCache, readFromCache, saveToCache } from "~/lib/cache-store"
+import { readFromCache, saveToCache } from "~/lib/cache-store"
 import { api } from "~/trpc/react"
+
+import dayjs from 'dayjs'
+import 'dayjs/locale/es'
+dayjs.locale('es')
 
 type CTXType = {
     data: MRPData
@@ -29,10 +33,21 @@ if (typeof window !== 'undefined') {
 export default function MRPDataProvider(props: { children: React.ReactNode }) {
     const [data, setData] = useState<MRPData | null>(null)
     const [loadingMessage, setLoadingMessage] = useState<string>('Buscando información')
-    const { data: currentProfile } = api.forecast.currentProfile.useQuery()
+    const { mutateAsync: obtainCurrentProfile } = api.forecast.obtainCurrentProfile.useMutation()
+    const { mutateAsync: obtainDataExportInfo } = api.mrpData.obtainDataExportInfo.useMutation()
     const [isUpdating, setIsUpdating] = useState(false)
 
     const channel = gloabalMRPChannel!
+
+    async function dataIsUpToDate(data: MRPData): Promise<boolean> {
+        const currentProfile = await obtainCurrentProfile()
+        const dataExportInfo = await obtainDataExportInfo()
+
+        const forecastProfileMismatch = data?.forecastData?.forecastProfile.id != currentProfile?.id
+        const dataExportMismatch = data.dataExportDate != dataExportInfo.exportDate
+
+        return !forecastProfileMismatch && !dataExportMismatch
+    }
 
     function dataReady(data: MRPData) {
         setData(data)
@@ -162,17 +177,23 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
                 // Buscar si existe en cache
                 data = await readFromCache<MRPData>('mrp-data')
 
-                const dataForecastProfileId = data?.forecastData?.forecastProfile.id
 
-                if (dataForecastProfileId != currentProfile?.id) {
-                    // Cache data forecast profile is not the same as the current profile
-                    console.log('Cache data forecast profile is not the same as the current profile')
-                    data = null
+                if (data) {
+                    setLoadingMessage("Datos encontrados en caché, comprobando validez")
+
+                    const isValid = await dataIsUpToDate(data)
+
+                    if (!isValid) {
+                        // Cache data forecast profile is not the same as the current profile
+                        console.log('Cache data isn\'t up to date')
+                        data = null
+                    }
                 }
+
 
                 if (data) {
                     console.log("Data found in cache!")
-                    setLoadingMessage('Datos obtenidos de cache')
+                    setLoadingMessage('Datos encontrados en caché validados')
                     dataReady(data)
                     return data
                 }
@@ -206,6 +227,17 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
 
     useOnMounted(() => {
         void initializeData()
+
+        setInterval(async () => {
+            console.log("Checking if data is still valid...")
+
+            const dataStillValid = data && await dataIsUpToDate(data)
+
+            if (!dataStillValid) {
+                console.log("Data is not valid anymore, reinitializing...")
+                await initializeData({ revalidateMode: true })
+            }
+        }, 1000 * 60 * 5)
     })
 
     if (!data) return <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center">

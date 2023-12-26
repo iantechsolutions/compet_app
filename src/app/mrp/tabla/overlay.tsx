@@ -22,12 +22,13 @@ import { XIcon } from "lucide-react"
 import { MRPProduct } from "~/mrp_data/transform_mrp_data"
 import { useEffect, useLayoutEffect, useRef } from "react"
 import { useOnScroll } from "~/lib/hooks"
+import Link from "next/link"
 
 export function TargetOverlayInfoCard(props: {
     product: MRPProduct
     column: string | undefined
     onClose: () => void
-    onClickOpen: () => void
+    productHref: string
     trackElementId: string
 }) {
     const classNames = 'fixed left-0 right-0 w-[350px] z-20'
@@ -109,11 +110,12 @@ export function TargetOverlayInfoCard(props: {
     }
 
     if (!props.column) {
-        return <Button className={cn(classNames)}
-            id={id}
-            onClick={props.onClickOpen}
-            style={{ width: '150px', marginLeft: '50px' }}
-        >Abrir</Button>
+        return <Link href={props.productHref}>
+            <Button className={cn(classNames)}
+                id={id}
+                style={{ width: '150px', marginLeft: '50px' }}
+            >Abrir</Button>
+        </Link>
     }
 
     return (
@@ -163,9 +165,9 @@ export function TargetOverlayInfoCard(props: {
 
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                    <Button className="w-full"
-                        onClick={props.onClickOpen}
-                    >Abrir</Button>
+                    <Link href={props.productHref} className="w-full">
+                        <Button className="w-full">Abrir</Button>
+                    </Link>
                 </CardFooter>
             </Card>
         </div>
