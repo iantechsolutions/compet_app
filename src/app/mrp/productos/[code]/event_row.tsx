@@ -43,22 +43,40 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
         typeName = "Pedido"
     } else if (event.type === 'forecast') {
         typeName = "Forecast"
+
+        if (event.forecastType === 'sold') {
+            typeName = "Forecast (facturación)"
+        } else if (event.forecastType === 'budget') {
+            typeName = "Forecast (presupuestos)"
+        }
+
     } else if (event.type === 'supply') {
         typeName = 'Insumo para armado'
+
+        let supplyName = "Insumo"
+
+        if(event.isForecast) {
+            if(event.forecastType === 'sold') {
+                supplyName = "Forecast (facturación)"
+            } else if(event.forecastType === 'budget') {
+                supplyName = "Forecast (presupuestos)"
+            }
+        }
+
         if (parentProductCode && !hasChildren) {
             typeName = <><span className="font-medium underline">Insumo</span>{" -> Armado"}</>
         }
 
         if (parentProductCode && hasChildren) {
-            typeName = <>{"Insumo -> "}<span className="font-medium underline">Semielaborado</span>{" -> Armado"}</>
+            typeName = <>{supplyName}{" -> "}<span className="font-medium underline">Semielaborado</span>{" -> Armado"}</>
         }
 
         if (event.parentEvent && event.parentEvent.parentEvent) {
-            typeName = <><span className="font-medium underline">Insumo</span>{" -> Semielaborado -> Armado"}</>
+            typeName = <><span className="font-medium underline">{supplyName}</span>{" -> Semielaborado -> Armado"}</>
         }
 
         if (!parentProductCode && hasChildren) {
-            typeName = <>{"Insumo -> "}<span className="font-medium underline">Armado</span></>
+            typeName = <>{supplyName}{" -> "}<span className="font-medium underline">Armado</span></>
         }
     }
 
@@ -82,6 +100,10 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
         orderNumber = 'forecast'
     }
 
+    if(event.forecastType === 'sold') {
+        console.log(event)
+    }
+
     return <TableRow
         className={cn({
             // 'bg-green-100': event.type === 'order' || (event.type === 'supply' && !event.isForecast),
@@ -89,7 +111,14 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
             'bg-yellow-100': (event.type === 'forecast' || event.isForecast) && !props.nobg,
         })}
     >
-        <TableCell className="whitespace-nowrap">{formatStock(event.originalQuantity ?? event.quantity)}</TableCell>
+        <TableCell className="whitespace-nowrap">
+            {formatStock(event.originalQuantity ?? event.quantity)}
+            {event.forecastType === 'budget' && (
+                event.originalQuantity && <span className="text-xs ml-2">
+                    {`(${(data.forecastData!.forecastProfile.budgetsInclusionFactor * 100).toFixed(1)}% de ${formatStock(event.originalQuantity)})`}
+                </span>
+            )}
+        </TableCell>
         <TableCell className="whitespace-nowrap">{typeName}</TableCell>
         {!props.nodate && <TableCell className="whitespace-nowrap">{dayjs(event.date).format('YYYY-MM-DD')}</TableCell>}
         <TableCell className="whitespace-nowrap">

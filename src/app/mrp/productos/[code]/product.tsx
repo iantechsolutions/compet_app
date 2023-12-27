@@ -10,10 +10,11 @@ import { useProductPageData } from "./use_product_page_data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
 import dayjs from "dayjs";
-import { ForecastEventsRow } from "./forecast_events_row";
+import { ForecastSupplyEventsRow } from "./forecast_supply_events_row";
 import { ProductEventRow } from "./event_row";
 import { ProductEventsChart } from "./chart";
 import { Title } from "~/components/title";
+import { ForecastBudgetEventsRow } from "./forecast_budget_events_row";
 
 export default function ProductPage(props: { user?: NavUserData }) {
 
@@ -76,9 +77,13 @@ export default function ProductPage(props: { user?: NavUserData }) {
                     {Array.from(productData.entries()).map(([month, p], i) => {
 
                         const forecastEvents = p.events.filter(e => e.isForecast)
+                        const budgetForecastEvents = p.events.filter(e => e.isForecast && e.forecastType === 'budget')
+
                         const nonForecastEvents = p.events.filter(e => !e.isForecast)
 
                         const lastStock = forecastEvents[forecastEvents.length - 1]?.productAccumulativeStock ?? 0
+
+                        const supplyForecastEventsSum = p.supplyForecastEvents.reduce((acc, e) => acc + e.quantity, 0)
 
                         return <>
                             <TableRow key={`header:${month}`}>
@@ -89,7 +94,8 @@ export default function ProductPage(props: { user?: NavUserData }) {
                             {forecastEvents.map((event, i) => {
                                 return <ProductEventRow key={`row:${month}:f_${i}`} event={event} productCode={productCode} />
                             })}
-                            <ForecastEventsRow events={p.supplyForecastEvents} month={month} key={`forecast_event_row:${month}`} stock={lastStock} />
+                            <ForecastSupplyEventsRow events={p.supplyForecastEvents} month={month} key={`forecast_supply_event_row:${month}`} stock={lastStock} />
+                            {/* <ForecastBudgetEventsRow events={budgetForecastEvents} month={month} key={`forecast_budget_event_row:${month}`} stock={lastStock - supplyForecastEventsSum} /> */}
                             {nonForecastEvents.map((event, i) => {
                                 return <ProductEventRow key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />
                             })}

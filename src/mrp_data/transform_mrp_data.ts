@@ -13,6 +13,7 @@ export type ProductEventType = 'import' | 'order' | 'supply' | 'forecast'
 
 export type ProductEvent = {
     type: ProductEventType
+    forecastType?: 'sold' | 'budget' // | 'import'
     referenceId: number
     date: Date
     originalQuantity?: number
@@ -30,7 +31,6 @@ export type ProductEvent = {
 // Transformamos los datos en el cliente para que sean faciles de consumir y mostrar
 function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | undefined, forecastParams: ForecastProfile | undefined) {
     const data = mapData(rawData, forecastData)
-
 
     const months = rawData.months
 
@@ -55,6 +55,8 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
     const orderedQuantityOfProductsByMonth = new Map<string, Map<string, number>>()
     const usedAsSupplyQuantityOfProductsByMonth = new Map<string, Map<string, number>>()
     const usedAsForecastQuantityOfProductsByMonth = new Map<string, Map<string, number>>()
+    const usedAsForecastTypeSoldQuantityOfProductsByMonth = new Map<string, Map<string, number>>()
+    const usedAsForecastTypeBudgetQuantityOfProductsByMonth = new Map<string, Map<string, number>>()
 
     for (const product of data.products) {
         const events = eventsOfProductsByMonth.get(product.code)!
@@ -64,11 +66,15 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
             orderedQuantityOfProductsByMonth.set(product.code, orderedQuantityOfProductsByMonth.get(product.code) ?? new Map())
             usedAsSupplyQuantityOfProductsByMonth.set(product.code, usedAsSupplyQuantityOfProductsByMonth.get(product.code) ?? new Map())
             usedAsForecastQuantityOfProductsByMonth.set(product.code, usedAsForecastQuantityOfProductsByMonth.get(product.code) ?? new Map())
+            usedAsForecastTypeSoldQuantityOfProductsByMonth.set(product.code, usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code) ?? new Map())
+            usedAsForecastTypeBudgetQuantityOfProductsByMonth.set(product.code, usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code) ?? new Map())
 
             importedQuantityOfProductsByMonth.get(product.code)!.set(month, 0)
             orderedQuantityOfProductsByMonth.get(product.code)!.set(month, 0)
             usedAsSupplyQuantityOfProductsByMonth.get(product.code)!.set(month, 0)
             usedAsForecastQuantityOfProductsByMonth.get(product.code)!.set(month, 0)
+            usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!.set(month, 0)
+            usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.set(month, 0)
 
             for (const event of events.get(month) ?? []) {
                 // Aunque solo el valor de quantity afecte a la variación de stock, queremos que los eventos musetren la cantidad original por más de que se hayan dividido en eventos de suministro
@@ -78,6 +84,13 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
                     importedQuantityOfProductsByMonth.get(product.code)!.set(month, importedQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
                 } else if (event.type === 'forecast' || event.isForecast) {
                     usedAsForecastQuantityOfProductsByMonth.get(product.code)!.set(month, usedAsForecastQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+
+                    if (event.forecastType === 'sold') {
+                        usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!.set(month, usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+                    } else if (event.forecastType === 'budget') {
+                        usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.set(month, usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+                    }
+
                 } else if (event.type === 'order') {
                     orderedQuantityOfProductsByMonth.get(product.code)!.set(month, orderedQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
                 } else if (event.type === 'supply') {
@@ -94,11 +107,11 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
         ordered_quantity_by_month: orderedQuantityOfProductsByMonth.get(product.code)!,
         used_as_supply_quantity_by_month: usedAsSupplyQuantityOfProductsByMonth.get(product.code)!,
         used_as_forecast_quantity_by_month: usedAsForecastQuantityOfProductsByMonth.get(product.code)!,
+        used_as_forecast_type_sold_quantity_by_month: usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!,
+        used_as_forecast_type_budget_quantity_by_month: usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!,
         events_by_month: eventsOfProductsByMonth.get(product.code)!,
         events: eventsByProductCode.get(product.code)!,
     }))
-
-
 
     return {
         ...data,
@@ -149,12 +162,14 @@ function listAllEvents(data: MappedData) {
         for (const event of data.forecastData.events) {
             events.push({
                 type: 'forecast',
+                forecastType: event.type,
                 referenceId: -1,
                 date: event.date,
                 quantity: event.quantity,
                 productCode: event.product_code,
                 expired: event.date < today,
                 productAccumulativeStock: 0,
+                originalQuantity: event.originalQuantity,
                 isForecast: true,
             })
         }
@@ -252,6 +267,7 @@ function listAllEventsWithSupplyEvents(data: MappedData) {
                 for (const supply of product.supplies) {
                     newSupplyEvents.push({
                         type: 'supply',
+                        forecastType: event.forecastType,
                         level: event.type === 'supply' ? event.level! + 1 : 0,
                         date: event.date, // La fecha es la misma
                         productCode: supply.supply_product_code, // Código del suministro

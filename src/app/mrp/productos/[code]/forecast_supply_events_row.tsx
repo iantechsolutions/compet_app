@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 import { ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { cn, formatStock } from "~/lib/utils";
 
-export function ForecastEventsRow(props: { events: ProductEvent[], month: string, stock: number }) {
+export function ForecastSupplyEventsRow(props: { events: ProductEvent[], month: string, stock: number }) {
     const openId = useId()
 
     const sum = props.events.reduce((acc, event) => acc + event.quantity, 0)
@@ -49,7 +49,7 @@ export function ForecastEventsRow(props: { events: ProductEvent[], month: string
             <DialogTrigger asChild>
                 <Button variant="outline" id={openId} className="hidden">Insumo de forecast</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[1000px]">
+            <DialogContent className="sm:max-w-[1200px]">
                 <DialogHeader>
                     <DialogTitle>Forecast como insumo {props.month}</DialogTitle>
                     <DialogDescription>

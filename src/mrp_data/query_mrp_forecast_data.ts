@@ -13,6 +13,7 @@ type ForecastDataEvent = {
     product_code: string
     date: Date
     quantity: number
+    originalQuantity?: number
 }
 
 
@@ -109,13 +110,14 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
             const date = dayjs().startOf('month').add(6, 'hours').add(i + 1, 'month').toDate()
 
             for (const product_code of productSoldAverageMonthlyByCode.keys()) {
-
                 const quantity = productSoldAverageMonthlyByCode.get(product_code)!
+
                 events.push({
                     type: 'sold',
                     product_code,
                     date,
                     quantity: quantity * (1 + i * forecastProfile.salesIncrementFactor),
+                    originalQuantity: quantity,
                 })
             }
         }
@@ -141,6 +143,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
         // console.log(budget.date, budget.next_contact_date)
 
         if(!budget.date) continue
+        if(budget.date < new Date()) continue
 
         events.push({
             type: 'budget',
