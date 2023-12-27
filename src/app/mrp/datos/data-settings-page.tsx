@@ -160,7 +160,7 @@ function RemoteUpdateComponent() {
                     clearTimeout(timerRef.current!)
 
                     timerRef.current = setTimeout(() => {
-                        if(progressRef.current?.value != 0) return
+                        if (progressRef.current?.value != 0) return
 
                         setRemoteUpdateProgress({
                             value: 0,
@@ -191,7 +191,9 @@ function RemoteUpdateComponent() {
                 if (data.finished) {
                     invalidateAndReloadData()
                     router.refresh()
-                    setRemoteUpdateProgress(null)
+                    setTimeout(() => {
+                        setRemoteUpdateProgress(null)
+                    }, 200)
                 } else {
                     setRemoteUpdateProgress(data)
                 }
@@ -204,10 +206,11 @@ function RemoteUpdateComponent() {
     return <section className="w-full max-w-[600px]">
         <Title>Base de datos de tango</Title>
         {(!remoteUpdateProgress || remoteUpdateProgress.error) && <Button
-        className="mb-5"
+            className="mb-5"
             onClick={() => {
                 requestRemoteUpdate?.()
             }}
+            disabled={!requestRemoteUpdate}
         >
             Solicitar actualización de datos
         </Button>}
