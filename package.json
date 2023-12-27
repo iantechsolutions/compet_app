@@ -38,6 +38,7 @@
     "@types/react-window": "^1.8.8",
     "@uidotdev/usehooks": "^2.4.1",
     "@uploadthing/react": "^6.0.2",
+    "@web-std/file": "^3.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
