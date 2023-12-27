@@ -1,30 +1,16 @@
 /* eslint-disable */
 
 import dayjs from "dayjs";
-import { sql } from "drizzle-orm";
 import { getSetting } from "~/lib/settings";
-import { Client, Import, Order, OrderProduct, Product, ProductAssembly, ProductImport, ProductProvider, ProductStockCommited, Provider } from "~/lib/types";
+import { CrmBudget, CrmBudgetProduct, Order, OrderProductSold, Product, ProductAssembly, ProductImport, ProductProvider, ProductStockCommited } from "~/lib/types";
 import { decodeData, getMonths } from "~/lib/utils";
 import { DataExport } from "~/scripts/lib/read-from-tango-db";
-import { db } from "~/server/db";
-import { utapi } from "~/server/uploadthing";
 import { api } from "~/trpc/server";
 
 export async function queryBaseMRPData() {
-    // const imports = (await db.execute(sql`select * from Import`)).rows as Import[]
-    // const products_imports = (await db.execute(sql`select * from ProductImport`)).rows as ProductImport[]
-    // const products = (await db.execute(sql`select * from Product`)).rows as Product[]
-    // const products_stock_commited = (await db.execute(sql`select * from ProductStockCommited`)).rows as ProductStockCommited[]
-    // const products_assemblies = (await db.execute(sql`select * from ProductAssembly`)).rows as ProductAssembly[]
-    // const providers = (await db.execute(sql`select * from Provider`)).rows as Provider[]
-    // const product_providers = (await db.execute(sql`select * from ProductProvider`)).rows as ProductProvider[]
-    // const orders = (await db.execute(sql`select * from \`Order\``)).rows as Order[]
-    // const products_orders = (await db.execute(sql`select * from OrderProduct`)).rows as OrderProduct[]
-    // const clients = (await db.execute(sql`select * from Client`)).rows as Client[]
-
     const mrpExportFile = await getSetting<string>("mrp.export-file")
 
-    if(!mrpExportFile) {
+    if (!mrpExportFile) {
         throw new Error("No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.")
     }
 
@@ -96,6 +82,27 @@ export async function queryBaseMRPData() {
         ordersByOrderNumber.set(order.order_number, order)
     }
 
+
+    const productSoldByN_COMP: Map<string, OrderProductSold[]> = new Map()
+    for (const soldProduct of products_sold) {
+        const orderProducts = productSoldByN_COMP.get(soldProduct.N_COMP) ?? []
+        orderProducts.push(soldProduct)
+        productSoldByN_COMP.set(soldProduct.N_COMP, orderProducts)
+    }
+
+    const budgetsById: Map<number, CrmBudget> = new Map()
+    for (const budget of budgets) {
+        budgetsById.set(budget.budget_id, budget)
+    }
+
+    const budgetProductByBudgetId: Map<number, CrmBudgetProduct[]> = new Map()
+    for (const budgetProduct of budget_products) {
+        const budgetProducts = budgetProductByBudgetId.get(budgetProduct.budget_id) ?? []
+        budgetProducts.push(budgetProduct)
+        budgetProductByBudgetId.set(budgetProduct.budget_id, budgetProducts)
+    }
+
+
     const months = getMonths(10)
 
     return {
@@ -125,6 +132,20 @@ export async function queryBaseMRPData() {
             return true
         }),
         clients,
+        sold: sold.map(sold => ({
+            ...sold,
+            products: productSoldByN_COMP.get(sold.N_COMP) ?? [],
+        })),
+        products_sold,
+
+        budgetsById,
+        budgets: budgets.map(budget => ({
+            ...budget,
+            products: budgetProductByBudgetId.get(budget.budget_id) ?? [],
+        })),
+        budget_products,
+        crm_clients,
+
         dataExportUrl: exportURL,
         dataExportDate: dataInfo.exportDate,
     }

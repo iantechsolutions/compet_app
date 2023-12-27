@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
 
     const mrpRawData = await queryBaseMRPData()
-    const forecastData = await queryForecastData(forecastProfile)
+    const forecastData = await queryForecastData(forecastProfile, mrpRawData)
 
     const data = transformMRPData(mrpRawData, forecastData, forecastProfile)
 

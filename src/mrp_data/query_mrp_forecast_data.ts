@@ -6,41 +6,42 @@ import { db } from "~/server/db"
 import { sql } from "drizzle-orm"
 import { OrderProductSold, OrderSold } from "~/lib/types"
 import { ForecastProfile } from "./transform_mrp_data"
+import { RawMRPData, queryBaseMRPData } from "./query_mrp_data"
 
 type ForecastDataEvent = {
+    type: 'sold' | 'budget' // | 'import'
     product_code: string
     date: Date
     quantity: number
 }
 
 
-export async function queryForecastData(forecastProfile: ForecastProfile) {
+export async function queryForecastData(forecastProfile: ForecastProfile, mrpRawData?: RawMRPData) {
 
-    // const budgetProducts = await prisma.cRMBudgetProduct.findMany({
-    //     where: {
-    //         budget: {
-    //             date: {
-    //                 gte: dayjs().startOf('month').toDate()
-    //             }
-    //         }
-    //     },
-    //     include: {
-    //         budget: true,
-    //     }
-    // })
 
-    // const soldProducts = await prisma.orderProductSold.findMany({
-    //     include: {
-    //         order: {
-    //             select: {
-    //                 emission_date: true
-    //             }
-    //         }
-    //     }
-    // })
+    const data = mrpRawData ?? await queryBaseMRPData()
 
-    const soldProductsBase = (await db.execute(sql`select * from OrderProductSold`)).rows as OrderProductSold[]
-    const ordersSold = (await db.execute(sql`select * from OrderSold`)).rows as OrderSold[]
+
+
+    const events: ForecastDataEvent[] = [
+        // {
+        //     product_code: '01014040 CON AD',
+        //     date: new Date(2023, 11, 1),
+        //     quantity: 1500,
+        // },
+        // {
+        //     product_code: '03103EPE201593',
+        //     date: new Date(2023, 11, 2),
+        //     quantity: 880,
+        // }
+    ]
+
+    /**
+     * SOLD AREA
+     */
+
+    const soldProductsBase = data.products_sold
+    const ordersSold = data.sold
 
     const ordersSoldByN_COMP: Map<string, OrderSold> = new Map()
     for (const orderSold of ordersSold) {
@@ -100,18 +101,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile) {
         productSoldAverageMonthlyByCode.set(code, total / 6)
     }
 
-    const events: ForecastDataEvent[] = [
-        // {
-        //     product_code: '01014040 CON AD',
-        //     date: new Date(2023, 11, 1),
-        //     quantity: 1500,
-        // },
-        // {
-        //     product_code: '03103EPE201593',
-        //     date: new Date(2023, 11, 2),
-        //     quantity: 880,
-        // }
-    ]
+
 
     if (forecastProfile.includeSales) {
         // for next 12 months
@@ -122,6 +112,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile) {
 
                 const quantity = productSoldAverageMonthlyByCode.get(product_code)!
                 events.push({
+                    type: 'sold',
                     product_code,
                     date,
                     quantity: quantity * (1 + i * forecastProfile.salesIncrementFactor),
@@ -129,6 +120,38 @@ export async function queryForecastData(forecastProfile: ForecastProfile) {
             }
         }
     }
+
+
+    /** END BUDGETS AREA */
+
+
+    /**
+     * BUDGETS AREA
+     */
+
+    const budgets = data.budgets
+    const budgetProducts = data.budget_products
+
+    for (const budgetProduct of budgetProducts) {
+        const budget = data.budgetsById.get(budgetProduct.budget_id)
+        if(!budget) continue
+
+
+        // TODO: Preguntar por que fecha utilizar según el presupuesto
+        // console.log(budget.date, budget.next_contact_date)
+
+        if(!budget.date) continue
+
+        events.push({
+            type: 'budget',
+            date: budget.date,
+            product_code: budgetProduct.product_code,
+            quantity: budgetProduct.quantity * forecastProfile.budgetsInclusionFactor,
+        })
+    }
+
+
+    /** END BUDGETS AREA */
 
 
     return {
