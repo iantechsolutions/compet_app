@@ -138,6 +138,10 @@ export function initialzeScaledroneListen() {
     function sendProgressUpdate(progress: RemoteUpdateProgress) {
         lastProgressSent = progress
 
+        if (progress.finished) {
+            lastProgressSent = null
+        }
+
         drone.publish({
             room: 'update_progress',
             message: JSON.stringify(progress)
