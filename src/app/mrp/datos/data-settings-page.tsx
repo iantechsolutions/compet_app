@@ -1,8 +1,10 @@
 "use client"
 
 import dayjs from "dayjs";
+import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import DataUploadingCard from "~/components/data-uploading-card";
@@ -10,8 +12,10 @@ import { useMRPData, useMRPInvalidateAndReloadData } from "~/components/mrp-data
 import { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
 import { Button } from "~/components/ui/button";
-import { useOnMounted } from "~/lib/hooks";
+import { Card } from "~/components/ui/card";
+import { useGlobalState, useOnMounted } from "~/lib/hooks";
 import { nullProfile } from "~/lib/nullForecastProfile";
+import { cn } from "~/lib/utils";
 import { RouterOutputs } from "~/trpc/shared";
 
 export default function DataSettingsPage(props: {
@@ -78,24 +82,34 @@ export default function DataSettingsPage(props: {
 }
 
 
-type RemoteUpdateProgress = {
+export type RemoteUpdateProgress = {
     value: number
     message: string
     finished: boolean
     timestamp: number
+    error: boolean
 }
 
 function RemoteUpdateComponent() {
 
-    const [requestRemoteUpdate, setRequestRemoteUpdate] = useState<(() => void) | null>(null)
-    const [remoteUpdateProgress, setRemoteUpdateProgress] = useState<RemoteUpdateProgress | null>(null)
+    const [requestRemoteUpdate, setRequestRemoteUpdate] = useGlobalState<(() => void) | null>('mrp.data.requestRemoteUpdate', null)
+    const [remoteUpdateProgress, _setRemoteUpdateProgress] = useGlobalState<RemoteUpdateProgress | null>('mrp.data.remoteUpdateProgress', null)
+    const progressRef = useRef<RemoteUpdateProgress | null>(remoteUpdateProgress)
+
+    const setRemoteUpdateProgress = (value: RemoteUpdateProgress | null) => {
+        progressRef.current = value
+        _setRemoteUpdateProgress(value)
+    }
 
     const invalidateAndReloadData = useMRPInvalidateAndReloadData()
 
+    const timerRef = useRef<any>(0)
 
     useOnMounted(() => {
         listenScaledrone()
     })
+
+    const router = useRouter()
 
     async function listenScaledrone() {
         const rc = await fetch('/api/scaledrone_channel')
@@ -134,9 +148,36 @@ function RemoteUpdateComponent() {
 
             const room = drone.subscribe('update_progress');
 
+            drone.publish({
+                room: 'request_data_update',
+                message: "null",
+            })
+
             setRequestRemoteUpdate(() => {
                 return () => {
                     console.log('requesting remote update')
+
+                    clearTimeout(timerRef.current!)
+
+                    timerRef.current = setTimeout(() => {
+                        if(progressRef.current?.value != 0) return
+
+                        setRemoteUpdateProgress({
+                            value: 0,
+                            message: 'Error de conexión (el servidor no responde)',
+                            finished: false,
+                            timestamp: Date.now(),
+                            error: true
+                        })
+                    }, 15000)
+
+                    setRemoteUpdateProgress({
+                        value: 0,
+                        message: 'Esperando información del servidor',
+                        finished: false,
+                        timestamp: Date.now(),
+                        error: false
+                    })
 
                     drone.publish({
                         room: 'request_data_update',
@@ -149,6 +190,7 @@ function RemoteUpdateComponent() {
                 const data = JSON.parse(message.data) as RemoteUpdateProgress
                 if (data.finished) {
                     invalidateAndReloadData()
+                    router.refresh()
                     setRemoteUpdateProgress(null)
                 } else {
                     setRemoteUpdateProgress(data)
@@ -159,14 +201,26 @@ function RemoteUpdateComponent() {
 
 
 
-    return <section>
+    return <section className="w-full max-w-[600px]">
         <Title>Base de datos de tango</Title>
-        <Button
+        {(!remoteUpdateProgress || remoteUpdateProgress.error) && <Button
+        className="mb-5"
             onClick={() => {
                 requestRemoteUpdate?.()
             }}
         >
             Solicitar actualización de datos
-        </Button>
+        </Button>}
+
+        {remoteUpdateProgress && <Card className="flex p-5 gap-5 items-center break-words">
+            {!remoteUpdateProgress.error && <Loader2Icon className="mr-2 animate-spin" />}
+            <p
+                className={cn('font-medium', {
+                    'text-red-500': remoteUpdateProgress?.error
+                })}
+            >
+                {progressRef.current?.message}
+            </p>
+        </Card>}
     </section>
 }

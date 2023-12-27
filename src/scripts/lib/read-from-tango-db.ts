@@ -31,12 +31,13 @@ export function trimmAllProperties(obj: Record<string, any>) {
     return obj
 }
 
-export async function readDataFromDB() {
-    console.log("Conectando a la base de datos...")
-    const connection = await sql.connect(connectionQuery)
-    console.log("Se conectó a la base de datos")
+export async function readDataFromDB(opts?: { log: (...args: any[]) => unknown }) {
+    const log = opts?.log || console.log
 
-    console.log("Leyendo tablas...")
+    log("Conectando a la base de datos...")
+    const connection = await sql.connect(connectionQuery)
+
+    log("Leyendo tablas...")
 
     // **** Products and providers ****
     const products = await fetchTableWithQuery(`SELECT

@@ -9,7 +9,7 @@ class Scaledrone {
 
     publish(options: {
         room: string
-        message: string
+        message: any
     }): void
 
     subscribe(room: string): {

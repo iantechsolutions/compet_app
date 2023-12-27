@@ -3,6 +3,7 @@ import jwt from 'jwt-simple'
 
 import Scaledrone from 'scaledrone-node'
 import { loadDataFromTangoToCloud } from './load-data-func'
+import { RemoteUpdateProgress } from '~/app/mrp/datos/data-settings-page'
 
 
 export function initialzeScaledroneListen() {
@@ -63,6 +64,8 @@ export function initialzeScaledroneListen() {
         onReady()
     });
 
+    let dataIsUpdating = false
+
     function onReady() {
         console.log("Listo para recibir comandos")
 
@@ -72,13 +75,73 @@ export function initialzeScaledroneListen() {
         requestDataUpdateRoom.on('message', async (message: any) => {
             console.log('request_data_update:', message.data)
 
+            if (dataIsUpdating || message.data == "null") {
+                if (lastProgressSent) {
+                    console.log("Sending already starte progress update")
+                    sendProgressUpdate(lastProgressSent)
+                } else {
+                    console.log("Sending null progress update")
+                }
+                return
+            }
+
+            sendProgressUpdate({
+                finished: false,
+                message: "Iniciando actualización de datos",
+                timestamp: Date.now(),
+                value: 0,
+                error: false,
+            })
+
+            dataIsUpdating = true
             loadDataFromTangoToCloud({
                 log: (...args: any[]) => {
                     console.log("Update request progress:", ...args)
+
+                    sendProgressUpdate({
+                        finished: false,
+                        message: args.join(" "),
+                        timestamp: Date.now(),
+                        value: 50,
+                        error: false,
+                    })
                 }
+            }).then(() => {
+                dataIsUpdating = false
+                sendProgressUpdate({
+                    finished: true,
+                    message: "Datos actualizados",
+                    timestamp: Date.now(),
+                    value: 100,
+                    error: false,
+                })
+            }).catch((error) => {
+                console.error("Error updating data", error)
+
+                setTimeout(() => {
+                    dataIsUpdating = false
+
+                    sendProgressUpdate({
+                        finished: true,
+                        error: true,
+                        message: "Ocurrió un error al actualizar los datos",
+                        timestamp: Date.now(),
+                        value: 100,
+                    })
+                }, 120)
             })
         });
     }
 
+    let lastProgressSent: RemoteUpdateProgress | null = null
+
+    function sendProgressUpdate(progress: RemoteUpdateProgress) {
+        lastProgressSent = progress
+
+        drone.publish({
+            room: 'update_progress',
+            message: JSON.stringify(progress)
+        })
+    }
 }
 

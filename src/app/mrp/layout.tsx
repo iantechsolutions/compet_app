@@ -8,6 +8,12 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 dayjs.locale('es')
 
+export const metadata = {
+  title: "Compet MRP",
+  icons: [{ rel: "icon", url: "/icon.png" }],
+};
+
+
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <AuthProvider>

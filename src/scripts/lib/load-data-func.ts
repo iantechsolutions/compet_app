@@ -5,15 +5,15 @@ import { encodeData } from '~/lib/utils'
 import { getSetting, setSetting } from '~/lib/settings'
 
 export async function loadDataFromTangoToCloud(opts?: { log: (...args: any[]) => unknown }) {
-    const rawData = await readDataFromDB()
-
     const log = opts?.log || console.log
+
+    const rawData = await readDataFromDB({ log })
 
     log("Datos leidos de la base de datos")
 
     const encoded = encodeData(rawData)
 
-    log("Datos codificados", "Tamaño:", encoded.length, `${encoded.substring(0, 100)}.....`)
+    // log("Datos codificados", "Tamaño:", encoded.length, `${encoded.substring(0, 100)}.....`)
 
     log("Subiendo datos al servidor...")
 
