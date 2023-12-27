@@ -117,7 +117,7 @@ export async function queryBaseMRPData() {
             supplies: suppliesOfProduct.get(product.code) ?? [],
             suppliesOf: suppliesOfOfProduct.get(product.code) ?? [],
             providers: productProivderOfProduct.get(product.code) ?? [],
-        })),
+        })).sort((a, b) => a.code.localeCompare(b.code)),
         stockCommitedData: products_stock_commited,
         assemblies: products_assemblies,
         providers,

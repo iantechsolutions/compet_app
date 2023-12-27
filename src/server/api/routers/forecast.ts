@@ -19,7 +19,8 @@ export const forecastRouter = createTRPCRouter({
 
         clientInclusionList: z.array(z.string()).nullable().default(null),
     })).mutation(async ({ ctx, input }) => {
-        await ctx.db.insert(schema.forecastProfiles).values(input)
+        const r = await ctx.db.insert(schema.forecastProfiles).values(input)
+        return r.insertId
     }),
     listProfiles: protectedProcedure.query(async ({ ctx }) => {
         const profiles = await ctx.db.query.forecastProfiles.findMany()

@@ -36,6 +36,16 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
 
     let typeName: React.ReactNode = ""
 
+    let supplyName = "Insumo"
+
+    if(event.isForecast) {
+        if(event.forecastType === 'sold') {
+            supplyName = "Ins. forecast fact."
+        } else if(event.forecastType === 'budget') {
+            supplyName = "Ins. forecast presup."
+        }
+    }
+
     if (event.type === 'import') {
         typeName = "Importación"
 
@@ -53,18 +63,9 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
     } else if (event.type === 'supply') {
         typeName = 'Insumo para armado'
 
-        let supplyName = "Insumo"
-
-        if(event.isForecast) {
-            if(event.forecastType === 'sold') {
-                supplyName = "Forecast (facturación)"
-            } else if(event.forecastType === 'budget') {
-                supplyName = "Forecast (presupuestos)"
-            }
-        }
 
         if (parentProductCode && !hasChildren) {
-            typeName = <><span className="font-medium underline">Insumo</span>{" -> Armado"}</>
+            typeName = <><span className="font-medium underline">{supplyName}</span>{" -> Armado"}</>
         }
 
         if (parentProductCode && hasChildren) {
@@ -81,11 +82,11 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
     }
 
     if (!parentProductCode && hasChildren) {
-        typeName = <>{"Insumo -> "}<span className="font-medium underline">Pedido (armado)</span></>
+        typeName = <>{supplyName}{" -> "}<span className="font-medium underline">Pedido (armado)</span></>
     }
 
     if (!parentProductCode && hasChildren && childrenHasChildren) {
-        typeName = <>{"Insumo -> Semielaborado -> "}<span className="font-medium underline">Pedido (armado)</span></>
+        typeName = <>{supplyName}{" -> Semielaborado -> "}<span className="font-medium underline">Pedido (armado)</span></>
     }
 
 
@@ -104,6 +105,13 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
         console.log(event)
     }
 
+
+    let stockComp: React.ReactNode = formatStock(event.quantity)
+
+    if(event.originalQuantity && Math.round(event.originalQuantity) != Math.round(event.quantity)) {
+        stockComp = <>{formatStock(event.quantity)} <span className="bg-stone-700 bg-opacity-10 px-1 opacity-60">{`<-`} {formatStock(event.originalQuantity)}</span></>
+    }
+
     return <TableRow
         className={cn({
             // 'bg-green-100': event.type === 'order' || (event.type === 'supply' && !event.isForecast),
@@ -112,12 +120,14 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
         })}
     >
         <TableCell className="whitespace-nowrap">
-            {formatStock(event.originalQuantity ?? event.quantity)}
+            {stockComp}
+            
+            {/* {formatStock(event.originalQuantity ?? event.quantity)}
             {event.forecastType === 'budget' && (
                 event.originalQuantity && <span className="text-xs ml-2">
                     {`(${(data.forecastData!.forecastProfile.budgetsInclusionFactor * 100).toFixed(1)}% de ${formatStock(event.originalQuantity)})`}
                 </span>
-            )}
+            )} */}
         </TableCell>
         <TableCell className="whitespace-nowrap">{typeName}</TableCell>
         {!props.nodate && <TableCell className="whitespace-nowrap">{dayjs(event.date).format('YYYY-MM-DD')}</TableCell>}
@@ -181,7 +191,7 @@ function EventHoverCard(props: { event: ProductEvent, data: MRPData, children: R
                     className="block underline"
                     href={`/mrp/productos/${encodeURIComponent(parentEvent.productCode)}`}
                 >
-                    {parentEvent.productCode} (cant. original: {parentEvent.originalQuantity})
+                    {parentEvent.productCode} (cant. original: {formatStock(parentEvent.originalQuantity ?? 0)})
                 </Link>}
 
                 {parentEvent && childEvents.length > 0 && <div className="h-2" />}

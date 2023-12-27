@@ -59,7 +59,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
     }
 
     let appliedProfile = data.forecastData?.forecastProfile
-    if(!appliedProfile?.id) appliedProfile = undefined
+    if (!appliedProfile?.id) appliedProfile = undefined
 
     console.log("---->", appliedProfile)
 
@@ -126,7 +126,10 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
 }
 
 function CreateProfileForm(props: { disabled?: boolean }) {
-    const { mutateAsync: createProfile, isLoading } = api.forecast.createProfile.useMutation()
+    const { mutateAsync: createProfile, isLoading: isLoading1 } = api.forecast.createProfile.useMutation()
+    const { mutateAsync: applyProfile, isLoading: isLoading2 } = api.forecast.applyProfile.useMutation()
+
+    const isLoading = isLoading1 || isLoading2
 
     const [name, setName] = useState('')
 
@@ -145,7 +148,7 @@ function CreateProfileForm(props: { disabled?: boolean }) {
         e.preventDefault()
 
         try {
-            await createProfile({
+            const insertId = await createProfile({
                 name,
                 includeSales,
                 salesIncrementFactor: parseFloat(salesIncrementPercentage) / 100,
@@ -153,6 +156,7 @@ function CreateProfileForm(props: { disabled?: boolean }) {
                 budgetsInclusionFactor: parseFloat(budgetsInclusionPercentage) / 100,
                 clientInclusionList,
             })
+            await applyProfile({ id: parseInt(insertId) })
             invalidateAndReloadData()
         } catch (error) {
             console.error(error)
