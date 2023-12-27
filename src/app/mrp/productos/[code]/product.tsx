@@ -75,15 +75,23 @@ export default function ProductPage(props: { user?: NavUserData }) {
                 <TableBody>
                     {Array.from(productData.entries()).map(([month, p], i) => {
 
+                        const forecastEvents = p.events.filter(e => e.isForecast)
+                        const nonForecastEvents = p.events.filter(e => !e.isForecast)
+
+                        const lastStock = forecastEvents[forecastEvents.length - 1]?.productAccumulativeStock ?? 0
+
                         return <>
                             <TableRow key={`header:${month}`}>
                                 <TableCell colSpan={6} className="font-medium pt-7">
                                     {dayjs(month).format('MMMM YYYY').toUpperCase()}
                                 </TableCell>
                             </TableRow>
-                            <ForecastEventsRow events={p.supplyForecastEvents} month={month} key={`forecast_event_row:${month}`} />
-                            {p.events.map((event, i) => {
-                                return <ProductEventRow key={`row:${month}:${i}`} event={event} productCode={productCode} />
+                            {forecastEvents.map((event, i) => {
+                                return <ProductEventRow key={`row:${month}:f_${i}`} event={event} productCode={productCode} />
+                            })}
+                            <ForecastEventsRow events={p.supplyForecastEvents} month={month} key={`forecast_event_row:${month}`} stock={lastStock} />
+                            {nonForecastEvents.map((event, i) => {
+                                return <ProductEventRow key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />
                             })}
                         </>
                     })}

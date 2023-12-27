@@ -6,9 +6,9 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { ProductEventRow } from "./event_row";
 import dayjs from "dayjs";
 import { ProductEvent } from "~/mrp_data/transform_mrp_data";
-import { formatStock } from "~/lib/utils";
+import { cn, formatStock } from "~/lib/utils";
 
-export function ForecastEventsRow(props: { events: ProductEvent[], month: string }) {
+export function ForecastEventsRow(props: { events: ProductEvent[], month: string, stock: number }) {
     const openId = useId()
 
     const sum = props.events.reduce((acc, event) => acc + event.quantity, 0)
@@ -17,8 +17,8 @@ export function ForecastEventsRow(props: { events: ProductEvent[], month: string
 
     let minStock = Infinity
 
-    for(const event of props.events) {
-        if(event.productAccumulativeStock < minStock) {
+    for (const event of props.events) {
+        if (event.productAccumulativeStock < minStock) {
             minStock = event.productAccumulativeStock
         }
     }
@@ -36,8 +36,10 @@ export function ForecastEventsRow(props: { events: ProductEvent[], month: string
             <TableCell className="underline">
                 Ver detalles
             </TableCell>
-            <TableCell>
-                {/* {formatStock(minStock)} */}
+            <TableCell className={cn("font-medium", {
+                "text-red-500 font-medium": (props.stock - sum) < 0
+            })}>
+                {formatStock(props.stock - sum)}
             </TableCell>
             <TableCell>
 
