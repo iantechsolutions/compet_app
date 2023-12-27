@@ -116,7 +116,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
                     type: 'sold',
                     product_code,
                     date,
-                    quantity: quantity * (1 + i * forecastProfile.salesIncrementFactor),
+                    quantity: quantity * (1 + (1 + i) * forecastProfile.salesIncrementFactor),
                 })
             }
         }
@@ -172,7 +172,6 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
 
         for (const [month, monthMap] of productsBudgetForecastByMonth.entries()) {
             for (const [product_code, quantity] of monthMap.entries()) {
-                console.log(month, product_code, quantity)
                 events.push({
                     type: 'budget',
                     date: monthCodeToDate(month),
