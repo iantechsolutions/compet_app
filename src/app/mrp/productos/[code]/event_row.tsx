@@ -179,7 +179,7 @@ function EventHoverCard(props: { event: ProductEvent, data: MRPData, children: R
             <HoverCardTrigger asChild>
                 {props.children}
             </HoverCardTrigger>
-            <HoverCardContent>
+            <HoverCardContent className="w-[300px]">
                 {parentEvent && <p className="font-medium mb-2">Insumo de</p>}
                 {parentEvent && <Link
                     // state={{ allowBack: true }}

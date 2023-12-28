@@ -23,6 +23,7 @@ import { MRPProduct } from "~/mrp_data/transform_mrp_data"
 import { useEffect, useLayoutEffect, useRef } from "react"
 import { useOnScroll } from "~/lib/hooks"
 import Link from "next/link"
+import { useMRPData } from "~/components/mrp-data-provider"
 
 export function TargetOverlayInfoCard(props: {
     product: MRPProduct
@@ -39,8 +40,11 @@ export function TargetOverlayInfoCard(props: {
     const imported = props.column ? product.imported_quantity_by_month.get(props.column) : 0
     const ordered = props.column ? product.ordered_quantity_by_month.get(props.column) : 0
     const usedAsSupply = props.column ? product.used_as_supply_quantity_by_month.get(props.column) : 0
-    const usedAsForecast = props.column ? product.used_as_forecast_quantity_by_month.get(props.column) : 0
+    // const usedAsForecast = props.column ? product.used_as_forecast_quantity_by_month.get(props.column) : 0
+    const usedAsForecastSold = props.column ? product.used_as_forecast_type_sold_quantity_by_month.get(props.column) : 0
+    const usedAsForecastBudgets = props.column ? product.used_as_forecast_type_budget_quantity_by_month.get(props.column) : 0
 
+    const data = useMRPData()
 
     useEffect(() => {
         function listener(e: KeyboardEvent) {
@@ -79,6 +83,7 @@ export function TargetOverlayInfoCard(props: {
         const card = document.getElementById(id)
         const element = document.getElementById(trackIdRef.current)
 
+
         if (!card) return
         if (!element) {
             card.style.display = 'none'
@@ -86,9 +91,11 @@ export function TargetOverlayInfoCard(props: {
             card.style.display = 'block'
         }
 
+        const cardH = card.getBoundingClientRect().height
+
         const rect = element?.getBoundingClientRect()
 
-        const h = columnRef.current ? 360 : 40
+        const h = columnRef.current ? cardH + 10 : 40
 
         if (!rect) return
 
@@ -156,10 +163,20 @@ export function TargetOverlayInfoCard(props: {
                                 <TableCell className="font-medium">Stock</TableCell>
                                 <TableCell>{formatStock(stock ?? 0)}</TableCell>
                             </TableRow>
-                            <TableRow>
+                            {data.forecastData?.forecastProfile.includeSales && <TableRow>
                                 <TableCell className="font-medium">Forecast</TableCell>
-                                <TableCell className="text-orange-900 font-medium">{formatStock(usedAsForecast ?? 0)}</TableCell>
-                            </TableRow>
+                                <TableCell className="text-orange-900 font-medium">
+                                    {formatStock(usedAsForecastSold ?? 0)}
+                                    <span className="ml-2 text-stone-600">Facturación</span>
+                                </TableCell>
+                            </TableRow>}
+                            {data.forecastData?.forecastProfile.includeBudgets && <TableRow>
+                                <TableCell className="font-medium">Forecast</TableCell>
+                                <TableCell className="text-orange-700 font-medium">
+                                    {formatStock(usedAsForecastBudgets ?? 0)}
+                                    <span className="ml-2 text-stone-600">Presupuestos</span>
+                                </TableCell>
+                            </TableRow>}
                         </TableBody>
                     </Table>
 
@@ -170,6 +187,6 @@ export function TargetOverlayInfoCard(props: {
                     </Link>
                 </CardFooter>
             </Card>
-        </div>
+        </div >
     )
 }
