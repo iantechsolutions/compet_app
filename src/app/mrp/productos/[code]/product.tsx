@@ -14,7 +14,6 @@ import { ForecastSupplyEventsRow } from "./forecast_supply_events_row";
 import { ProductEventRow } from "./event_row";
 import { ProductEventsChart } from "./chart";
 import { Title } from "~/components/title";
-import { ForecastBudgetEventsRow } from "./forecast_budget_events_row";
 import { formatStock } from "~/lib/utils";
 
 export default function ProductPage(props: { user?: NavUserData }) {
@@ -90,7 +89,6 @@ export default function ProductPage(props: { user?: NavUserData }) {
                     {Array.from(productData.entries()).map(([month, p], i) => {
 
                         const forecastEvents = p.events.filter(e => e.isForecast)
-                        const budgetForecastEvents = p.events.filter(e => e.isForecast)
 
                         const nonForecastEvents = p.events.filter(e => !e.isForecast)
 
@@ -104,11 +102,9 @@ export default function ProductPage(props: { user?: NavUserData }) {
                         const initialStock = finalStock - stockVariation
 
                         // Usado como forecast (no insumo, facturación y presupuesto)
-                        const usedAsForecast = product.used_as_forecast_quantity_by_month.get(month) ?? 0
-                        const usedAsSoldForecast = product.used_as_forecast_type_sold_quantity_by_month.get(month) ?? 0
-                        const usedAsBudgetForecast = product.used_as_forecast_type_budget_quantity_by_month.get(month) ?? 0
-
-                        const lastStock = forecastEvents[forecastEvents.length - 1]?.productAccumulativeStock ?? initialStock
+                        // const usedAsForecast = product.used_as_forecast_quantity_by_month.get(month) ?? 0
+                        // const usedAsSoldForecast = product.used_as_forecast_type_sold_quantity_by_month.get(month) ?? 0
+                        // const usedAsBudgetForecast = product.used_as_forecast_type_budget_quantity_by_month.get(month) ?? 0
 
 
                         return <>
@@ -123,9 +119,9 @@ export default function ProductPage(props: { user?: NavUserData }) {
                                 </TableCell>
                             </TableRow>
                             {forecastEvents.map((event, i) => {
-                                return <ProductEventRow key={`row:${month}:f_${i}`} event={event} productCode={productCode} />
+                                return <ProductEventRow key={`row:${month}:f_${i}`} event={event} productCode={productCode} nostock />
                             })}
-                            <ForecastSupplyEventsRow events={p.supplyForecastEvents} month={month} key={`forecast_supply_event_row:${month}`} stock={lastStock} />
+                            <ForecastSupplyEventsRow events={p.supplyForecastEvents} month={month} key={`forecast_supply_event_row:${month}`} />
                             {nonForecastEvents.map((event, i) => {
                                 return <ProductEventRow key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />
                             })}

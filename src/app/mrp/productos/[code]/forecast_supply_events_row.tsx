@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 import { ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { cn, formatStock } from "~/lib/utils";
 
-export function ForecastSupplyEventsRow(props: { events: ProductEvent[], month: string, stock: number }) {
+export function ForecastSupplyEventsRow(props: { events: ProductEvent[], month: string }) {
     const openId = useId()
 
     const sum = props.events.reduce((acc, event) => acc + event.quantity, 0)
@@ -22,6 +22,9 @@ export function ForecastSupplyEventsRow(props: { events: ProductEvent[], month: 
             minStock = event.productAccumulativeStock
         }
     }
+
+    const stock = minStock
+    // const stock = props.stock - sum
 
     return <>
         <TableRow className="bg-yellow-100" role="button" onClick={() => {
@@ -37,9 +40,9 @@ export function ForecastSupplyEventsRow(props: { events: ProductEvent[], month: 
                 Ver detalles
             </TableCell>
             <TableCell className={cn("font-medium", {
-                "text-red-500 font-medium": (props.stock - sum) < 0
+                "text-red-500 font-medium": stock < 0
             })}>
-                {formatStock(props.stock - sum)}
+                {/* {formatStock(stock)} */}
             </TableCell>
             <TableCell>
 

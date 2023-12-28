@@ -6,7 +6,7 @@ import { MRPData, ProductEvent } from "~/mrp_data/transform_mrp_data"
 import { useMRPData } from "~/components/mrp-data-provider"
 import Link from "next/link"
 
-export function ProductEventRow(props: { event: ProductEvent, productCode: string, nobg?: boolean, nostate?: boolean, nodate?: boolean }) {
+export function ProductEventRow(props: { event: ProductEvent, productCode: string, nobg?: boolean, nostate?: boolean, nodate?: boolean, nostock?: boolean }) {
     const data = useMRPData()
 
     const { event, productCode } = props
@@ -38,10 +38,10 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
 
     let supplyName = "Insumo"
 
-    if(event.isForecast) {
-        if(event.forecastType === 'sold') {
+    if (event.isForecast) {
+        if (event.forecastType === 'sold') {
             supplyName = "Ins. forecast fact."
-        } else if(event.forecastType === 'budget') {
+        } else if (event.forecastType === 'budget') {
             supplyName = "Ins. forecast presup."
         }
     }
@@ -101,14 +101,9 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
         orderNumber = 'forecast'
     }
 
-    if(event.forecastType === 'sold') {
-        console.log(event)
-    }
-
-
     let stockComp: React.ReactNode = formatStock(event.quantity)
 
-    if(event.originalQuantity && Math.round(event.originalQuantity) != Math.round(event.quantity)) {
+    if (event.originalQuantity && Math.round(event.originalQuantity) != Math.round(event.quantity)) {
         stockComp = <>{formatStock(event.quantity)} <span className="bg-stone-700 bg-opacity-10 px-1 opacity-60">{`<-`} {formatStock(event.originalQuantity)}</span></>
     }
 
@@ -121,7 +116,7 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
     >
         <TableCell className="whitespace-nowrap">
             {stockComp}
-            
+
             {/* {formatStock(event.originalQuantity ?? event.quantity)}
             {event.forecastType === 'budget' && (
                 event.originalQuantity && <span className="text-xs ml-2">
@@ -164,7 +159,7 @@ export function ProductEventRow(props: { event: ProductEvent, productCode: strin
         <TableCell className={cn("font-medium", {
             "text-red-500 font-medium": event.productAccumulativeStock < 0
         })}>
-            {formatStock(event.productAccumulativeStock)}
+            {!props.nostock && formatStock(event.productAccumulativeStock)}
         </TableCell>
         {!props.nostate && <TableCell>
             {event.expired && "Comprometido"}

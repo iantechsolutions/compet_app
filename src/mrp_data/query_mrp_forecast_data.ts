@@ -105,9 +105,9 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
 
 
     if (forecastProfile.includeSales) {
-        // for next 12 months
-        for (let i = 0; i < 9; i++) {
-            const date = dayjs().startOf('month').add(6, 'hours').add(i + 1, 'month').toDate()
+        // for next 9 months (starting the next month)
+        for (let i = 1; i < 10; i++) {
+            const date = dayjs().startOf('month').add(6, 'hours').add(i, 'month').toDate()
 
             for (const product_code of productSoldAverageMonthlyByCode.keys()) {
                 const quantity = productSoldAverageMonthlyByCode.get(product_code)!
@@ -116,7 +116,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
                     type: 'sold',
                     product_code,
                     date,
-                    quantity: quantity * (1 + (1 + i) * forecastProfile.salesIncrementFactor),
+                    quantity: quantity * (1 + i * forecastProfile.salesIncrementFactor),
                 })
             }
         }
@@ -174,7 +174,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
             for (const [product_code, quantity] of monthMap.entries()) {
                 events.push({
                     type: 'budget',
-                    date: monthCodeToDate(month),
+                    date: dayjs(monthCodeToDate(month)).add(6, 'hours').toDate(),
                     product_code,
                     quantity,
                 })
