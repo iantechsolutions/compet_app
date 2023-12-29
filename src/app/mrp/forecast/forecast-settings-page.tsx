@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { useMRPData, useMRPDataIsUpdating, useMRPInvalidateAndReloadData, useMRPLoadingMessage } from "~/components/mrp-data-provider";
 import DataUploadingCard from "~/components/data-uploading-card";
+import { SelectCRMClients } from "./select-crm-clients";
 
 export default function ForecastSettingsPage(props: { user?: NavUserData, forecastProfiles: RouterOutputs['forecast']['listProfiles'] }) {
     const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation()
@@ -60,8 +61,6 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
 
     let appliedProfile = data.forecastData?.forecastProfile
     if (!appliedProfile?.id) appliedProfile = undefined
-
-    console.log("---->", appliedProfile)
 
     return <AppLayout
         title={<h1>Configuración de forecast</h1>}
@@ -231,6 +230,7 @@ function CreateProfileForm(props: { disabled?: boolean }) {
                         placeholder="20"
                         required
                     />
+                    <SelectCRMClients />
                 </div>}
 
             </CardContent>
