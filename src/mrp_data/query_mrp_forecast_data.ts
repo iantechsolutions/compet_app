@@ -130,8 +130,9 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
      * BUDGETS AREA
      */
 
-    const budgets = data.budgets
+    // const budgets = data.budgets
     const budgetProducts = data.budget_products
+    const clientInclusionSet = forecastProfile.clientInclusionList ? new Set(forecastProfile.clientInclusionList) : null
 
     if (forecastProfile.includeBudgets) {
         const productsBudgetForecastByMonth = new Map<string, Map<string, number>>()
@@ -143,6 +144,10 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
         for (const budgetProduct of budgetProducts) {
             const budget = data.budgetsById.get(budgetProduct.budget_id)
             if (!budget) continue
+
+            if(clientInclusionSet && !clientInclusionSet.has(budget.client_id.toString())) continue
+
+
             // if (budget.finished_date) continue
             // if (budget.validity_date && new Date(budget.validity_date) < new Date()) continue
 

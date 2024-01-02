@@ -21,8 +21,8 @@ export type ListSelectionDialogProps = {
     children: React.ReactNode
     title: React.ReactNode
     options: {
-        title: string
-        subtitle: string
+        title: React.ReactNode
+        subtitle: React.ReactNode
         value: string
     }[],
     onApply: (selected: string[]) => void
@@ -54,8 +54,8 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
     const filteredOptions = useMemo(() => {
         if (!filter.trim()) return props.options
         return props.options.filter(o => {
-            if (o.title?.toLowerCase().includes(filter.toLowerCase())) return true
-            if (o.subtitle?.toLowerCase().includes(filter.toLowerCase())) return true
+            if (o.title?.toString().toLowerCase().includes(filter.toLowerCase())) return true
+            if (o.subtitle?.toString().toLowerCase().includes(filter.toLowerCase())) return true
             if (o.value?.toString().toLowerCase().includes(filter.toLowerCase())) return true
             return false
         })

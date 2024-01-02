@@ -7,7 +7,7 @@ import { Input } from "~/components/ui/input";
 import AppSidenav from "~/components/app-sidenav";
 import { RouterOutputs } from "~/trpc/shared";
 import { api } from "~/trpc/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Loader2Icon, Trash2Icon } from "lucide-react";
@@ -17,6 +17,9 @@ import dayjs from "dayjs";
 import { useMRPData, useMRPDataIsUpdating, useMRPInvalidateAndReloadData, useMRPLoadingMessage } from "~/components/mrp-data-provider";
 import DataUploadingCard from "~/components/data-uploading-card";
 import { SelectCRMClients } from "./select-crm-clients";
+import ListSelectionDialog from "~/components/list-selection-dialog";
+import { CrmBudget } from "~/lib/types";
+import { formatStock } from "~/lib/utils";
 
 export default function ForecastSettingsPage(props: { user?: NavUserData, forecastProfiles: RouterOutputs['forecast']['listProfiles'] }) {
     const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation()
@@ -143,6 +146,30 @@ function CreateProfileForm(props: { disabled?: boolean }) {
     const router = useRouter()
     const invalidateAndReloadData = useMRPInvalidateAndReloadData()
 
+    const data = useMRPData()
+
+    const quantityByClient = new Map<number, number>()
+    const budgetsByClient = new Map<number, CrmBudget[]>()
+
+    for (const budgetProduct of data.budget_products) {
+        const budget = data.budgetsById.get(budgetProduct.budget_id)
+        if (!budget) continue
+
+        let qty = quantityByClient.get(budget.client_id) ?? 0
+        qty += budgetProduct.quantity
+        quantityByClient.set(budget.client_id, qty)
+
+        let budgets = budgetsByClient.get(budget.client_id) ?? []
+        budgets.push(budget)
+        budgetsByClient.set(budget.client_id, budgets)
+    }
+
+    const crmClients = data.crm_clients
+
+    const clientsWithBudgets = useMemo(() => {
+        return crmClients.filter(client => quantityByClient.has(client.client_id))
+    }, [crmClients, quantityByClient,])
+
     async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
 
@@ -230,7 +257,27 @@ function CreateProfileForm(props: { disabled?: boolean }) {
                         placeholder="20"
                         required
                     />
-                    <SelectCRMClients />
+                    <div className="h-5" />
+                    <ListSelectionDialog
+                        options={clientsWithBudgets.map(client => ({
+                            value: client.client_id.toString(),
+                            title: client.name || client.business_name,
+                            subtitle: `Presupuestos: ${budgetsByClient.get(client.client_id)?.length}. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`
+                        }))}
+                        onApply={(selected) => {
+                            if(selected.length === clientsWithBudgets.length) {
+                                setClientInclusionList(null)
+                            } else {
+                                setClientInclusionList(selected)
+                            }
+                        }}
+                        defaultValues={clientInclusionList ?? clientsWithBudgets.map(client => client.client_id.toString())}
+                        title="Seleccionar clientes"
+                    >
+                        <Button variant="secondary" className="w-full">
+                            Presupuestos de estos clientes: ({clientInclusionList ? clientInclusionList.length : `todos: ${clientsWithBudgets.length}`})
+                        </Button>
+                    </ListSelectionDialog>
                 </div>}
 
             </CardContent>
