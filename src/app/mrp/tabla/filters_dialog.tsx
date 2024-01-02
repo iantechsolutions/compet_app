@@ -17,6 +17,7 @@ import { FixedSizeList as List } from 'react-window';
 import { useWindowSize } from "@uidotdev/usehooks"
 import { Settings2Icon } from "lucide-react"
 import { useMRPData } from "~/components/mrp-data-provider"
+import ListSelectionDialog from "~/components/list-selection-dialog"
 
 export type Filters = {
     search: string
@@ -166,95 +167,154 @@ function ProviderRow(props: { index: number, style: React.CSSProperties, value: 
 
 }
 
-
 function ProvidersFilter(props: {
     value: Set<string>,
     onChange: (providers: Set<string>) => void
 }) {
-    const providers = useMRPData().providers
+    const data = useMRPData()
+    const providers = data.providers
+    const products = data.products
 
-    const [hideProviders, setHideProviders] = useState(props.value)
 
-    const closeId = useId()
+    const productsByProvider = useMemo(() => {
+        const map = new Map<string, number>()
 
-    function handleApply() {
-        props.onChange(hideProviders)
-    }
+        for (const product of products) {
+            for (const provider of product.providers) {
+                map.set(provider.provider_code, (map.get(provider.provider_code) ?? 0) + 1)
+            }
+        }
 
-    const [search, setSearch] = useState("")
+        return map
+    }, [
+        products,
+        products,
+    ])
 
     const filteredProviders = useMemo(() => {
-        return providers.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-    }, [providers, search])
+        return providers.filter(p => productsByProvider.get(p.code) ?? 0 > 0)
+    }, [providers, props.value])
 
-    const size = useWindowSize()
+    const allProviersCodes = useMemo(() => {
+        return new Set<string>(filteredProviders.map(p => p.code))
+    }, [providers])
 
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline">Ocultar o mostrar proveedores</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]"
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                        handleApply()
-                        document.getElementById(closeId)?.click()
-                        e.stopPropagation()
-                    }
-                }}
-            >
-                <DialogHeader>
-                    <DialogTitle>Proveedores</DialogTitle>
-                    <DialogDescription>
-                        Mostrar u ocultar proveedores
-                    </DialogDescription>
-                </DialogHeader>
-                <Input
-                    id="search_providers"
-                    placeholder="Buscar..."
-                    className="w-full"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-                <div className="grid gap-5 grid-cols-2">
-                    <Button variant="outline"
-                        onClick={() => {
-                            setHideProviders(new Set(providers.map(p => p.code)))
-                        }}
-                    >Ninguno</Button>
-                    <Button variant="outline"
-                        onClick={() => {
-                            setHideProviders(new Set())
-                        }}
-                    >Todos</Button>
-                </div>
-                <div className="max-h-[calc(100vh_-_296px)] overflow-y-auto">
-                    <List
-                        height={(size.height ?? window.innerHeight) - 296}
-                        itemCount={filteredProviders.length}
-                        itemSize={40}
-                        width="100%"
-                    >
-                        {({ index, style }) => (
-                            <ProviderRow
-                                index={index}
-                                style={style}
-                                value={hideProviders}
-                                onChange={setHideProviders}
-                            />
-                        )}
-                    </List>
-                </div>
+    const defaultValues = useMemo(() => {
+        return Array.from(allProviersCodes).filter(code => !props.value.has(code))
+    }, [allProviersCodes, props.value])
 
-                <DialogFooter>
-                    <DialogPrimitive.Close
-                        id={closeId}
-                        asChild
-                    >
-                        <Button type="submit" onClick={handleApply}>Aplicar</Button>
-                    </DialogPrimitive.Close>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+    return <ListSelectionDialog
+        title="Proveedores"
+        options={filteredProviders.map(p => ({
+            title: p.name,
+            subtitle: p.code + ' - ' + (p.address || '') + ' ' + (` - Productos: ${productsByProvider.get(p.code) ?? 0}`),
+            value: p.code,
+        }))}
+        defaultValues={defaultValues}
+        onApply={(selectedList) => {
+            const selected = new Set(selectedList)
+            const value = new Set<string>()
+            for (const provider of filteredProviders) {
+                if (!selected.has(provider.code)) {
+                    value.add(provider.code)
+                }
+            }
+            props.onChange(value)
+        }}
+    >
+        <Button variant="outline">Ocultar o mostrar proveedores</Button>
+    </ListSelectionDialog>
 }
+
+
+// function ProvidersFilter(props: {
+//     value: Set<string>,
+//     onChange: (providers: Set<string>) => void
+// }) {
+//     const providers = useMRPData().providers
+
+//     const [hideProviders, setHideProviders] = useState(props.value)
+
+//     const closeId = useId()
+
+//     function handleApply() {
+//         props.onChange(hideProviders)
+//     }
+
+//     const [search, setSearch] = useState("")
+
+//     const filteredProviders = useMemo(() => {
+//         return providers.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+//     }, [providers, search])
+
+//     const size = useWindowSize()
+
+//     return (
+//         <Dialog>
+//             <DialogTrigger asChild>
+//                 <Button variant="outline">Ocultar o mostrar proveedores</Button>
+//             </DialogTrigger>
+//             <DialogContent className="sm:max-w-[425px]"
+//                 onKeyDown={(e) => {
+//                     if (e.key === 'Enter') {
+//                         handleApply()
+//                         document.getElementById(closeId)?.click()
+//                         e.stopPropagation()
+//                     }
+//                 }}
+//             >
+//                 <DialogHeader>
+//                     <DialogTitle>Proveedores</DialogTitle>
+//                     <DialogDescription>
+//                         Mostrar u ocultar proveedores
+//                     </DialogDescription>
+//                 </DialogHeader>
+//                 <Input
+//                     id="search_providers"
+//                     placeholder="Buscar..."
+//                     className="w-full"
+//                     value={search}
+//                     onChange={(e) => setSearch(e.target.value)}
+//                 />
+//                 <div className="grid gap-5 grid-cols-2">
+//                     <Button variant="outline"
+//                         onClick={() => {
+//                             setHideProviders(new Set(providers.map(p => p.code)))
+//                         }}
+//                     >Ninguno</Button>
+//                     <Button variant="outline"
+//                         onClick={() => {
+//                             setHideProviders(new Set())
+//                         }}
+//                     >Todos</Button>
+//                 </div>
+//                 <div className="max-h-[calc(100vh_-_296px)] overflow-y-auto">
+//                     <List
+//                         height={(size.height ?? window.innerHeight) - 296}
+//                         itemCount={filteredProviders.length}
+//                         itemSize={40}
+//                         width="100%"
+//                     >
+//                         {({ index, style }) => (
+//                             <ProviderRow
+//                                 index={index}
+//                                 style={style}
+//                                 value={hideProviders}
+//                                 onChange={setHideProviders}
+//                             />
+//                         )}
+//                     </List>
+//                 </div>
+
+//                 <DialogFooter>
+//                     <DialogPrimitive.Close
+//                         id={closeId}
+//                         asChild
+//                     >
+//                         <Button type="submit" onClick={handleApply}>Aplicar</Button>
+//                     </DialogPrimitive.Close>
+//                 </DialogFooter>
+//             </DialogContent>
+//         </Dialog>
+//     )
+// }

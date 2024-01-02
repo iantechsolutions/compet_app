@@ -7,7 +7,7 @@ import { FixedSizeList as List } from 'react-window';
 import { useWindowSize } from "@uidotdev/usehooks";
 import { MRPData, MRPProduct } from '~/mrp_data/transform_mrp_data';
 import { cn, formatStock } from '~/lib/utils';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useId, useMemo, useState } from 'react';
 import { useFocus } from './focused_provider';
 import { TargetOverlayInfoCard } from './overlay';
 import { Filters, FiltersDialog } from './filters_dialog';
@@ -126,7 +126,10 @@ function ListRowContainer({ children, style, id, className }: { children: React.
 }
 
 
-function ListRow({ index, style, products }: { index: number, style: React.CSSProperties, products: MRPProduct[] }) {
+function ListRow({ index, style }: { index: number, style: React.CSSProperties }) {
+    const ctx = useContext(listRowContext)
+    const products = ctx.filteredProducts
+
     const data = useMRPData()
     const product = products[index]!
 
@@ -139,6 +142,12 @@ function ListRow({ index, style, products }: { index: number, style: React.CSSPr
         {data.months.map(month => <StockAtMonthCell key={month} product={product} month={month} />)}
     </ListRowContainer>
 }
+
+const listRowContext = createContext<{
+    filteredProducts: MRPProduct[]
+}>({
+    filteredProducts: []
+})
 
 export function Table(props: { user?: NavUserData }) {
     const data = useMRPData()
@@ -157,21 +166,13 @@ export function Table(props: { user?: NavUserData }) {
 
     const scrolldivElement = document.getElementsByClassName(scrollClassName)[0] as HTMLElement | undefined
 
-    // const globalScrollSaver = useGlobalScroll()
-
     useOnScroll(scrolldivElement, (scrollX, scrollY) => {
-        // globalScrollSaver.save(scrollX, scrollY)
-
         const headerElement = document.getElementById(headerId)
         if (!headerElement) return
 
         headerElement.scrollTo(scrollX, 0)
     })
 
-    // useEffect(() => {
-    //     const scroll = globalScrollSaver.get()
-    //     scrolldivElement?.scrollTo(scroll.x, scroll.y)
-    // }, [])
 
     const headerCellClassName = 'flex items-center justify-center font-semibold bg-stone-100 h-10 px-2'
 
@@ -185,7 +186,6 @@ export function Table(props: { user?: NavUserData }) {
         }
     }, [currentFocus])
 
-    const router = useRouter()
 
     return <AppLayout
         title={<h1>COMPET MRP</h1>}
@@ -225,15 +225,18 @@ export function Table(props: { user?: NavUserData }) {
             </div>)}
         </ListRowContainer>
         <div className='' style={{ height: h, width: w }}>
-            <List
-                className={scrollClassName}
-                height={h}
-                width={w}
-                itemCount={filtered.length}
-                itemSize={57}
-            >
-                {({ ...props }) => <ListRow key={props.index} {...props} products={filtered} />}
-            </List>
+            <listRowContext.Provider value={{ filteredProducts: filtered }}>
+
+                <List
+                    className={scrollClassName}
+                    height={h}
+                    width={w}
+                    itemCount={filtered.length}
+                    itemSize={57}
+                >
+                    {ListRow}
+                </List>
+            </listRowContext.Provider>
         </div>
     </AppLayout>
 }
@@ -241,7 +244,7 @@ export function Table(props: { user?: NavUserData }) {
 function useFilters() {
     const [filtersHideAllZero, setName] = useQueryState('hide_zero', { defaultValue: true, parse: (v) => v === 'true' })
     const [filtersSearch, setSearch] = useQueryState('search', { defaultValue: '' })
-    const [filtersHideProviders, setProviders] = useQueryState('providers', {
+    const [filtersHideProviders, setProviders] = useQueryState('hide-providers', {
         defaultValue: new Set<string>(), parse: (v) => new Set(v.split(',')),
         serialize: (v) => Array.from(v).join(','),
     })
@@ -289,7 +292,9 @@ function useFiltered(data: MRPData, filters: Filters) {
 
         if (filters.search) {
             list = list.filter((product) => {
-                return product.code.toLowerCase().includes(filters.search.trim().toLowerCase()) || product.description.toLowerCase().includes(filters.search.trim().toLowerCase())
+                return product.code.toLowerCase().includes(filters.search.trim().toLowerCase())
+                    ||
+                    product.description.toLowerCase().includes(filters.search.trim().toLowerCase())
             })
         }
 
