@@ -5,7 +5,6 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
-    AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
@@ -52,27 +51,6 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
 
     const [filter, setFilter] = useState('')
 
-    const idbase = useId()
-
-    const focusedIdRef = useRef<string | null>(null)
-    const lastFocusedIdRef = useRef<string>(idbase + '_0')
-
-    function focusNext() {
-        if (!focusedIdRef.current) return
-        const element = document.getElementById(focusedIdRef.current)
-        const nextSibling = element?.nextElementSibling as HTMLElement
-
-        nextSibling?.focus()
-    }
-
-    function focusPrevious() {
-        if (!focusedIdRef.current) return
-        const element = document.getElementById(focusedIdRef.current)
-        const previousSibling = element?.previousElementSibling as HTMLElement
-
-        previousSibling?.focus()
-    }
-
     const filteredOptions = useMemo(() => {
         if (!filter.trim()) return props.options
         return props.options.filter(o => {
@@ -82,62 +60,6 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
             return false
         })
     }, [props.options, filter])
-
-    const Row = useCallback(({ index, style }: {
-        index: number
-        style: React.CSSProperties
-    }) => {
-        const option = filteredOptions[index]
-        if (!option) return null
-
-        const id = idbase + '_' + index
-        return <button id={id} tabIndex={lastFocusedIdRef.current === id ? 0 : -1} style={style} className="flex items-center px-2 h-[150px] outline-none focus:bg-stone-200 text-left"
-            onClick={e => {
-                if (selected.has(option.value)) {
-                    selected.delete(option.value)
-                } else {
-                    selected.add(option.value)
-                }
-                setSelected(new Set(selected))
-                setTimeout(() => {
-                    if (!focusedIdRef.current) return
-                    const element = document.getElementById(focusedIdRef.current)
-                    element?.focus()
-                }, 20)
-            }}
-
-            onKeyDown={e => {
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault()
-                    focusNext()
-                }
-                if (e.key === 'ArrowUp') {
-                    e.preventDefault()
-                    focusPrevious()
-                }
-            }}
-
-            onFocus={e => {
-                focusedIdRef.current = e.target.id
-                lastFocusedIdRef.current = e.target.id
-            }}
-
-            onBlur={e => {
-                if (focusedIdRef.current !== e.target.id) return
-                focusedIdRef.current = null
-            }}
-        >
-            <div>
-                <p className="font-medium">{option.title}</p>
-                {option.subtitle && <p className="text-xs">{option.subtitle}</p>}
-            </div>
-            {selected.has(option.value) && <CheckIcon className="ml-auto mr-2" />}
-        </button>
-    }, [
-        props.options,
-        selected
-    ])
-
 
 
     return <AlertDialog>
@@ -154,14 +76,7 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
                     onChange={e => setFilter(e.target.value)}
                 />
             </AlertDialogHeader>
-            {/* <List
-                height={window.innerHeight - 220}
-                itemCount={filteredOptions.length}
-                itemSize={70}
-                width={'100%'}
-            >
-                {Row}
-            </List> */}
+    
             <rowsContext.Provider
                 value={{
                     options: filteredOptions,
@@ -246,15 +161,6 @@ function Row({ index, style }: {
             }
         }}
 
-    // onFocus={e => {
-    //     focusedIdRef.current = e.target.id
-    //     lastFocusedIdRef.current = e.target.id
-    // }}
-
-    // onBlur={e => {
-    //     if (focusedIdRef.current !== e.target.id) return
-    //     focusedIdRef.current = null
-    // }}
     >
         <div>
             <p className="font-medium">{option.title}</p>
