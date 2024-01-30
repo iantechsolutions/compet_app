@@ -1,8 +1,8 @@
 import 'dotenv/config'
-import { utapi } from '~/server/uploadthing'
-import { readDataFromDB } from '~/scripts/lib/read-from-tango-db'
-import { encodeData } from '~/lib/utils'
-import { getSetting, setSetting } from '~/lib/settings'
+import { utapi } from '../../server/uploadthing'
+import { readDataFromDB } from '../../scripts/lib/read-from-tango-db'
+import { encodeData } from '../../lib/utils'
+import { getSetting, setSetting } from '../../lib/settings'
 import { File } from '@web-std/file';
 
 export async function loadDataFromTangoToCloud(opts?: { log: (...args: any[]) => unknown }) {

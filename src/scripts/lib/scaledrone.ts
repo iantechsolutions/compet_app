@@ -3,8 +3,14 @@ import jwt from 'jwt-simple'
 
 import Scaledrone from 'scaledrone-node'
 import { loadDataFromTangoToCloud } from './load-data-func'
-import { RemoteUpdateProgress } from '~/app/mrp/datos/data-settings-page'
 
+type RemoteUpdateProgress = {
+    value: number
+    message: string
+    finished: boolean
+    timestamp: number
+    error: boolean
+}
 
 export function initialzeScaledroneListen() {
     const channel = process.env.SCALEDRONE_CHANNEL_ID
