@@ -43,3 +43,4 @@ yarn-error.log*
 
 # Service
 src/scripts/daemon
+logs
