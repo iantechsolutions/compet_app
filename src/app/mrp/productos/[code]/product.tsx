@@ -15,6 +15,7 @@ import { ProductEventRow } from "./event_row";
 import { ProductEventsChart } from "./chart";
 import { Title } from "~/components/title";
 import { formatStock } from "~/lib/utils";
+import { Fragment } from 'react'
 
 export default function ProductPage(props: { user?: NavUserData }) {
 
@@ -107,7 +108,7 @@ export default function ProductPage(props: { user?: NavUserData }) {
                         // const usedAsBudgetForecast = product.used_as_forecast_type_budget_quantity_by_month.get(month) ?? 0
 
 
-                        return <>
+                        return <Fragment key={i}>
                             <TableRow key={`header:${month}`}>
                                 <TableCell colSpan={6} className="font-medium pt-7">
                                     <div className="flex items-center">
@@ -125,7 +126,7 @@ export default function ProductPage(props: { user?: NavUserData }) {
                             {nonForecastEvents.map((event, i) => {
                                 return <ProductEventRow key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />
                             })}
-                        </>
+                        </Fragment>
                     })}
                 </TableBody >
             </Table>
