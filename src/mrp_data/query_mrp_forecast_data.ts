@@ -18,11 +18,10 @@ type ForecastDataEvent = {
 
 
 export async function queryForecastData(forecastProfile: ForecastProfile, mrpRawData?: RawMRPData) {
-
-
     const data = mrpRawData ?? await queryBaseMRPData()
 
-
+    const budgetProducts = data.budget_products
+    const clientInclusionSet = forecastProfile.clientInclusionList ? new Set(forecastProfile.clientInclusionList) : null
 
     const events: ForecastDataEvent[] = [
         // {
@@ -55,6 +54,9 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
             ...soldProduct,
             order,
         }
+    }).filter(soldProduct => {
+        if(clientInclusionSet && !clientInclusionSet.has(soldProduct.order.client_code.toString())) return false
+        return true
     })
 
     const productsSoldMonthlyByCode = new Map<string, Map<string, number>>()
@@ -131,8 +133,6 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
      */
 
     // const budgets = data.budgets
-    const budgetProducts = data.budget_products
-    const clientInclusionSet = forecastProfile.clientInclusionList ? new Set(forecastProfile.clientInclusionList) : null
 
     if (forecastProfile.includeBudgets) {
         const productsBudgetForecastByMonth = new Map<string, Map<string, number>>()
