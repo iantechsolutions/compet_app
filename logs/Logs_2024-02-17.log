@@ -1,6 +1,0 @@
-13:12:13.031 | Info | 'Starting process' | 
-13:12:13.544 | Info | '\n> compet_app@0.1.0 listen-load-data\n> tsx src/scripts/listen-load-data.ts\n\n' | 
-13:12:15.559 | Info | '[17/02/2024 18:12:15]\n' | 
-13:12:15.560 | Info | 'Script que escucha por actualizaciones de datos\n' | 
-13:12:17.045 | Info | 'Authenticated\n' | 
-13:12:17.046 | Info | 'Listo para recibir comandos\n' | 
