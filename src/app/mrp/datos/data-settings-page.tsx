@@ -169,7 +169,7 @@ function RemoteUpdateComponent() {
                             timestamp: Date.now(),
                             error: true
                         })
-                    }, 15000)
+                    }, 25000)
 
                     setRemoteUpdateProgress({
                         value: 0,

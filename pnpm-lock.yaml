@@ -131,6 +131,9 @@ dependencies:
   next-usequerystate:
     specifier: ^1.13.2
     version: 1.13.2(next@14.0.4)
+  node-file-logger:
+    specifier: ^0.9.5
+    version: 0.9.5
   node-windows:
     specifier: 1.0.0-beta.8
     version: 1.0.0-beta.8
@@ -4133,6 +4136,16 @@ packages:
     resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
     dev: false
 
+  /moment-timezone@0.5.45:
+    resolution: {integrity: sha512-HIWmqA86KcmCAhnMAN0wuDOARV/525R2+lOLotuGFzn4HO+FH+/645z2wx0Dt3iDv6/p61SIvKnDstISainhLQ==}
+    dependencies:
+      moment: 2.30.1
+    dev: false
+
+  /moment@2.30.1:
+    resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
+    dev: false
+
   /ms@2.1.2:
     resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
 
@@ -4268,9 +4281,22 @@ packages:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
     dev: false
 
+  /node-file-logger@0.9.5:
+    resolution: {integrity: sha512-V/VxkAHcr1FA1UDZxutg95sJLoRij5Uq8+/TmMNwrw0awUXxhI44M1AdCgF2cZjK4E52gSJb+KnTLF4k89pU9w==}
+    dependencies:
+      moment: 2.30.1
+      moment-timezone: 0.5.45
+      node-stringify: 0.2.1
+    dev: false
+
   /node-releases@2.0.14:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
     dev: true
+
+  /node-stringify@0.2.1:
+    resolution: {integrity: sha512-EdzBiPO2hmQOpG8eZtJmBK0bAWPTdla2GAU4Tb7fztLkAiMEYcJAHWvC/4FI8E9ZOxB1zmoAJpM6upTQ54xNDw==}
+    engines: {node: '>=4.0.0'}
+    dev: false
 
   /node-windows@1.0.0-beta.8:
     resolution: {integrity: sha512-uLekXnSeem3nW5escID224Fd0U/1VtvE796JpSpOY+c73Cslz/Qn2WUHRJyPQJEMrNGAy/FMRFjjhh4z1alZTA==}

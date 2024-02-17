@@ -1,20 +1,26 @@
 import { spawn } from 'child_process'
+// @ts-ignore
+import log from 'node-file-logger';
+import path from 'path';
 
+log.SetUserOptions({
+    folderPath: path.resolve('./logs/')
+})
 
 function runProcess() {
     return new Promise((resolve, reject) => {
         const child = spawn('C:\\Program Files\\nodejs\\node.exe', ['C:\\Program Files\\nodejs\\node_modules\\npm\\index.js', 'run', 'listen-load-data'])
 
         child.stdout.on('data', (data) => {
-            console.log(`${data}`);
+            log.Info(`${data}`);
         });
 
         child.stderr.on('data', (data) => {
-            console.error(`stderr: ${data}`);
+            log.Error(`stderr: ${data}`);
         });
 
         child.on('close', (code) => {
-            console.log(`child process exited with code ${code}`);
+            log.Info(`child process exited with code ${code}`);
             resolve(code);
         });
 
@@ -31,17 +37,25 @@ function runProcess() {
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function main() {
+    setInterval(() => {
+        log.Info("MRP corriendo ok", new Date())
+    }, 1000 * 60 * 60)
+
     while (true) {
-        console.log('Starting process')
+        log.Info('Starting process')
         try {
             await runProcess()
         } catch (error) {
-            console.log('Error running process')
-            console.log(error)
+            log.Info('Error running process')
+            log.Info(error)
         }
-        console.log('Waiting 5 seconds')
+        log.Info('Waiting 5 seconds')
         await delay(5000)
     }
 }
+
+process.on('uncaughtException', (err) => {
+    log.Error('FATAL: uncaughtException', err)
+})
 
 main()
