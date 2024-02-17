@@ -3,18 +3,16 @@
 /* eslint-disable */
 
 import { useMRPData } from "~/components/mrp-data-provider"
-import { FixedSizeList as List } from 'react-window';
+import { FixedSizeList as List, ListOnScrollProps } from 'react-window';
 import { useWindowSize } from "@uidotdev/usehooks";
 import { MRPData, MRPProduct } from '~/mrp_data/transform_mrp_data';
 import { cn, formatStock } from '~/lib/utils';
-import { createContext, useContext, useEffect, useId, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useState } from 'react';
 import { useFocus } from './focused_provider';
 import { TargetOverlayInfoCard } from './overlay';
 import { Filters, FiltersDialog } from './filters_dialog';
 import { useOnScroll } from '~/lib/hooks';
-// import { useGlobalScroll } from '~/components/global_scroll_provider';
 import { useQueryState } from 'next-usequerystate'
-import { useRouter } from "next/navigation";
 import { NavUserData } from "~/components/nav-user-section";
 import AppLayout from "~/components/applayout";
 import AppSidenav from "~/components/app-sidenav";
@@ -186,6 +184,19 @@ export function Table(props: { user?: NavUserData }) {
         }
     }, [currentFocus])
 
+    function handleListScroll(e: ListOnScrollProps) {
+        if (e.scrollOffset === 0) {
+            // This events fires before the layout effect, for this reason we need to delay the effect
+            (window as any).listScrollTimeout = setTimeout(() => (window as any).listScroll = e.scrollOffset, 500)
+        } else {
+            (window as any).listScroll = e.scrollOffset
+            clearTimeout((window as any).listScrollTimeout)
+        }
+    }
+
+    useLayoutEffect(() => {
+        document.getElementsByClassName(scrollClassName)[0]?.scrollTo(0, (window as any).listScroll)
+    }, [])
 
     return <AppLayout
         title={<h1>COMPET MRP</h1>}
@@ -228,6 +239,7 @@ export function Table(props: { user?: NavUserData }) {
             <listRowContext.Provider value={{ filteredProducts: filtered }}>
 
                 <List
+                    onScroll={handleListScroll}
                     className={scrollClassName}
                     height={h}
                     width={w}
