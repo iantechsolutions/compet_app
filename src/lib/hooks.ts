@@ -48,3 +48,21 @@ export function useGlobalState<T>(key: string, defaultValue: T) {
 
     return [value, setValue] as const
 }
+
+export function useShortcut(key: string, callback: () => void) {
+    useEffect(() => {
+        function listener(event: KeyboardEvent) {
+            console.log(event.key, event.ctrlKey)
+            if (event.key === key && event.ctrlKey) {
+                event.preventDefault()
+                callback()
+            }
+        }
+
+        window.addEventListener('keydown', listener)
+
+        return () => {
+            window.removeEventListener('keydown', listener)
+        }
+    }, [])
+}

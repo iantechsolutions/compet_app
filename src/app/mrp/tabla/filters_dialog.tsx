@@ -18,6 +18,7 @@ import { useWindowSize } from "@uidotdev/usehooks"
 import { Settings2Icon } from "lucide-react"
 import { useMRPData } from "~/components/mrp-data-provider"
 import ListSelectionDialog from "~/components/list-selection-dialog"
+import { useShortcut } from "~/lib/hooks"
 
 export type Filters = {
     search: string
@@ -59,10 +60,14 @@ export function FiltersDialog(props: {
         props.onApply(filters)
     }
 
+    useShortcut('b', () => {
+        document.getElementById('filters-trigger-btn')?.click()
+    })
+
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="secondary">
+                <Button variant="secondary" id="filters-trigger-btn">
                     <Settings2Icon className="mr-2" size={20} />
                     Filtros
                     <aside className="ml-2 bg-stone-200 px-2 py-1 rounded-full text-sm" aria-label="Cantidad de productos mostrados:">
