@@ -46,7 +46,23 @@ export async function queryBaseMRPData() {
 
     const stockCommitedByProduct: Map<string, ProductStockCommited> = new Map()
     for (const stockCommited of products_stock_commited) {
-        stockCommitedByProduct.set(stockCommited.product_code, stockCommited)
+        // Por alguna razón puede haber más de una fila con el mismo código de producto
+        // Por eso vamos a combinarlas
+        const prev = stockCommitedByProduct.get(stockCommited.product_code) || {
+            product_code: stockCommited.product_code,
+            stock_quantity: 0,
+            commited_quantity: 0,
+            pending_quantity: 0,
+            last_update: new Date(0),
+        }
+
+        stockCommitedByProduct.set(stockCommited.product_code, {
+            product_code: stockCommited.product_code,
+            commited_quantity: prev.commited_quantity + stockCommited.commited_quantity,
+            stock_quantity: prev.stock_quantity + stockCommited.stock_quantity,
+            pending_quantity: prev.pending_quantity + stockCommited.pending_quantity,
+            last_update: prev.last_update > stockCommited.last_update ? prev.last_update : stockCommited.last_update,
+        })
     }
 
     const productImportsByProduct: Map<string, ProductImport[]> = new Map()
