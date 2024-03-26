@@ -86,9 +86,9 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
         </div>
 
         <div className="mt-2">
-            <ul className="lg:grid lg:grid-cols-2 gap-5">
+            <ul className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-                <li className="items-center border border-dashed p-5 rounded-xl relative">
+                <li className="items-center border border-dashed p-5 rounded-xl relative min-h-[120px]">
                     <h2 className="font-semibold w-full">Sin forecast</h2>
                     <div className="absolute left-5 bottom-5">
                         {(!isApplyingNullProfile && !isUpdating) && <Button onClick={handleApplyNullProfile} disabled={!appliedProfile}>{appliedProfile ? 'Aplicar' : 'Aplicado'}</Button>}
