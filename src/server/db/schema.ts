@@ -118,6 +118,18 @@ export const settings = mysqlTable(
   {
     key: varchar("key", { length: 255 }).notNull().primaryKey(),
 
-    value: json('value').$type<any>().default(null),
+    value: json('value').$type<unknown>().default(null),
   }
+);
+
+export const userSettings = mysqlTable(
+  "user_setting",
+  {
+    userId: varchar("userId", { length: 255 }).notNull(),
+    key: varchar("key", { length: 255 }).notNull(),
+    value: json('value').$type<unknown>().default(null),
+  },
+  (us) => ({
+    compoundKey: primaryKey(us.userId, us.key),
+  })
 );

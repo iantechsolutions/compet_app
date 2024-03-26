@@ -7,7 +7,7 @@ export default function DataUploadingCard() {
     const loadingMessage = useMRPLoadingMessage()
 
     return <>
-        {isUpdating && <Card className="flex py-4 px-6 items-center max-w-[600px] mb-5">
+        {isUpdating && <Card className="flex py-4 px-6 items-center mb-5">
             <Loader2Icon className="animate-spin mr-2" size={30} />
             <div className="ml-4">
                 <p className="font-bold">Actualizando datos</p>

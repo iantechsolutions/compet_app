@@ -29,6 +29,7 @@ export type ListSelectionDialogProps = {
     defaultValues?: Iterable<string>
     onCanceled?: () => void
     height?: number
+    readOnly?: boolean
 }
 
 
@@ -39,7 +40,7 @@ const rowsContext = createContext<{
 }>({
     options: [],
     selected: new Set(),
-    onClickOption: () => { }
+    onClickOption: () => void 0
 })
 
 
@@ -76,12 +77,14 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
                     onChange={e => setFilter(e.target.value)}
                 />
             </AlertDialogHeader>
-    
+
             <rowsContext.Provider
                 value={{
                     options: filteredOptions,
                     selected,
                     onClickOption: option => {
+                        if (props.readOnly) return;
+
                         if (selected.has(option)) {
                             selected.delete(option)
                         } else {
@@ -93,7 +96,7 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
             >
                 <ListRender />
             </rowsContext.Provider>
-            <AlertDialogFooter>
+            {!props.readOnly && <AlertDialogFooter>
 
                 <div className="flex gap-2 items-center w-full">
                     <Button variant="ghost"
@@ -109,11 +112,14 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
                     <AlertDialogCancel className="ml-auto">Cancelar</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={() => {
-                            props.onApply(Array.from(selected) as any)
+                            props.onApply(Array.from(selected) as unknown as string[])
                         }}
                     >Aceptar</AlertDialogAction>
                 </div>
-            </AlertDialogFooter>
+            </AlertDialogFooter>}
+            {props.readOnly && <AlertDialogFooter>
+                <AlertDialogCancel className="w-full">Cerrar</AlertDialogCancel>
+            </AlertDialogFooter>}
         </AlertDialogContent>
     </AlertDialog>
 }

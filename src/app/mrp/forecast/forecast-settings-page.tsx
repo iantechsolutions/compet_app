@@ -1,25 +1,17 @@
 "use client"
 import AppLayout from "~/components/applayout";
-import { NavUserData } from "~/components/nav-user-section";
+import type { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
 import AppSidenav from "~/components/app-sidenav";
-import { RouterOutputs } from "~/trpc/shared";
+import type { RouterOutputs } from "~/trpc/shared";
 import { api } from "~/trpc/react";
-import { useMemo, useState } from "react";
-import { Label } from "~/components/ui/label";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Loader2Icon, Trash2Icon } from "lucide-react";
+import { Loader2Icon, PlusIcon } from "lucide-react";
 import { Title } from "~/components/title";
 import { useRouter } from "next/navigation";
-import dayjs from "dayjs";
-import { useMRPData, useMRPDataIsUpdating, useMRPInvalidateAndReloadData, useMRPLoadingMessage } from "~/components/mrp-data-provider";
+import { useMRPData, useMRPDataIsUpdating, useMRPInvalidateAndReloadData } from "~/components/mrp-data-provider";
 import DataUploadingCard from "~/components/data-uploading-card";
-import { SelectCRMClients } from "./select-crm-clients";
-import ListSelectionDialog from "~/components/list-selection-dialog";
-import { CrmBudget } from "~/lib/types";
-import { formatStock } from "~/lib/utils";
+import ForecastProfileCard from "./forecast-profile-card";
+import ForecastDialogForm from "./forecast-dialog-form";
 
 export default function ForecastSettingsPage(props: { user?: NavUserData, forecastProfiles: RouterOutputs['forecast']['listProfiles'] }) {
     const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation()
@@ -36,16 +28,16 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
 
     const isUpdating = useMRPDataIsUpdating()
 
-    function handleDeleteProfile(id: number) {
+    async function handleDeleteProfile(id: number) {
         if (confirm('¿Estás seguro de que quieres eliminar este perfil?')) {
-            deleteProfile({ id }).finally(() => {
+            void deleteProfile({ id }).finally(() => {
                 router.refresh()
             })
         }
     }
 
     function handleApplyProfile(id: number) {
-        applyProfile({ id }).then(() => {
+        void applyProfile({ id }).then(() => {
             console.log("Applied profile!", id)
         }).finally(() => {
             invalidateAndReloadData()
@@ -54,7 +46,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
     }
 
     function handleApplyNullProfile() {
-        applyNullProfile().then(() => {
+        void applyNullProfile().then(() => {
             console.log("Applied null profile!")
         }).finally(() => {
             invalidateAndReloadData()
@@ -73,53 +65,45 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
 
         {(appliedProfile && !isUpdating) && <div className="mb-3">
             <p className="font-bold">Perfil actual: {appliedProfile.name}</p>
-            <p className="text-xs">Porcentaje de incremento de prediccón de ventas: {(appliedProfile.salesIncrementFactor * 100).toFixed(1)}%</p>
-            <p className="text-xs">Porcentaje de incremento de prediccón de ventas: {(appliedProfile.budgetsInclusionFactor * 100).toFixed(1)}%</p>
+            <p className="text-xs">Porcentaje de incremento de predicción de ventas: {(appliedProfile.salesIncrementFactor * 100).toFixed(1)}%</p>
+            <p className="text-xs">Porcentaje de incremento de predicción de ventas: {(appliedProfile.budgetsInclusionFactor * 100).toFixed(1)}%</p>
         </div>}
 
         <DataUploadingCard />
 
-        <CreateProfileForm disabled={isUpdating} />
+
 
         <div className="mt-6" />
 
-        <Title>Perfiles de forecast</Title>
+        <div className="flex justify-between">
+            <Title>Perfiles de forecast</Title>
+            <ForecastDialogForm disabled={isUpdating}>
+                <Button disabled={isApplying} type="button" className="ml-auto">
+                    <PlusIcon className="mr-2" />
+                    Crear perfil
+                </Button>
+            </ForecastDialogForm>
+        </div>
 
-        <div className="mt-2 max-w-[600px]">
-            <ul>
+        <div className="mt-2">
+            <ul className="lg:grid lg:grid-cols-2 gap-5">
 
-                <li className="flex items-center border-l-4 border-l-stone-500 pl-2 mb-4">
+                <li className="items-center border border-dashed p-5 rounded-xl relative">
                     <h2 className="font-semibold w-full">Sin forecast</h2>
-                    {(!isApplyingNullProfile && !isUpdating) && <Button onClick={handleApplyNullProfile} disabled={!appliedProfile}>{appliedProfile ? 'Aplicar' : 'Aplicado'}</Button>}
-                    {isApplyingNullProfile && <Button disabled><Loader2Icon className="animate-spin mr-2" />Aplicando</Button>}
-
+                    <div className="absolute left-5 bottom-5">
+                        {(!isApplyingNullProfile && !isUpdating) && <Button onClick={handleApplyNullProfile} disabled={!appliedProfile}>{appliedProfile ? 'Aplicar' : 'Aplicado'}</Button>}
+                        {isApplyingNullProfile && <Button disabled><Loader2Icon className="animate-spin mr-2" />Aplicando</Button>}
+                    </div>
                 </li>
                 {props.forecastProfiles.map(profile => {
 
-                    return <li key={profile.id} className="flex items-center border-l-4 border-l-stone-500 pl-2 mb-4">
-                        <div className="w-full">
-                            <h2 className="font-semibold">{profile.name}</h2>
-                            {profile.includeSales && <p className="text-sm font-medium">
-                                Incremento ventas: {(profile.salesIncrementFactor * 100).toFixed(1)}%
-                            </p>}
-                            {profile.includeBudgets && <p className="text-sm font-medium">
-                                Inclusión de presupuestos: {(profile.budgetsInclusionFactor * 100).toFixed(1)}%
-                            </p>}
-                            <p className="text-xs">{dayjs(profile.createdAt).format('DD/MM/YYYY - HH:mm')}</p>
-                        </div>
-                        {!profile.current && <button className="p-2 hover:bg-stone-100 active:bg-stone-200 mr-2"
-                            onClick={() => handleDeleteProfile(profile.id)}
-                        >
-                            <Trash2Icon size={16} className="text-red-500" />
-                        </button>}
-                        {!profile.current && <Button
-                            disabled={isApplying || isUpdating}
-                            onClick={() => handleApplyProfile(profile.id)}
-                        >Aplicar</Button>}
-                        {profile.current && <Button
-                            disabled
-                        >Aplicado</Button>}
-                    </li>
+                    return <ForecastProfileCard
+                        key={profile.id}
+                        profile={profile}
+                        handleApplyProfile={handleApplyProfile}
+                        handleDeleteProfile={handleDeleteProfile}
+                        isLoading={isApplying ?? isUpdating}
+                    />
                 })}
             </ul>
         </div>
@@ -127,164 +111,3 @@ export default function ForecastSettingsPage(props: { user?: NavUserData, foreca
     </AppLayout>
 }
 
-function CreateProfileForm(props: { disabled?: boolean }) {
-    const { mutateAsync: createProfile, isLoading: isLoading1 } = api.forecast.createProfile.useMutation()
-    const { mutateAsync: applyProfile, isLoading: isLoading2 } = api.forecast.applyProfile.useMutation()
-
-    const isLoading = isLoading1 || isLoading2
-
-    const [name, setName] = useState('')
-
-    const [includeSales, setIncludeSales] = useState(true)
-    const [salesIncrementPercentage, setSalesIncrementPercentage] = useState('1')
-
-    const [includeBudgets, setIncludeBudgets] = useState(true)
-    const [budgetsInclusionPercentage, setBudgetsInclusionPercentage] = useState('10')
-
-    const [clientInclusionList, setClientInclusionList] = useState<string[] | null>(null)
-
-    const router = useRouter()
-    const invalidateAndReloadData = useMRPInvalidateAndReloadData()
-
-    const data = useMRPData()
-
-    const quantityByClient = new Map<number, number>()
-    const budgetsByClient = new Map<number, CrmBudget[]>()
-
-    for (const budgetProduct of data.budget_products) {
-        const budget = data.budgetsById.get(budgetProduct.budget_id)
-        if (!budget) continue
-
-        let qty = quantityByClient.get(budget.client_id) ?? 0
-        qty += budgetProduct.quantity
-        quantityByClient.set(budget.client_id, qty)
-
-        let budgets = budgetsByClient.get(budget.client_id) ?? []
-        budgets.push(budget)
-        budgetsByClient.set(budget.client_id, budgets)
-    }
-
-    const crmClients = data.crm_clients
-
-    const clientsWithBudgets = useMemo(() => {
-        return crmClients.filter(client => quantityByClient.has(client.client_id))
-    }, [crmClients, quantityByClient,])
-
-    async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault()
-
-        try {
-            const insertId = await createProfile({
-                name,
-                includeSales,
-                salesIncrementFactor: parseFloat(salesIncrementPercentage) / 100,
-                includeBudgets,
-                budgetsInclusionFactor: parseFloat(budgetsInclusionPercentage) / 100,
-                clientInclusionList,
-            })
-            await applyProfile({ id: parseInt(insertId) })
-            invalidateAndReloadData()
-        } catch (error) {
-            console.error(error)
-            alert(error)
-        }
-
-        router.refresh()
-    }
-
-    return <Card className="max-w-[600px]">
-        <CardHeader>
-            <CardTitle>Nueva config. de forecast</CardTitle>
-        </CardHeader>
-        <form onSubmit={onSubmit}>
-            <CardContent className="grid gap-2">
-
-                <div>
-                    <Label htmlFor="name">Nombre del perfil</Label>
-                    <Input
-                        id="name"
-                        name="name"
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        placeholder="Optimista"
-                        required
-                    />
-                </div>
-
-                <div className="flex items-center gap-2 mt-5">
-                    <Checkbox id="includeSales" checked={includeSales} onCheckedChange={c => setIncludeSales(!!c.valueOf())} />
-                    <label
-                        htmlFor="includeSales"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                        Incluir facturación para el forecast
-                    </label>
-                </div>
-
-                {includeSales && <div>
-                    <Label htmlFor="salesIncrementPercentage">Porcentaje de incremento de predicción de ventas</Label>
-                    <Input
-                        type="number"
-                        step={0.5}
-                        id="salesIncrementPercentage"
-                        name="salesIncrementPercentage"
-                        value={salesIncrementPercentage}
-                        onChange={e => setSalesIncrementPercentage(e.target.value)}
-                        placeholder="5"
-                        required
-                    />
-                </div>}
-
-                <div className="flex items-center gap-2 mt-5">
-                    <Checkbox id="includeBudgets" checked={includeBudgets} onCheckedChange={c => setIncludeBudgets(!!c.valueOf())} />
-                    <label
-                        htmlFor="includeBudgets"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                        Incluir presupuestos para el forecast
-                    </label>
-                </div>
-
-                {includeBudgets && <div>
-                    <Label htmlFor="budgetsInclusionPercentage">Porcentaje de inclusión de presupuestos</Label>
-                    <Input
-                        type="number"
-                        step={0.5}
-                        id="budgetsInclusionPercentage"
-                        name="budgetsInclusionPercentage"
-                        value={budgetsInclusionPercentage}
-                        onChange={e => setBudgetsInclusionPercentage(e.target.value)}
-                        placeholder="20"
-                        required
-                    />
-                    <div className="h-5" />
-                    <ListSelectionDialog
-                        options={clientsWithBudgets.map(client => ({
-                            value: client.client_id.toString(),
-                            title: client.name || client.business_name,
-                            subtitle: `Presupuestos: ${budgetsByClient.get(client.client_id)?.length}. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`
-                        }))}
-                        onApply={(selected) => {
-                            if(selected.length === clientsWithBudgets.length) {
-                                setClientInclusionList(null)
-                            } else {
-                                setClientInclusionList(selected)
-                            }
-                        }}
-                        defaultValues={clientInclusionList ?? clientsWithBudgets.map(client => client.client_id.toString())}
-                        title="Seleccionar clientes"
-                    >
-                        <Button variant="secondary" className="w-full">
-                            Presupuestos de estos clientes: ({clientInclusionList ? clientInclusionList.length : `todos: ${clientsWithBudgets.length}`})
-                        </Button>
-                    </ListSelectionDialog>
-                </div>}
-
-            </CardContent>
-            <CardFooter className="flex justify-end">
-                {((includeBudgets || includeSales) && name.trim() && !isLoading && !props.disabled) && <Button type="submit">Crear y aplicar</Button>}
-                {isLoading && <Button disabled><Loader2Icon className="animate-spin mr-2" />Creando</Button>}
-            </CardFooter>
-        </form>
-    </Card>
-}

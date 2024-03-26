@@ -5,8 +5,8 @@ import { encodeData } from '../../lib/utils'
 import { getSetting, setSetting } from '../../lib/settings'
 import { File } from '@web-std/file';
 
-export async function loadDataFromTangoToCloud(opts?: { log: (...args: any[]) => unknown }) {
-    const log = opts?.log || console.log
+export async function loadDataFromTangoToCloud(opts?: { log: (...args: unknown[]) => unknown }) {
+    const log = opts?.log ?? console.log
 
     const rawData = await readDataFromDB({ log })
 

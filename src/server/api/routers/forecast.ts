@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import * as schema from '~/server/db/schema'
 import { eq } from "drizzle-orm";
-import { getSetting, setSetting } from "~/lib/settings";
+import { getSetting, getUserSetting, setSetting, setUserSetting } from "~/lib/settings";
 import { ForecastProfile } from "~/mrp_data/transform_mrp_data";
 import { nullProfile } from "~/lib/nullForecastProfile";
 import { db } from "~/server/db";
@@ -25,7 +25,7 @@ export const forecastRouter = createTRPCRouter({
     listProfiles: protectedProcedure.query(async ({ ctx }) => {
         const profiles = await ctx.db.query.forecastProfiles.findMany()
 
-        const profileInUse = await getSetting<number>('mrp.current_forecast_profile')
+        const profileInUse = await getUserSetting<number>('mrp.current_forecast_profile', ctx.session.user.id)
 
         return profiles.map(p => ({
             ...p,
@@ -35,7 +35,7 @@ export const forecastRouter = createTRPCRouter({
     deleteProfile: protectedProcedure.input(z.object({
         id: z.number(),
     })).mutation(async ({ ctx, input }) => {
-        const profileInUse = await getSetting<number>('mrp.current_forecast_profile')
+        const profileInUse = await getUserSetting<number>('mrp.current_forecast_profile', ctx.session.user.id)
 
         if (profileInUse == input.id) {
             throw new Error('No se puede eliminar el perfil actual')
@@ -46,21 +46,21 @@ export const forecastRouter = createTRPCRouter({
     applyProfile: protectedProcedure.input(z.object({
         id: z.number(),
     })).mutation(async ({ ctx, input }) => {
-        await setSetting('mrp.current_forecast_profile', input.id)
+        await setUserSetting('mrp.current_forecast_profile', ctx.session.user.id, input.id)
     }),
     applyNullProfile: protectedProcedure.mutation(async ({ ctx }) => {
-        await setSetting('mrp.current_forecast_profile', null)
+        await setUserSetting('mrp.current_forecast_profile', ctx.session.user.id, null)
     }),
     currentProfile: protectedProcedure.query(({ ctx }) => {
-        return getCurrentProfile()
+        return getCurrentProfile(ctx.session.user.id)
     }),
     obtainCurrentProfile: protectedProcedure.mutation(({ ctx }) => {
-        return getCurrentProfile()
+        return getCurrentProfile(ctx.session.user.id)
     }),
 })
 
-async function getCurrentProfile() {
-    const profileInUse = await getSetting<number>('mrp.current_forecast_profile')
+async function getCurrentProfile(userId: string) {
+    const profileInUse = await getUserSetting<number>('mrp.current_forecast_profile', userId)
 
     if (!profileInUse) return nullProfile
 
