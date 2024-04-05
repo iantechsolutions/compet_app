@@ -56,7 +56,7 @@ export const accounts = pgTable(
   },
   (account) => ({
     compoundKey: primaryKey(account.provider, account.providerAccountId),
-    userIdIdx: index("userId_idx").on(account.userId),
+    userIdIdx: index("account_userId_idx").on(account.userId),
   })
 );
 
@@ -74,7 +74,7 @@ export const sessions = pgTable(
     expires: timestamp("expires", { mode: "date" }).notNull(),
   },
   (session) => ({
-    userIdIdx: index("userId_idx").on(session.userId),
+    userIdIdx: index("session_userId_idx").on(session.userId),
   })
 );
 
@@ -90,7 +90,7 @@ export const verificationTokens = pgTable(
     expires: timestamp("expires", { mode: "date" }).notNull(),
   },
   (vt) => ({
-    compoundKey: primaryKey(vt.identifier, vt.token),
+    compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   })
 );
 
@@ -115,7 +115,7 @@ export const forecastProfiles = pgTable(
 export const settings = pgTable(
   "setting",
   {
-    key: varchar("key", { length: 255 }).notNull().primaryKey(),
+    key: varchar("key", { length: 255 }).notNull().primaryKey().unique(),
 
     value: json('value').$type<unknown>().default(null),
   }

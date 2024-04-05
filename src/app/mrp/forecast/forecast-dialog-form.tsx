@@ -1,6 +1,6 @@
 import { ListTodoIcon, Loader2Icon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import ListSelectionDialog from "~/components/list-selection-dialog"
 import { useMRPData, useMRPInvalidateAndReloadData } from "~/components/mrp-data-provider"
 import { Button } from "~/components/ui/button"
@@ -77,11 +77,13 @@ export default function ForecastDialogForm(props: { disabled?: boolean, children
         router.refresh()
     }
 
+    const formId = useId()
+
     return <Dialog>
         <DialogTrigger asChild>
             {props.children}
         </DialogTrigger>
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onSubmit} id={formId}>
             <DialogContent className="grid gap-2">
                 <DialogHeader>
                     <DialogTitle>Nuevo perfil de forecast</DialogTitle>
@@ -170,8 +172,10 @@ export default function ForecastDialogForm(props: { disabled?: boolean, children
                 </div>}
 
                 <DialogFooter className="flex justify-end">
-                    {((includeBudgets || includeSales) && name.trim() && !isLoading && !props.disabled) && <Button className="w-full mt-2" type="submit">Crear y aplicar</Button>}
-                    {isLoading && <Button disabled><Loader2Icon className="animate-spin mr-2 w-full mt-2" />Creando</Button>}
+                    {((includeBudgets || includeSales) && name.trim() && !isLoading && !props.disabled) && <Button className="w-full mt-2" type="button" onClick={() => {
+                        (document.getElementById(formId) as HTMLFormElement)?.requestSubmit()
+                    }}>Crear y aplicar</Button>}
+                    {isLoading && <Button disabled><Loader2Icon className="animate-spin mr-2 w-full" />Creando</Button>}
                 </DialogFooter>
             </DialogContent>
         </form>

@@ -2,8 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import * as schema from '~/server/db/schema'
 import { eq } from "drizzle-orm";
-import { getSetting, getUserSetting, setSetting, setUserSetting } from "~/lib/settings";
-import { ForecastProfile } from "~/mrp_data/transform_mrp_data";
+import { getUserSetting, setUserSetting } from "~/lib/settings";
 import { nullProfile } from "~/lib/nullForecastProfile";
 import { db } from "~/server/db";
 
@@ -19,8 +18,16 @@ export const forecastRouter = createTRPCRouter({
 
         clientInclusionList: z.array(z.string()).nullable().default(null),
     })).mutation(async ({ ctx, input }) => {
-        const r = await ctx.db.insert(schema.forecastProfiles).values(input)
-        return r.insertId
+        const r = await ctx.db.insert(schema.forecastProfiles).values({
+            // @ts-ignore
+            budgetsInclusionFactor: input.budgetsInclusionFactor,
+            clientInclusionList: input.clientInclusionList,
+            includeBudgets: input.includeBudgets,
+            includeSales: input.includeSales,
+            salesIncrementFactor: input.salesIncrementFactor,
+            name: input.name,
+        }).returning({ id: schema.forecastProfiles.id })
+        return r[0]?.id
     }),
     listProfiles: protectedProcedure.query(async ({ ctx }) => {
         const profiles = await ctx.db.query.forecastProfiles.findMany()
