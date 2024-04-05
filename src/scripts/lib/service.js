@@ -1,5 +1,3 @@
-
-
 // @ts-ignore
 import { Service } from 'node-windows'
 
@@ -17,6 +15,6 @@ const svc = new Service({
     script: serviceEntryPath,
     maxRestarts: 1000,
     wait: 10,
-});
+})
 
-export { svc, serviceEntryPath };
+export { svc, serviceEntryPath }

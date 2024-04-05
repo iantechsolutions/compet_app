@@ -1,14 +1,14 @@
-"use client"
+'use client'
 /* eslint-disable */
 
-import { createContext, useContext, useState } from "react"
-import { useOnMounted } from "~/lib/hooks"
-import { MRPData } from "~/mrp_data/transform_mrp_data"
-import { Loader2Icon } from "lucide-react"
-import { Button } from "./ui/button"
-import { decodeData } from "~/lib/utils"
-import { readFromCache, saveToCache } from "~/lib/cache-store"
-import { api } from "~/trpc/react"
+import { Loader2Icon } from 'lucide-react'
+import { createContext, useContext, useState } from 'react'
+import { readFromCache, saveToCache } from '~/lib/cache-store'
+import { useOnMounted } from '~/lib/hooks'
+import { decodeData } from '~/lib/utils'
+import type { MRPData } from '~/mrp_data/transform_mrp_data'
+import { api } from '~/trpc/react'
+import { Button } from './ui/button'
 
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -52,10 +52,10 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     function dataReady(data: MRPData) {
         setData(data)
 
-        saveToCache('mrp-data', data).then(() => console.log("Data saved to cache!"))
+        saveToCache('mrp-data', data).then(() => console.log('Data saved to cache!'))
 
-        console.log("Data ready!", data)
-        console.log("Ready to receive requests!")
+        console.log('Data ready!', data)
+        console.log('Ready to receive requests!')
         channel.onmessage = (message) => {
             if (!message.data?.type) return
 
@@ -65,28 +65,28 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
 
             // Used to find if is there some channel ready
             if (messageData.type === 'status' && messageData.action === 'request') {
-                console.log("Status request received!")
+                console.log('Status request received!')
                 channel.postMessage({
                     action: 'response',
                     type: 'status',
-                    status: 'ready'
+                    status: 'ready',
                 })
                 return
             }
 
             // Request data
             if (messageData.type === 'request' && messageData.action === 'request') {
-                console.log("Data request received!")
+                console.log('Data request received!')
                 channel.postMessage({
                     action: 'response',
                     type: 'response',
-                    data: data
+                    data: data,
                 })
             }
 
             // If data is changed, update it for all clients
             if (message.data.type === 'update' && message.data.action === 'broadcast') {
-                console.log("Broadcast received!")
+                console.log('Broadcast received!')
                 setData(message.data.data)
             }
         }
@@ -98,7 +98,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         channel.postMessage({
             action: 'broadcast',
             type: 'update',
-            data: data
+            data: data,
         })
     }
 
@@ -118,7 +118,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     function tryRequestData() {
         return new Promise<MRPData | null>((resolve, reject) => {
             let timer: any = -1
-            console.log("Waiting for status")
+            console.log('Waiting for status')
 
             // Here we need to wait for a response, if we receive a status response
             // it means that the channel is ready to receive a request
@@ -126,13 +126,12 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
                 if (!message.data?.type) return
 
                 if (message.data.type === 'response' && message.data.action === 'response') {
-                    console.log("Data received from channel!", message.data.data)
+                    console.log('Data received from channel!', message.data.data)
                     setLoadingMessage('Datos recibidos')
                     channel.onmessage = null
                     resolve(message.data.data)
-
                 } else if (message.data.type === 'status' && message.data.status === 'ready' && message.data.action === 'response') {
-                    console.log("Channel ready! Requesting data...")
+                    console.log('Channel ready! Requesting data...')
                     setLoadingMessage('Esperando datos de otra pestaña')
                     clearTimeout(timer)
 
@@ -143,7 +142,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
                 }
             }
 
-            console.log("Requesting status...")
+            console.log('Requesting status...')
             channel.postMessage({
                 action: 'request',
                 type: 'status',
@@ -151,13 +150,15 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
 
             timer = setTimeout(() => {
                 channel.onmessage = null
-                console.log("Timeout! No response received")
+                console.log('Timeout! No response received')
                 resolve(null)
             }, 500)
         })
     }
 
-    async function initializeData(opts?: { revalidateMode: boolean }): Promise<MRPData | null> {
+    async function initializeData(opts?: {
+        revalidateMode: boolean
+    }): Promise<MRPData | null> {
         try {
             let data: MRPData | null = null
 
@@ -167,33 +168,32 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
                 data = await tryRequestData()
 
                 if (data) {
-                    console.log("Data found in another tab!")
+                    console.log('Data found in another tab!')
                     dataReady(data)
                     return data
                 }
 
                 setLoadingMessage('Buscando datos en caché')
 
-                console.log("Data not found in another tab, searching in cache...")
+                console.log('Data not found in another tab, searching in cache...')
 
                 // Buscar si existe en cache
                 data = await readFromCache<MRPData>('mrp-data')
 
                 if (data) {
-                    setLoadingMessage("Datos encontrados en caché, comprobando validez")
+                    setLoadingMessage('Datos encontrados en caché, comprobando validez')
 
                     const isValid = await dataIsUpToDate(data)
 
                     if (!isValid) {
                         // Cache data forecast profile is not the same as the current profile
-                        console.log('Cache data isn\'t up to date')
+                        console.log("Cache data isn't up to date")
                         data = null
                     }
                 }
 
-
                 if (data) {
-                    console.log("Data found in cache!")
+                    console.log('Data found in cache!')
                     setLoadingMessage('Datos encontrados en caché validados')
                     dataReady(data)
                     return data
@@ -201,7 +201,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
             }
 
             if (opts?.revalidateMode) {
-                console.log("Forcing revalidate mode (using server)")
+                console.log('Forcing revalidate mode (using server)')
             }
 
             setLoadingMessage('Esperando al servidor')
@@ -229,25 +229,35 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     useOnMounted(() => {
         void initializeData()
 
-        setInterval(async () => {
-            console.log("Checking if data is still valid...")
+        setInterval(
+            async () => {
+                console.log('Checking if data is still valid...')
 
-            const dataStillValid = data && await dataIsUpToDate(data)
+                const dataStillValid = data && (await dataIsUpToDate(data))
 
-            if (!dataStillValid) {
-                console.log("Data is not valid anymore, reinitializing...")
-                await initializeData({ revalidateMode: true })
-            }
-        }, 1000 * 60 * 5)
+                if (!dataStillValid) {
+                    console.log('Data is not valid anymore, reinitializing...')
+                    await initializeData({ revalidateMode: true })
+                }
+            },
+            1000 * 60 * 5,
+        )
     })
 
-    if (!data) return <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center">
-        <Button variant="secondary" disabled><Loader2Icon className="animate-spin mr-2" /> {loadingMessage}</Button>
-    </div>
+    if (!data)
+        return (
+            <div className='fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center'>
+                <Button variant='secondary' disabled>
+                    <Loader2Icon className='animate-spin mr-2' /> {loadingMessage}
+                </Button>
+            </div>
+        )
 
-    return <dataProviderContext.Provider value={{ data, invalidateAndReloadData, isUpdating, loadingMessage }}>
-        {props.children}
-    </dataProviderContext.Provider>
+    return (
+        <dataProviderContext.Provider value={{ data, invalidateAndReloadData, isUpdating, loadingMessage }}>
+            {props.children}
+        </dataProviderContext.Provider>
+    )
 }
 
 export function useMRPContext() {

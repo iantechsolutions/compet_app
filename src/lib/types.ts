@@ -1,7 +1,14 @@
 import { z } from 'zod'
 
-const nullableDate = z.date().or(z.string()).nullable().transform((date) => date ? new Date(date) : null)
-const dateZodType = z.date().or(z.string()).transform((date) => new Date(date))
+const nullableDate = z
+    .date()
+    .or(z.string())
+    .nullable()
+    .transform((date) => (date ? new Date(date) : null))
+const dateZodType = z
+    .date()
+    .or(z.string())
+    .transform((date) => new Date(date))
 
 export const productSchema = z.object({
     code: z.string(),

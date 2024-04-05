@@ -1,21 +1,24 @@
-import { Button } from "~/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
-import { useId } from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { ProductEventRow } from "./event_row";
-import dayjs from "dayjs";
-import { ProductEvent } from "~/mrp_data/transform_mrp_data";
-import { cn, formatStock } from "~/lib/utils";
+import * as DialogPrimitive from '@radix-ui/react-dialog'
+import dayjs from 'dayjs'
+import { useId } from 'react'
+import { Button } from '~/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
+import { cn, formatStock } from '~/lib/utils'
+import type { ProductEvent } from '~/mrp_data/transform_mrp_data'
+import { ProductEventRow } from './event_row'
 
-export function ForecastSupplyEventsRow(props: { events: ProductEvent[], month: string }) {
+export function ForecastSupplyEventsRow(props: {
+    events: ProductEvent[]
+    month: string
+}) {
     const openId = useId()
 
     const sum = props.events.reduce((acc, event) => acc + event.quantity, 0)
 
     if (props.events.length === 0 || Math.floor(sum) === 0) return <></>
 
-    let minStock = Infinity
+    let minStock = Number.POSITIVE_INFINITY
 
     for (const event of props.events) {
         if (event.productAccumulativeStock < minStock) {
@@ -26,66 +29,68 @@ export function ForecastSupplyEventsRow(props: { events: ProductEvent[], month: 
     const stock = minStock
     // const stock = props.stock - sum
 
-    return <>
-        <TableRow className="bg-yellow-100" role="button" onClick={() => {
-            document.getElementById(openId)?.click()
-        }}>
-            <TableCell>
-                {formatStock(sum)}
-            </TableCell>
-            <TableCell colSpan={2}>
-                <b>Forecast</b> Insumo / Semielaborado
-            </TableCell>
-            <TableCell className="underline">
-                Ver detalles
-            </TableCell>
-            <TableCell className={cn("font-medium", {
-                "text-red-500 font-medium": stock < 0
-            })}>
-                {/* {formatStock(stock)} */}
-            </TableCell>
-            <TableCell>
+    return (
+        <>
+            <TableRow
+                className='bg-yellow-100'
+                role='button'
+                onClick={() => {
+                    document.getElementById(openId)?.click()
+                }}
+            >
+                <TableCell>{formatStock(sum)}</TableCell>
+                <TableCell colSpan={2}>
+                    <b>Forecast</b> Insumo / Semielaborado
+                </TableCell>
+                <TableCell className='underline'>Ver detalles</TableCell>
+                <TableCell
+                    className={cn('font-medium', {
+                        'text-red-500 font-medium': stock < 0,
+                    })}
+                >
+                    {/* {formatStock(stock)} */}
+                </TableCell>
+                <TableCell></TableCell>
+            </TableRow>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant='outline' id={openId} className='hidden'>
+                        Insumo de forecast
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className='sm:max-w-[1200px]'>
+                    <DialogHeader>
+                        <DialogTitle>Forecast como insumo {props.month}</DialogTitle>
+                        <DialogDescription>
+                            Forecast como insumo para armado de diferentes productos en el período {dayjs(props.month).format('MMMM YYYY')}.
+                        </DialogDescription>
+                    </DialogHeader>
 
-            </TableCell>
-        </TableRow>
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline" id={openId} className="hidden">Insumo de forecast</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[1200px]">
-                <DialogHeader>
-                    <DialogTitle>Forecast como insumo {props.month}</DialogTitle>
-                    <DialogDescription>
-                        Forecast como insumo para armado de diferentes productos
-                        en el período {dayjs(props.month).format('MMMM YYYY')}.
-                    </DialogDescription>
-                </DialogHeader>
+                    <div className='max-h-[calc(100vh_-_200px)] overflow-auto'>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className='w-[100px]'>Cantidad</TableHead>
+                                    <TableHead>Tipo</TableHead>
+                                    <TableHead>Referencia</TableHead>
+                                    <TableHead>Stock</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {props.events.map((event, index) => {
+                                    return <ProductEventRow key={index} event={event} productCode={event.productCode} nobg nodate nostate />
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
 
-                <div className="max-h-[calc(100vh_-_200px)] overflow-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[100px]">Cantidad</TableHead>
-                                <TableHead>Tipo</TableHead>
-                                <TableHead>Referencia</TableHead>
-                                <TableHead>Stock</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {props.events.map((event, index) => {
-                                return <ProductEventRow key={index} event={event} productCode={event.productCode} nobg nodate nostate />
-                            })}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <DialogFooter>
-                    <DialogPrimitive.Close
-                        asChild
-                    >
-                        <Button type="submit">Cerrar</Button>
-                    </DialogPrimitive.Close>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog></>
+                    <DialogFooter>
+                        <DialogPrimitive.Close asChild>
+                            <Button type='submit'>Cerrar</Button>
+                        </DialogPrimitive.Close>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
+    )
 }

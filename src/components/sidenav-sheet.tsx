@@ -7,16 +7,17 @@ import {
     SheetHeader,
     SheetTitle,
     SheetTrigger,
-} from "~/components/ui/sheet"
-import { Button } from "./ui/button"
+} from '~/components/ui/sheet'
+import { Button } from './ui/button'
 
-export function SidenavSheet(props: { trigger: React.ReactNode, content: React.ReactNode }) {
+export function SidenavSheet(props: {
+    trigger: React.ReactNode
+    content: React.ReactNode
+}) {
     return (
         <Sheet>
-            <SheetTrigger asChild>
-                {props.trigger}
-            </SheetTrigger>
-            <SheetContent side="left" className="overflow-y-auto max-h-full">
+            <SheetTrigger asChild>{props.trigger}</SheetTrigger>
+            <SheetContent side='left' className='overflow-y-auto max-h-full'>
                 {/* <SheetHeader>
                     <SheetTitle>Edit profile</SheetTitle>
                     <SheetDescription>

@@ -1,8 +1,12 @@
 /* eslint-disable */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-export function useOnScroll(element: HTMLElement | undefined | null, onScrollChanged: (scrollX: number, scrollY: number) => void, all: boolean = false) {
+export function useOnScroll(
+    element: HTMLElement | undefined | null,
+    onScrollChanged: (scrollX: number, scrollY: number) => void,
+    all = false,
+) {
     useLayoutEffect(() => {
         if (!element) return
 

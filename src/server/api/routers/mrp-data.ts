@@ -1,9 +1,9 @@
-import { getSetting } from "~/lib/settings";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { utapi } from "~/server/uploadthing";
+import { getSetting } from '~/lib/settings'
+import { utapi } from '~/server/uploadthing'
+import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const mrpDataRouter = createTRPCRouter({
-    mrpDataInfo: protectedProcedure.query(({ }) => {
+    mrpDataInfo: protectedProcedure.query(({}) => {
         return getMrpExportInfo()
     }),
     obtainDataExportInfo: protectedProcedure.mutation(({ ctx }) => {
@@ -13,24 +13,28 @@ export const mrpDataRouter = createTRPCRouter({
 
 async function getMrpExportInfo() {
     const mrpExportFile = await getSetting<string>('mrp.export-file')
-    const mrpExportDateStr = await getSetting<string>("mrp.export-date")
+    const mrpExportDateStr = await getSetting<string>('mrp.export-date')
 
     const exportDate = mrpExportDateStr ? new Date(mrpExportDateStr) : new Date()
 
     if (!mrpExportFile) {
-        throw new Error("No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.")
+        throw new Error(
+            'No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.',
+        )
     }
 
-    const files = await utapi.getFileUrls(mrpExportFile);
+    const files = await utapi.getFileUrls(mrpExportFile)
 
-    if(files.length == 0) {
-        throw new Error("No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.")
+    if (files.length == 0) {
+        throw new Error(
+            'No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.',
+        )
     }
 
     const file = files[0]
 
     return {
         exportURL: file!.url,
-        exportDate: exportDate.toISOString()
+        exportDate: exportDate.toISOString(),
     }
 }

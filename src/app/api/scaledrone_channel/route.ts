@@ -1,7 +1,7 @@
-import { NextApiRequest } from "next"
-import { NextRequest, NextResponse } from "next/server"
-import { env } from "~/env"
-import { getServerAuthSession } from "~/server/auth"
+import { NextApiRequest } from 'next'
+import { type NextRequest, NextResponse } from 'next/server'
+import { env } from '~/env'
+import { getServerAuthSession } from '~/server/auth'
 
 export function GET(request: NextRequest) {
     const channel = env.SCALEDRONE_CHANNEL_ID
@@ -10,11 +10,14 @@ export function GET(request: NextRequest) {
     const session = getServerAuthSession()
 
     if (!session) {
-        return NextResponse.json({
-            error: 'Unauthorized'
-        }, {
-            status: 401
-        })
+        return NextResponse.json(
+            {
+                error: 'Unauthorized',
+            },
+            {
+                status: 401,
+            },
+        )
     }
 
     if (!channel) {

@@ -1,30 +1,27 @@
-import "~/styles/globals.css";
+import '~/styles/globals.css'
 
-import { Inter } from "next/font/google";
+import { Inter } from 'next/font/google'
 
 const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
+    subsets: ['latin'],
+    variable: '--font-sans',
+})
 
-export const runtime = "edge";
+export const runtime = 'edge'
 
 export const metadata = {
-  title: "Compet APP",
-  description: "App de gestión de información",
-  icons: [{ rel: "icon", url: "/icon.png" }],
-};
+    title: 'Compet APP',
+    description: 'App de gestión de información',
+    icons: [{ rel: 'icon', url: '/icon.png' }],
+}
 
 export default function RootLayout(props: { children: React.ReactNode }) {
-  return (
-    <html lang="es">
-      <body className={`font-sans ${inter.variable}`}>
-        {props.children}
-        <script
-          src="https://cdn.scaledrone.com/scaledrone-lite.min.js"
-          type="text/javascript"
-        ></script>
-      </body>
-    </html>
-  );
+    return (
+        <html lang='es'>
+            <body className={`font-sans ${inter.variable}`}>
+                {props.children}
+                <script src='https://cdn.scaledrone.com/scaledrone-lite.min.js' type='text/javascript'></script>
+            </body>
+        </html>
+    )
 }

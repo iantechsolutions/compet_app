@@ -1,29 +1,15 @@
-"use client"
-import { Button } from "~/components/ui/button"
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "~/components/ui/card"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "~/components/ui/table"
+'use client'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
 
-import { cn, formatStock } from "~/lib/utils"
-import { XIcon } from "lucide-react"
-import { MRPProduct } from "~/mrp_data/transform_mrp_data"
-import { useEffect, useLayoutEffect, useRef } from "react"
-import { useOnScroll } from "~/lib/hooks"
-import Link from "next/link"
-import { useMRPData } from "~/components/mrp-data-provider"
+import { XIcon } from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useMRPData } from '~/components/mrp-data-provider'
+import { useOnScroll } from '~/lib/hooks'
+import { cn, formatStock } from '~/lib/utils'
+import type { MRPProduct } from '~/mrp_data/transform_mrp_data'
 
 export function TargetOverlayInfoCard(props: {
     product: MRPProduct
@@ -65,9 +51,13 @@ export function TargetOverlayInfoCard(props: {
 
     const id = 'stock-at-month-overlay'
 
-    useOnScroll(document.body, () => {
-        updateElementPosition()
-    }, true)
+    useOnScroll(
+        document.body,
+        () => {
+            updateElementPosition()
+        },
+        true,
+    )
 
     const trackIdRef = useRef(props.trackElementId)
 
@@ -82,7 +72,6 @@ export function TargetOverlayInfoCard(props: {
     function updateElementPosition() {
         const card = document.getElementById(id)
         const element = document.getElementById(trackIdRef.current)
-
 
         if (!card) return
         if (!element) {
@@ -117,29 +106,31 @@ export function TargetOverlayInfoCard(props: {
     }
 
     if (!props.column) {
-        return <Link href={props.productHref}>
-            <Button className={cn(classNames)}
-                id={id}
-                style={{ width: '150px', marginLeft: '50px' }}
-            >Abrir</Button>
-        </Link>
+        return (
+            <Link href={props.productHref}>
+                <Button className={cn(classNames)} id={id} style={{ width: '150px', marginLeft: '50px' }}>
+                    Abrir
+                </Button>
+            </Link>
+        )
     }
 
     return (
         <div id={id} className={classNames}>
-            <Card className="min-w-[300px] relative">
-                <button className="absolute top-3 right-3" onClick={props.onClose}><XIcon size={18} /></button>
+            <Card className='min-w-[300px] relative'>
+                <button className='absolute top-3 right-3' onClick={props.onClose}>
+                    <XIcon size={18} />
+                </button>
                 <CardHeader>
                     <CardTitle>{props.column}</CardTitle>
                     <CardDescription>{props.product.code}</CardDescription>
                 </CardHeader>
                 <CardContent>
-
                     <Table>
                         {/* <TableCaption>A list of your recent invoices.</TableCaption> */}
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[100px]">Evento</TableHead>
+                                <TableHead className='w-[100px]'>Evento</TableHead>
                                 <TableHead>Cantidad</TableHead>
                                 {/* <TableHead>Method</TableHead>
                             <TableHead className="text-right">Amount</TableHead> */}
@@ -147,46 +138,49 @@ export function TargetOverlayInfoCard(props: {
                         </TableHeader>
                         <TableBody>
                             <TableRow>
-                                <TableCell className="font-medium">Importación</TableCell>
-                                <TableCell className="text-green-600 font-medium">{formatStock(imported ?? 0)}</TableCell>
+                                <TableCell className='font-medium'>Importación</TableCell>
+                                <TableCell className='text-green-600 font-medium'>{formatStock(imported ?? 0)}</TableCell>
                                 {/* <TableCell className="text-right">{invoice.totalAmount}</TableCell> */}
                             </TableRow>
                             <TableRow>
-                                <TableCell className="font-medium">Ventas</TableCell>
-                                <TableCell className="text-blue-500 font-medium">{formatStock(ordered ?? 0)}</TableCell>
+                                <TableCell className='font-medium'>Ventas</TableCell>
+                                <TableCell className='text-blue-500 font-medium'>{formatStock(ordered ?? 0)}</TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell className="font-medium">Armados</TableCell>
-                                <TableCell className="font-medium">{formatStock(usedAsSupply ?? 0)}</TableCell>
+                                <TableCell className='font-medium'>Armados</TableCell>
+                                <TableCell className='font-medium'>{formatStock(usedAsSupply ?? 0)}</TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell className="font-medium">Stock</TableCell>
+                                <TableCell className='font-medium'>Stock</TableCell>
                                 <TableCell>{formatStock(stock ?? 0)}</TableCell>
                             </TableRow>
-                            {data.forecastData?.forecastProfile.includeSales && <TableRow>
-                                <TableCell className="font-medium">Forecast</TableCell>
-                                <TableCell className="text-orange-900 font-medium">
-                                    {formatStock(usedAsForecastSold ?? 0)}
-                                    <span className="ml-2 text-stone-600">Facturación</span>
-                                </TableCell>
-                            </TableRow>}
-                            {data.forecastData?.forecastProfile.includeBudgets && <TableRow>
-                                <TableCell className="font-medium">Forecast</TableCell>
-                                <TableCell className="text-orange-700 font-medium">
-                                    {formatStock(usedAsForecastBudgets ?? 0)}
-                                    <span className="ml-2 text-stone-600">Presupuestos</span>
-                                </TableCell>
-                            </TableRow>}
+                            {data.forecastData?.forecastProfile.includeSales && (
+                                <TableRow>
+                                    <TableCell className='font-medium'>Forecast</TableCell>
+                                    <TableCell className='text-orange-900 font-medium'>
+                                        {formatStock(usedAsForecastSold ?? 0)}
+                                        <span className='ml-2 text-stone-600'>Facturación</span>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {data.forecastData?.forecastProfile.includeBudgets && (
+                                <TableRow>
+                                    <TableCell className='font-medium'>Forecast</TableCell>
+                                    <TableCell className='text-orange-700 font-medium'>
+                                        {formatStock(usedAsForecastBudgets ?? 0)}
+                                        <span className='ml-2 text-stone-600'>Presupuestos</span>
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
-
                 </CardContent>
-                <CardFooter className="flex justify-between">
-                    <Link href={props.productHref} className="w-full">
-                        <Button className="w-full">Abrir</Button>
+                <CardFooter className='flex justify-between'>
+                    <Link href={props.productHref} className='w-full'>
+                        <Button className='w-full'>Abrir</Button>
                     </Link>
                 </CardFooter>
             </Card>
-        </div >
+        </div>
     )
 }

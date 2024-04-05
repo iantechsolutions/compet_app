@@ -1,24 +1,36 @@
 /* eslint-disable */
 
-import dayjs from "dayjs";
-import { getSetting } from "~/lib/settings";
-import { CrmBudget, CrmBudgetProduct, Order, OrderProductSold, Product, ProductAssembly, ProductImport, ProductProvider, ProductStockCommited } from "~/lib/types";
-import { decodeData, getMonths } from "~/lib/utils";
-import { DataExport } from "~/scripts/lib/read-from-tango-db";
-import { api } from "~/trpc/server";
+import dayjs from 'dayjs'
+import { getSetting } from '~/lib/settings'
+import type {
+    CrmBudget,
+    CrmBudgetProduct,
+    Order,
+    OrderProductSold,
+    Product,
+    ProductAssembly,
+    ProductImport,
+    ProductProvider,
+    ProductStockCommited,
+} from '~/lib/types'
+import { decodeData, getMonths } from '~/lib/utils'
+import type { DataExport } from '~/scripts/lib/read-from-tango-db'
+import { api } from '~/trpc/server'
 
 export async function queryBaseMRPData() {
-    const mrpExportFile = await getSetting<string>("mrp.export-file")
+    const mrpExportFile = await getSetting<string>('mrp.export-file')
 
     if (!mrpExportFile) {
-        throw new Error("No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.")
+        throw new Error(
+            'No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.',
+        )
     }
 
     const dataInfo = await api.mrpData.mrpDataInfo.query()
 
     const exportURL = dataInfo.exportURL
 
-    const dataEncoded = await fetch(exportURL).then(res => res.text())
+    const dataEncoded = await fetch(exportURL).then((res) => res.text())
     const data = decodeData(dataEncoded) as DataExport
 
     const {
@@ -36,7 +48,7 @@ export async function queryBaseMRPData() {
         products_sold,
         budgets,
         budget_products,
-        crm_clients
+        crm_clients,
     } = data
 
     const productByCode: Map<string, Product> = new Map()
@@ -98,7 +110,6 @@ export async function queryBaseMRPData() {
         ordersByOrderNumber.set(order.order_number, order)
     }
 
-
     const productSoldByN_COMP: Map<string, OrderProductSold[]> = new Map()
     for (const soldProduct of products_sold) {
         const orderProducts = productSoldByN_COMP.get(soldProduct.N_COMP) ?? []
@@ -118,44 +129,45 @@ export async function queryBaseMRPData() {
         budgetProductByBudgetId.set(budgetProduct.budget_id, budgetProducts)
     }
 
-
     const months = getMonths(10)
 
     return {
         months,
         imports,
         productImports: products_imports,
-        products: products.map(product => ({
-            ...product,
-            stock: stockCommitedByProduct.get(product.code)?.stock_quantity ?? 0,
-            commited: stockCommitedByProduct.get(product.code)?.commited_quantity ?? 0,
-            imports: productImportsByProduct.get(product.code) ?? [],
-            supplies: suppliesOfProduct.get(product.code) ?? [],
-            suppliesOf: suppliesOfOfProduct.get(product.code) ?? [],
-            providers: productProivderOfProduct.get(product.code) ?? [],
-        })).sort((a, b) => a.code.localeCompare(b.code)),
+        products: products
+            .map((product) => ({
+                ...product,
+                stock: stockCommitedByProduct.get(product.code)?.stock_quantity ?? 0,
+                commited: stockCommitedByProduct.get(product.code)?.commited_quantity ?? 0,
+                imports: productImportsByProduct.get(product.code) ?? [],
+                supplies: suppliesOfProduct.get(product.code) ?? [],
+                suppliesOf: suppliesOfOfProduct.get(product.code) ?? [],
+                providers: productProivderOfProduct.get(product.code) ?? [],
+            }))
+            .sort((a, b) => a.code.localeCompare(b.code)),
         stockCommitedData: products_stock_commited,
         assemblies: products_assemblies,
         providers,
         orders,
-        orderProducts: products_orders.filter(orderProduct => {
+        orderProducts: products_orders.filter((orderProduct) => {
             const order = ordersByOrderNumber.get(orderProduct.order_number)
             if (!order) return false
             if (order.state != 2) return false
-            if (order.delivery_date < dayjs("2020-01-01").toDate()) {
+            if (order.delivery_date < dayjs('2020-01-01').toDate()) {
                 return false
             }
             return true
         }),
         clients,
-        sold: sold.map(sold => ({
+        sold: sold.map((sold) => ({
             ...sold,
             products: productSoldByN_COMP.get(sold.N_COMP) ?? [],
         })),
         products_sold,
 
         budgetsById,
-        budgets: budgets.map(budget => ({
+        budgets: budgets.map((budget) => ({
             ...budget,
             products: budgetProductByBudgetId.get(budget.budget_id) ?? [],
         })),

@@ -1,13 +1,13 @@
 /* eslint-disable */
 
-import { monthCodeFromDate } from "~/lib/utils";
+import { monthCodeFromDate } from '~/lib/utils'
 // Es un archivo de cliente porque enviar todo como JSON del servidor va a generar problemas
 
 // Importamos SOLO el tipo de dato
-import type { ForecastData } from "~/mrp_data/query_mrp_forecast_data";
+import type { ForecastData } from '~/mrp_data/query_mrp_forecast_data'
 export type { RawMRPData, ForecastData }
-import dayjs from "dayjs";
-import { RawMRPData } from "~/mrp_data/query_mrp_data";
+import dayjs from 'dayjs'
+import type { RawMRPData } from '~/mrp_data/query_mrp_data'
 
 export type ProductEventType = 'import' | 'order' | 'supply' | 'forecast'
 
@@ -39,10 +39,7 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
 
     const stockOfProductsByMonth = new Map<string, Map<string, number>>()
     for (const product of data.products) {
-        stockOfProductsByMonth.set(
-            product.code,
-            stockOfProductByMonth(product.stock, eventsByProductCode.get(product.code)!, months),
-        )
+        stockOfProductsByMonth.set(product.code, stockOfProductByMonth(product.stock, eventsByProductCode.get(product.code)!, months))
     }
 
     const eventsOfProductsByMonth = new Map<string, Map<string, ProductEvent[]>>()
@@ -66,9 +63,18 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
             importedQuantityOfProductsByMonth.set(product.code, importedQuantityOfProductsByMonth.get(product.code) ?? new Map())
             orderedQuantityOfProductsByMonth.set(product.code, orderedQuantityOfProductsByMonth.get(product.code) ?? new Map())
             usedAsSupplyQuantityOfProductsByMonth.set(product.code, usedAsSupplyQuantityOfProductsByMonth.get(product.code) ?? new Map())
-            usedAsForecastQuantityOfProductsByMonth.set(product.code, usedAsForecastQuantityOfProductsByMonth.get(product.code) ?? new Map())
-            usedAsForecastTypeSoldQuantityOfProductsByMonth.set(product.code, usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code) ?? new Map())
-            usedAsForecastTypeBudgetQuantityOfProductsByMonth.set(product.code, usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code) ?? new Map())
+            usedAsForecastQuantityOfProductsByMonth.set(
+                product.code,
+                usedAsForecastQuantityOfProductsByMonth.get(product.code) ?? new Map(),
+            )
+            usedAsForecastTypeSoldQuantityOfProductsByMonth.set(
+                product.code,
+                usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code) ?? new Map(),
+            )
+            usedAsForecastTypeBudgetQuantityOfProductsByMonth.set(
+                product.code,
+                usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code) ?? new Map(),
+            )
 
             stockVariationByMonth.get(product.code)!.set(month, 0)
             importedQuantityOfProductsByMonth.get(product.code)!.set(month, 0)
@@ -80,28 +86,40 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
 
             for (const event of events.get(month) ?? []) {
                 // Aunque solo el valor de quantity afecte a la variación de stock, queremos que los eventos musetren la cantidad original por más de que se hayan dividido en eventos de suministro
-                const qty = (event.originalQuantity ?? event.quantity)
+                const qty = event.originalQuantity ?? event.quantity
 
                 let stockModifier = 0
 
                 if (event.type === 'import') {
-                    importedQuantityOfProductsByMonth.get(product.code)!.set(month, importedQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+                    importedQuantityOfProductsByMonth
+                        .get(product.code)!
+                        .set(month, importedQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
                     stockModifier = qty
                 } else if (event.type === 'forecast' || event.isForecast) {
-                    usedAsForecastQuantityOfProductsByMonth.get(product.code)!.set(month, usedAsForecastQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+                    usedAsForecastQuantityOfProductsByMonth
+                        .get(product.code)!
+                        .set(month, usedAsForecastQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
 
                     if (event.forecastType === 'sold') {
-                        usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!.set(month, usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+                        usedAsForecastTypeSoldQuantityOfProductsByMonth
+                            .get(product.code)!
+                            .set(month, usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
                     } else if (event.forecastType === 'budget') {
-                        usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.set(month, usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+                        usedAsForecastTypeBudgetQuantityOfProductsByMonth
+                            .get(product.code)!
+                            .set(month, usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
                     }
 
                     stockModifier = -event.quantity
                 } else if (event.type === 'order') {
-                    orderedQuantityOfProductsByMonth.get(product.code)!.set(month, orderedQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+                    orderedQuantityOfProductsByMonth
+                        .get(product.code)!
+                        .set(month, orderedQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
                     stockModifier = -event.quantity
                 } else if (event.type === 'supply') {
-                    usedAsSupplyQuantityOfProductsByMonth.get(product.code)!.set(month, usedAsSupplyQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
+                    usedAsSupplyQuantityOfProductsByMonth
+                        .get(product.code)!
+                        .set(month, usedAsSupplyQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty)
                     stockModifier = -event.quantity
                 }
 
@@ -110,9 +128,10 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
         }
     }
 
-    const products = data.products.map(product => {
-
-        const expiredNotImportEvents = (eventsByProductCode.get(product.code) ?? []).filter(event => event.expired && event.type !== 'import')
+    const products = data.products.map((product) => {
+        const expiredNotImportEvents = (eventsByProductCode.get(product.code) ?? []).filter(
+            (event) => event.expired && event.type !== 'import',
+        )
         const expiredSum = expiredNotImportEvents.reduce((sum, event) => sum + event.quantity, 0)
 
         return {
@@ -142,13 +161,13 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
 }
 
 export type ForecastProfile = {
-    id?: number,
-    name: string,
-    includeSales: boolean,
-    salesIncrementFactor: number,
-    includeBudgets: boolean,
-    budgetsInclusionFactor: number,
-    clientInclusionList: string[] | null,
+    id?: number
+    name: string
+    includeSales: boolean
+    salesIncrementFactor: number
+    includeBudgets: boolean
+    budgetsInclusionFactor: number
+    clientInclusionList: string[] | null
 }
 
 export function transformMRPData(rawData: RawMRPData, forecastData: ForecastData | undefined, forecastParams: ForecastProfile | undefined) {
@@ -175,7 +194,6 @@ function listAllEvents(data: MappedData) {
 
     const today = dayjs().startOf('day').toDate()
 
-
     if (data.forecastData) {
         for (const event of data.forecastData.events) {
             events.push({
@@ -192,7 +210,6 @@ function listAllEvents(data: MappedData) {
             })
         }
     }
-
 
     for (const productImport of data.productImports) {
         const date = dayjs(productImport.arrival_date).add(15, 'day').toDate()
@@ -223,7 +240,7 @@ function listAllEvents(data: MappedData) {
     }
 
     return events.sort((a, b) => {
-        return (new Date(a.date)).getTime() - (new Date(b.date)).getTime()
+        return new Date(a.date).getTime() - new Date(b.date).getTime()
     })
 }
 
@@ -321,7 +338,6 @@ function listAllEventsWithSupplyEvents(data: MappedData) {
 }
 
 function listProductsEvents(data: MappedData, events: ProductEvent[]) {
-
     const eventsByProductCode = new Map<string, ProductEvent[]>()
 
     for (const product of data.products) {
@@ -342,9 +358,8 @@ function stockOfProductByMonth(initialStock: number, productEvents: ProductEvent
 
     let stock = initialStock
 
-    const eventsBeforeToday = productEvents.filter(event => event.expired)
-    const eventFromToday = productEvents.filter(event => !event.expired)
-
+    const eventsBeforeToday = productEvents.filter((event) => event.expired)
+    const eventFromToday = productEvents.filter((event) => !event.expired)
 
     for (const event of eventsBeforeToday) {
         if (event.type === 'import') {
@@ -405,37 +420,52 @@ function eventsOfProductByMonth(productEvents: ProductEvent[], months: string[])
     return eventsByMonth
 }
 
-
 // Generamos mapas para acceder a los datos de forma más eficiente
 function mapData(rawData: RawMRPData, forecastData?: ForecastData) {
     // Productos y provedores por código
-    const productsByCode = new Map(rawData.products.map(product => [product.code, product]))
-    const providersByCode = new Map(rawData.providers.map(provider => [provider.code, provider]))
+    const productsByCode = new Map(rawData.products.map((product) => [product.code, product]))
+    const providersByCode = new Map(rawData.providers.map((provider) => [provider.code, provider]))
 
     // Imports por su identificador
-    const importsById = new Map(rawData.imports.map(imported => [imported.id, imported]))
+    const importsById = new Map(rawData.imports.map((imported) => [imported.id, imported]))
 
     // Importaciones de productos por su identificador y código de producto
-    const productImportsById = new Map(rawData.productImports.map(productImport => [productImport.id, productImport]))
-    const productImportsByProductCode = new Map(rawData.productImports.map(productImport => [productImport.product_code, productImport]))
+    const productImportsById = new Map(rawData.productImports.map((productImport) => [productImport.id, productImport]))
+    const productImportsByProductCode = new Map(rawData.productImports.map((productImport) => [productImport.product_code, productImport]))
 
     // Ordenes por su número de orden
-    const ordersByOrderNumber = new Map(rawData.orders.map(order => [order.order_number, order]))
+    const ordersByOrderNumber = new Map(rawData.orders.map((order) => [order.order_number, order]))
 
     // Ordenes de productos por su número de orden y código de producto
-    const orderProductsByOrderNumber = new Map<string, { id: number; order_number: string; product_code: string; ordered_quantity: number }[]>()
-    rawData.orderProducts.forEach(order => {
+    const orderProductsByOrderNumber = new Map<
+        string,
+        {
+            id: number
+            order_number: string
+            product_code: string
+            ordered_quantity: number
+        }[]
+    >()
+    rawData.orderProducts.forEach((order) => {
         orderProductsByOrderNumber.set(order.order_number, [...(orderProductsByOrderNumber.get(order.order_number) ?? []), order])
     })
-    const orderProductsByProductCode = new Map<string, { id: number; order_number: string; product_code: string; ordered_quantity: number }[]>()
-    rawData.orderProducts.forEach(order => {
+    const orderProductsByProductCode = new Map<
+        string,
+        {
+            id: number
+            order_number: string
+            product_code: string
+            ordered_quantity: number
+        }[]
+    >()
+    rawData.orderProducts.forEach((order) => {
         orderProductsByProductCode.set(order.product_code, [...(orderProductsByProductCode.get(order.product_code) ?? []), order])
     })
-    const orderProductsById = new Map(rawData.orderProducts.map(order => [order.id, order]))
+    const orderProductsById = new Map(rawData.orderProducts.map((order) => [order.id, order]))
 
-    const clientsByCode = new Map(rawData.clients.map(client => [client.code, client]))
+    const clientsByCode = new Map(rawData.clients.map((client) => [client.code, client]))
 
-    const assemblyById = new Map(rawData.assemblies.map(assembly => [assembly.id, assembly]))
+    const assemblyById = new Map(rawData.assemblies.map((assembly) => [assembly.id, assembly]))
 
     return {
         ...rawData,

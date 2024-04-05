@@ -21,10 +21,9 @@ declare module 'scaledrone-node' {
     export default Scaledrone
 }
 
-declare global{
+declare global {
     const Scaledrone: typeof Scaledrone
 }
-
 
 // declare module "json-complete" {
 //     declare function encode<T>(obj: T): string

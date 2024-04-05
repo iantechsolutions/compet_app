@@ -1,12 +1,12 @@
 /* eslint-disable */
 
-import dayjs from "dayjs"
-import { monthCodeFromDate, monthCodeToDate } from "~/lib/utils"
-import { db } from "~/server/db"
-import { sql } from "drizzle-orm"
-import { OrderProductSold, OrderSold } from "~/lib/types"
-import { ForecastProfile } from "./transform_mrp_data"
-import { RawMRPData, queryBaseMRPData } from "./query_mrp_data"
+import dayjs from 'dayjs'
+import { sql } from 'drizzle-orm'
+import { OrderProductSold, type OrderSold } from '~/lib/types'
+import { monthCodeFromDate, monthCodeToDate } from '~/lib/utils'
+import { db } from '~/server/db'
+import { type RawMRPData, queryBaseMRPData } from './query_mrp_data'
+import type { ForecastProfile } from './transform_mrp_data'
 
 type ForecastDataEvent = {
     type: 'sold' | 'budget' // | 'import'
@@ -16,9 +16,8 @@ type ForecastDataEvent = {
     originalQuantity?: number
 }
 
-
 export async function queryForecastData(forecastProfile: ForecastProfile, mrpRawData?: RawMRPData) {
-    const data = mrpRawData ?? await queryBaseMRPData()
+    const data = mrpRawData ?? (await queryBaseMRPData())
 
     const budgetProducts = data.budget_products
     const clientInclusionSet = forecastProfile.clientInclusionList ? new Set(forecastProfile.clientInclusionList) : null
@@ -48,16 +47,18 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
         ordersSoldByN_COMP.set(orderSold.N_COMP, orderSold)
     }
 
-    const soldProducts = soldProductsBase.map((soldProduct) => {
-        const order = ordersSoldByN_COMP.get(soldProduct.N_COMP)!
-        return {
-            ...soldProduct,
-            order,
-        }
-    }).filter(soldProduct => {
-        if(clientInclusionSet && !clientInclusionSet.has(soldProduct.order.client_code.toString())) return false
-        return true
-    })
+    const soldProducts = soldProductsBase
+        .map((soldProduct) => {
+            const order = ordersSoldByN_COMP.get(soldProduct.N_COMP)!
+            return {
+                ...soldProduct,
+                order,
+            }
+        })
+        .filter((soldProduct) => {
+            if (clientInclusionSet && !clientInclusionSet.has(soldProduct.order.client_code.toString())) return false
+            return true
+        })
 
     const productsSoldMonthlyByCode = new Map<string, Map<string, number>>()
 
@@ -104,8 +105,6 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
         productSoldAverageMonthlyByCode.set(code, total / 6)
     }
 
-
-
     if (forecastProfile.includeSales) {
         // for next 9 months (starting the next month)
         for (let i = 1; i < 10; i++) {
@@ -124,9 +123,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
         }
     }
 
-
     /** END BUDGETS AREA */
-
 
     /**
      * BUDGETS AREA
@@ -137,7 +134,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
     if (forecastProfile.includeBudgets) {
         const productsBudgetForecastByMonth = new Map<string, Map<string, number>>()
 
-        data.months.forEach(month => {
+        data.months.forEach((month) => {
             productsBudgetForecastByMonth.set(month, new Map())
         })
 
@@ -145,8 +142,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
             const budget = data.budgetsById.get(budgetProduct.budget_id)
             if (!budget) continue
 
-            if(clientInclusionSet && !clientInclusionSet.has(budget.client_id.toString())) continue
-
+            if (clientInclusionSet && !clientInclusionSet.has(budget.client_id.toString())) continue
 
             // if (budget.finished_date) continue
             // if (budget.validity_date && new Date(budget.validity_date) < new Date()) continue
@@ -188,7 +184,6 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
     }
 
     /** END BUDGETS AREA */
-
 
     return {
         // soldProducts,

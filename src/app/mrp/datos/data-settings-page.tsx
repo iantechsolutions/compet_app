@@ -1,27 +1,27 @@
-"use client"
+'use client'
 
-import dayjs from "dayjs";
-import { Loader2Icon } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import AppSidenav from "~/components/app-sidenav";
-import AppLayout from "~/components/applayout";
-import DataUploadingCard from "~/components/data-uploading-card";
-import { useMRPData, useMRPInvalidateAndReloadData } from "~/components/mrp-data-provider";
-import { NavUserData } from "~/components/nav-user-section";
-import { Title } from "~/components/title";
-import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
-import { useGlobalState, useOnMounted } from "~/lib/hooks";
-import { nullProfile } from "~/lib/nullForecastProfile";
-import { cn } from "~/lib/utils";
-import { RouterOutputs } from "~/trpc/shared";
+import dayjs from 'dayjs'
+import { Loader2Icon } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useRef, useState } from 'react'
+import AppSidenav from '~/components/app-sidenav'
+import AppLayout from '~/components/applayout'
+import DataUploadingCard from '~/components/data-uploading-card'
+import { useMRPData, useMRPInvalidateAndReloadData } from '~/components/mrp-data-provider'
+import type { NavUserData } from '~/components/nav-user-section'
+import { Title } from '~/components/title'
+import { Button } from '~/components/ui/button'
+import { Card } from '~/components/ui/card'
+import { useGlobalState, useOnMounted } from '~/lib/hooks'
+import { nullProfile } from '~/lib/nullForecastProfile'
+import { cn } from '~/lib/utils'
+import type { RouterOutputs } from '~/trpc/shared'
 
 export default function DataSettingsPage(props: {
-    user?: NavUserData,
-    dataInfo: RouterOutputs['mrpData']['mrpDataInfo'],
-    forecastProfile: RouterOutputs['forecast']['currentProfile'],
+    user?: NavUserData
+    dataInfo: RouterOutputs['mrpData']['mrpDataInfo']
+    forecastProfile: RouterOutputs['forecast']['currentProfile']
 }) {
     const date = dayjs(props.dataInfo.exportDate)
     const data = useMRPData()
@@ -30,57 +30,72 @@ export default function DataSettingsPage(props: {
 
     const dataMismatch = data.forecastData?.forecastProfile.id != forecastProfile.id || data.dataExportUrl != props.dataInfo.exportURL
 
-    return <AppLayout
-        title={<h1>Config. de datos</h1>}
-        user={props.user}
-        sidenav={<AppSidenav />}
-    >
-        <DataUploadingCard />
+    return (
+        <AppLayout title={<h1>Config. de datos</h1>} user={props.user} sidenav={<AppSidenav />}>
+            <DataUploadingCard />
 
-        <Title>Origen de datos</Title>
+            <Title>Origen de datos</Title>
 
-        <p>
-            Último export de datos{` `}
-            <b>{date.format("DD/MM/YYYY")}</b>
-            {` `}a las{` `}
-            <b>{date.format("HH:mm:ss")}</b>
-        </p>
-        <p>
-            Archivo de datos:{' '}
-            <Link href={props.dataInfo.exportURL} className="underline font-medium text-blue-500" target="_blank">
-                {props.dataInfo.exportURL}
+            <p>
+                Último export de datos{` `}
+                <b>{date.format('DD/MM/YYYY')}</b>
+                {` `}a las{` `}
+                <b>{date.format('HH:mm:ss')}</b>
+            </p>
+            <p>
+                Archivo de datos:{' '}
+                <Link href={props.dataInfo.exportURL} className='underline font-medium text-blue-500' target='_blank'>
+                    {props.dataInfo.exportURL}
+                </Link>
+            </p>
+            <p>
+                Perfil de forecast:{' '}
+                <b>
+                    {forecastProfile.name} (id: {forecastProfile.id ?? 0})
+                </b>
+            </p>
+            <Title className='mt-5'>Mostrando actualmente</Title>
+            <Link href={data.dataExportUrl} className='underline font-medium text-blue-500 text-sm' target='_blank'>
+                {data.dataExportUrl}
             </Link>
-        </p>
-        <p>Perfil de forecast: <b>{forecastProfile.name} (id: {forecastProfile.id ?? 0})</b></p>
-        <Title className="mt-5">Mostrando actualmente</Title>
-        <Link href={data.dataExportUrl} className="underline font-medium text-blue-500 text-sm" target="_blank">
-            {data.dataExportUrl}
-        </Link>
-        <p>Perfil de forecast: <b>{data.forecastData!.forecastProfile.name} (id: {data.forecastData!.forecastProfile.id ?? 0})</b></p>
-        <p>
-            Fecha del export:{` `}
-            <b>{dayjs(data.dataExportDate).format("DD/MM/YYYY")}</b>
-            {` `}a las{` `}
-            <b>{dayjs(data.dataExportDate).format("HH:mm:ss")}</b>
-        </p>
-        {dataMismatch && <div className="mt-5">
-            <p className="font-semibold text-red-500">
-                Los datos mostrados no coinciden con los datos exportados. Recargue los datos.
+            <p>
+                Perfil de forecast:{' '}
+                <b>
+                    {data.forecastData!.forecastProfile.name} (id: {data.forecastData!.forecastProfile.id ?? 0})
+                </b>
             </p>
-        </div>}
-        {!dataMismatch && <div className="mt-5">
-            <p className="font-semibold text-green-500">
-                Datos sincronizados correctamente.
+            <p>
+                Fecha del export:{` `}
+                <b>{dayjs(data.dataExportDate).format('DD/MM/YYYY')}</b>
+                {` `}a las{` `}
+                <b>{dayjs(data.dataExportDate).format('HH:mm:ss')}</b>
             </p>
-        </div>}
-        <Button className="mt-3 w-full max-w-[600px]" onClick={() => invalidateAndReloadData()} variant={dataMismatch ? 'default' : 'secondary'}>Recargar datos</Button>
+            {dataMismatch && (
+                <div className='mt-5'>
+                    <p className='font-semibold text-red-500'>
+                        Los datos mostrados no coinciden con los datos exportados. Recargue los datos.
+                    </p>
+                </div>
+            )}
+            {!dataMismatch && (
+                <div className='mt-5'>
+                    <p className='font-semibold text-green-500'>Datos sincronizados correctamente.</p>
+                </div>
+            )}
+            <Button
+                className='mt-3 w-full max-w-[600px]'
+                onClick={() => invalidateAndReloadData()}
+                variant={dataMismatch ? 'default' : 'secondary'}
+            >
+                Recargar datos
+            </Button>
 
-        <hr className="my-5 block" />
+            <hr className='my-5 block' />
 
-        <RemoteUpdateComponent />
-    </AppLayout>
+            <RemoteUpdateComponent />
+        </AppLayout>
+    )
 }
-
 
 export type RemoteUpdateProgress = {
     value: number
@@ -91,9 +106,11 @@ export type RemoteUpdateProgress = {
 }
 
 function RemoteUpdateComponent() {
-
     const [requestRemoteUpdate, setRequestRemoteUpdate] = useGlobalState<(() => void) | null>('mrp.data.requestRemoteUpdate', null)
-    const [remoteUpdateProgress, _setRemoteUpdateProgress] = useGlobalState<RemoteUpdateProgress | null>('mrp.data.remoteUpdateProgress', null)
+    const [remoteUpdateProgress, _setRemoteUpdateProgress] = useGlobalState<RemoteUpdateProgress | null>(
+        'mrp.data.remoteUpdateProgress',
+        null,
+    )
     const progressRef = useRef<RemoteUpdateProgress | null>(remoteUpdateProgress)
 
     const setRemoteUpdateProgress = (value: RemoteUpdateProgress | null) => {
@@ -115,9 +132,9 @@ function RemoteUpdateComponent() {
         const rc = await fetch('/api/scaledrone_channel')
         const { channel } = await rc.json()
 
-        const drone = new Scaledrone(channel);
+        const drone = new Scaledrone(channel)
 
-        drone.on('open', async function (error) {
+        drone.on('open', async (error) => {
             if (error) {
                 console.error(error)
                 return
@@ -129,7 +146,7 @@ function RemoteUpdateComponent() {
             drone.authenticate(token)
         })
 
-        drone.on('authenticate', function (error) {
+        drone.on('authenticate', (error) => {
             if (error) {
                 console.error(error)
             } else {
@@ -139,18 +156,18 @@ function RemoteUpdateComponent() {
             }
         })
 
-        drone.on('error', function (error) {
+        drone.on('error', (error) => {
             console.error(error)
         })
 
         function onReady() {
             console.log('messaging ready')
 
-            const room = drone.subscribe('update_progress');
+            const room = drone.subscribe('update_progress')
 
             drone.publish({
                 room: 'request_data_update',
-                message: "null",
+                message: 'null',
             })
 
             setRequestRemoteUpdate(() => {
@@ -167,7 +184,7 @@ function RemoteUpdateComponent() {
                             message: 'Error de conexión (el servidor no responde)',
                             finished: false,
                             timestamp: Date.now(),
-                            error: true
+                            error: true,
                         })
                     }, 25000)
 
@@ -176,17 +193,17 @@ function RemoteUpdateComponent() {
                         message: 'Esperando información del servidor',
                         finished: false,
                         timestamp: Date.now(),
-                        error: false
+                        error: false,
                     })
 
                     drone.publish({
                         room: 'request_data_update',
-                        message: Date.now().toString()
+                        message: Date.now().toString(),
                     })
                 }
             })
 
-            room.on('message', async message => {
+            room.on('message', async (message) => {
                 const data = JSON.parse(message.data) as RemoteUpdateProgress
                 if (data.finished) {
                     invalidateAndReloadData()
@@ -201,29 +218,33 @@ function RemoteUpdateComponent() {
         }
     }
 
+    return (
+        <section className='w-full max-w-[600px]'>
+            <Title>Base de datos de tango</Title>
+            {(!remoteUpdateProgress || remoteUpdateProgress.error) && (
+                <Button
+                    className='mb-5'
+                    onClick={() => {
+                        requestRemoteUpdate?.()
+                    }}
+                    disabled={!requestRemoteUpdate}
+                >
+                    Solicitar actualización de datos
+                </Button>
+            )}
 
-
-    return <section className="w-full max-w-[600px]">
-        <Title>Base de datos de tango</Title>
-        {(!remoteUpdateProgress || remoteUpdateProgress.error) && <Button
-            className="mb-5"
-            onClick={() => {
-                requestRemoteUpdate?.()
-            }}
-            disabled={!requestRemoteUpdate}
-        >
-            Solicitar actualización de datos
-        </Button>}
-
-        {remoteUpdateProgress && <Card className="flex p-5 gap-5 items-center break-words">
-            {!remoteUpdateProgress.error && <Loader2Icon className="mr-2 animate-spin" />}
-            <p
-                className={cn('font-medium', {
-                    'text-red-500': remoteUpdateProgress?.error
-                })}
-            >
-                {progressRef.current?.message}
-            </p>
-        </Card>}
-    </section>
+            {remoteUpdateProgress && (
+                <Card className='flex p-5 gap-5 items-center break-words'>
+                    {!remoteUpdateProgress.error && <Loader2Icon className='mr-2 animate-spin' />}
+                    <p
+                        className={cn('font-medium', {
+                            'text-red-500': remoteUpdateProgress?.error,
+                        })}
+                    >
+                        {progressRef.current?.message}
+                    </p>
+                </Card>
+            )}
+        </section>
+    )
 }

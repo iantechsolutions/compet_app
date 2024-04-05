@@ -1,4 +1,4 @@
-import { ForecastProfile } from "~/mrp_data/transform_mrp_data";
+import type { ForecastProfile } from '~/mrp_data/transform_mrp_data'
 
 export const nullProfile: ForecastProfile = {
     salesIncrementFactor: 0,

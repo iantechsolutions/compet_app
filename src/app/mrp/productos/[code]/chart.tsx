@@ -1,13 +1,16 @@
-import { MRPProduct } from "~/mrp_data/transform_mrp_data";
 import type { Props } from 'react-apexcharts/types/react-apexcharts'
+import type { MRPProduct } from '~/mrp_data/transform_mrp_data'
 type ApexOptions = Props['options']
 
 // import dynamic from "next/dynamic";
-import dayjs from "dayjs";
-import { formatStock } from "~/lib/utils";
+import dayjs from 'dayjs'
 import Chart from 'react-apexcharts'
+import { formatStock } from '~/lib/utils'
 
-export function ProductEventsChart(props: { product: MRPProduct, months: string[] }) {
+export function ProductEventsChart(props: {
+    product: MRPProduct
+    months: string[]
+}) {
     const series = [
         {
             name: 'Importaciones',
@@ -52,7 +55,6 @@ export function ProductEventsChart(props: { product: MRPProduct, months: string[
     ]
 
     const options: ApexOptions = {
-
         chart: {
             height: 350,
             type: 'line',
@@ -60,12 +62,12 @@ export function ProductEventsChart(props: { product: MRPProduct, months: string[
         },
         stroke: {
             width: [0, 2, 5],
-            curve: 'smooth'
+            curve: 'smooth',
         },
         plotOptions: {
             bar: {
-                columnWidth: '50%'
-            }
+                columnWidth: '50%',
+            },
         },
 
         fill: {
@@ -73,24 +75,21 @@ export function ProductEventsChart(props: { product: MRPProduct, months: string[
             gradient: {
                 inverseColors: false,
                 shade: 'light',
-                type: "vertical",
+                type: 'vertical',
                 opacityFrom: 0.85,
                 opacityTo: 0.55,
-                stops: [0, 100, 100, 100]
-            }
+                stops: [0, 100, 100, 100],
+            },
         },
         labels: props.months,
         markers: {
-            size: 0
+            size: 0,
         },
         xaxis: {
             type: 'datetime',
             labels: {
-                formatter: function (value: string) {
-                    return dayjs(value).format('YYYY-MM (MMMM)');
-                }
-            }
-
+                formatter: (value: string) => dayjs(value).format('YYYY-MM (MMMM)'),
+            },
         },
         yaxis: {
             title: {
@@ -101,9 +100,7 @@ export function ProductEventsChart(props: { product: MRPProduct, months: string[
                 text: 'Cantidad',
             },
             labels: {
-                formatter: function (value: number) {
-                    return value.toFixed(2);
-                }
+                formatter: (value: number) => value.toFixed(2),
             },
             // min: 0
         },
@@ -111,28 +108,27 @@ export function ProductEventsChart(props: { product: MRPProduct, months: string[
             shared: true,
             intersect: false,
             y: {
-                formatter: function (y: number) {
-                    if (typeof y !== "undefined") {
+                formatter: (y: number) => {
+                    if (typeof y !== 'undefined') {
                         // return y.toFixed(2) + " metros";
-                        return formatStock(y);
+                        return formatStock(y)
                     }
-                    return y;
-
-                }
-            }
+                    return y
+                },
+            },
         },
     }
 
     return (
-        <div id="chart">
+        <div id='chart'>
             {/* {createElement(Chart as any, { options, series, type: "line", height: 350 })} */}
-            <Chart 
-                options={options} 
-                series={series} 
-                type="line" 
-                height={350} 
+            <Chart
+                options={options}
+                series={series}
+                type='line'
+                height={350}
                 // className="w-full"
             />
         </div>
-    );
+    )
 }

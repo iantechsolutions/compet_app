@@ -1,13 +1,10 @@
-import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import {
-    type DefaultSession,
-    type NextAuthConfig,
-} from "next-auth";
-import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { env } from "~/env";
-import { pgTable } from "~/server/db/schema";
-import { db } from "~/server/db";
+import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import NextAuth from 'next-auth'
+import type { DefaultSession, NextAuthConfig } from 'next-auth'
+import GoogleProvider from 'next-auth/providers/google'
+import { env } from '~/env'
+import { db } from '~/server/db'
+import { pgTable } from '~/server/db/schema'
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -15,13 +12,13 @@ import { db } from "~/server/db";
  *
  * @see https://next-auth.js.org/getting-started/typescript#module-augmentation
  */
-declare module "next-auth" {
+declare module 'next-auth' {
     interface Session extends DefaultSession {
         user: {
-            id: string;
+            id: string
             // ...other properties
             // role: UserRole;
-        } & DefaultSession["user"];
+        } & DefaultSession['user']
     }
 
     // interface User {
@@ -61,14 +58,11 @@ export const authOptions: NextAuthConfig = {
          * @see https://next-auth.js.org/providers/github
          */
     ],
-};
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const {
-    handlers,
-    auth,
-} = NextAuth(authOptions)
+const { handlers, auth } = NextAuth(authOptions)
 
 export { handlers }
 
-export const getServerAuthSession = auth;
+export const getServerAuthSession = auth
