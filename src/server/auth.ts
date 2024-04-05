@@ -6,7 +6,7 @@ import {
 } from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { env } from "~/env";
-import { mysqlTable } from "~/server/db/schema";
+import { pgTable } from "~/server/db/schema";
 import { db } from "~/server/db";
 
 /**
@@ -45,7 +45,7 @@ export const authOptions: NextAuthConfig = {
             },
         }),
     },
-    adapter: DrizzleAdapter(db, mysqlTable),
+    adapter: DrizzleAdapter(db, pgTable),
     providers: [
         GoogleProvider({
             clientId: env.GOOGLE_CLIENT_ID,

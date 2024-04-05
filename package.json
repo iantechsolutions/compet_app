@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "db:push": "dotenv drizzle-kit push:mysql",
+    "db:push": "dotenv drizzle-kit push:pg",
     "db:studio": "dotenv drizzle-kit studio",
     "load-data": "tsx src/scripts/load-data.ts",
     "listen-load-data": "tsx src/scripts/listen-load-data.ts",
