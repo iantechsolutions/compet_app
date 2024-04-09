@@ -1,6 +1,19 @@
 import type { AdapterAccount } from '@auth/core/adapters'
 import { relations, sql } from 'drizzle-orm'
-import { boolean, index, integer, json, numeric, pgTableCreator, primaryKey, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import {
+    boolean,
+    index,
+    integer,
+    json,
+    numeric,
+    pgTableCreator,
+    primaryKey,
+    real,
+    serial,
+    text,
+    timestamp,
+    varchar,
+} from 'drizzle-orm/pg-core'
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -83,10 +96,10 @@ export const forecastProfiles = pgTable('forecastProfile', {
     name: varchar('name', { length: 255 }).notNull(),
 
     includeSales: boolean('include_sales').notNull().default(true),
-    salesIncrementFactor: numeric('sales_increment_factor').notNull(),
+    salesIncrementFactor: real('sales_increment_factor').notNull(),
 
     includeBudgets: boolean('include_budgets').notNull().default(true),
-    budgetsInclusionFactor: numeric('budgets_inclusion_factor').notNull(),
+    budgetsInclusionFactor: real('budgets_inclusion_factor').notNull(),
 
     clientInclusionList: json('include_clients').$type<string[] | null>().default(null),
 

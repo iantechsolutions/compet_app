@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { nullProfile } from '~/lib/nullForecastProfile'
 import { getUserSetting, setUserSetting } from '~/lib/settings'
+import { createId } from '~/lib/utils'
 import { db } from '~/server/db'
 import * as schema from '~/server/db/schema'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
@@ -25,7 +26,6 @@ export const forecastRouter = createTRPCRouter({
             const r = await ctx.db
                 .insert(schema.forecastProfiles)
                 .values({
-                    // @ts-ignore
                     budgetsInclusionFactor: input.budgetsInclusionFactor,
                     clientInclusionList: input.clientInclusionList,
                     includeBudgets: input.includeBudgets,
@@ -34,7 +34,7 @@ export const forecastRouter = createTRPCRouter({
                     name: input.name,
                 })
                 .returning({ id: schema.forecastProfiles.id })
-            return r[0]?.id
+            return r[0]!.id
         }),
     listProfiles: protectedProcedure.query(async ({ ctx }) => {
         const profiles = await ctx.db.query.forecastProfiles.findMany()

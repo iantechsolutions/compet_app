@@ -70,7 +70,7 @@ export default function ForecastDialogForm(props: {
                 budgetsInclusionFactor: Number.parseFloat(budgetsInclusionPercentage) / 100,
                 clientInclusionList,
             })
-            await applyProfile({ id: Number.parseInt(insertId) })
+            await applyProfile({ id: insertId })
             invalidateAndReloadData()
         } catch (error) {
             console.error(error)
