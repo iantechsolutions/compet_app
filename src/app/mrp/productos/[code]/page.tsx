@@ -14,7 +14,7 @@ import { ForecastSupplyEventsRow } from './forecast_supply_events_row'
 import { useCurrentProduct } from './product_provider'
 import { useProductPageData } from './use_product_page_data'
 
-export default function ProductPage(props: { user?: NavUserData }) {
+export default function ProductPage() {
     const data: MRPData = useMRPData()
 
     const params = useParams<{ code: string }>()
