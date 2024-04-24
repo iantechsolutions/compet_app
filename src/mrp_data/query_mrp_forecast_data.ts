@@ -56,7 +56,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
             }
         })
         .filter((soldProduct) => {
-            if (clientInclusionSet && clientInclusionSet.has(soldProduct.order.client_code.toString())) return false
+            if (clientInclusionSet && !clientInclusionSet.has(soldProduct.order.client_code.toString())) return false
             return true
         })
 
