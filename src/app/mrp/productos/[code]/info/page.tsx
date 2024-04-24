@@ -22,8 +22,6 @@ export default function ProductInfoPage() {
         })
     }, [data])
 
-    console.log(orders)
-
     return (
         <>
             <ClientsOrdersQuantityPieChart

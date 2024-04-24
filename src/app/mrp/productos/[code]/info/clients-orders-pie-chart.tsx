@@ -21,7 +21,5 @@ export default function ClientsOrdersQuantityPieChart({ orders }: { orders: Orde
         }
     }
 
-    console.log(data)
-
     return <Chart data={data} chartType='PieChart' options={{ title: 'Vendido por cliente' }} />
 }

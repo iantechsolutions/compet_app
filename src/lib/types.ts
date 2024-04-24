@@ -126,7 +126,7 @@ export const orderProductSoldSchema = z.object({
 })
 
 export const crmClientSchema = z.object({
-    client_id: z.number(),
+    client_id: z.number().transform((id) => id.toString()),
     business_name: z.string(),
     name: z.string(),
     address: z.string().catch(''),
@@ -145,8 +145,8 @@ export const crmClientSchema = z.object({
 })
 
 export const crmBudgetSchema = z.object({
+    client_id: z.number().transform((id) => id.toString()),
     budget_id: z.number(),
-    client_id: z.number(),
     category_id: z.number(),
     date: nullableDate,
     validity_date: nullableDate,

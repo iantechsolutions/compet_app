@@ -5,6 +5,7 @@ import { getSetting } from '~/lib/settings'
 import type {
     CrmBudget,
     CrmBudgetProduct,
+    CrmClient,
     Order,
     OrderProductSold,
     Product,
@@ -43,13 +44,19 @@ export async function queryBaseMRPData() {
         products_imports,
         orders,
         products_orders,
-        clients,
+        clients: clients_bad,
         sold,
         products_sold,
-        budgets,
+        budgets: budgets_bad,
         budget_products,
-        crm_clients,
+        crm_clients: crm_clients_bad,
     } = data
+
+    const { budgets, clients, crm_clients } = transformClientsIdsCodes({
+        budgets: budgets_bad,
+        clients: clients_bad,
+        crm_clients: crm_clients_bad,
+    })
 
     const productByCode: Map<string, Product> = new Map()
     for (const product of products) {
@@ -177,6 +184,71 @@ export async function queryBaseMRPData() {
         dataExportUrl: exportURL,
         dataExportDate: dataInfo.exportDate,
     }
+}
+
+export function transformClientsIdsCodes({
+    budgets,
+    clients,
+    crm_clients,
+}: Pick<DataExport, 'crm_clients' | 'clients' | 'budgets'>): Pick<DataExport, 'crm_clients' | 'clients' | 'budgets'> {
+    const clientsByName: Map<string, (typeof clients)[number]> = new Map()
+    const clientsByAddress: Map<string, (typeof clients)[number]> = new Map()
+    const clientsByPhone: Map<string, (typeof clients)[number]> = new Map()
+    const clientsByCode: Map<string, (typeof clients)[number]> = new Map()
+
+    for (const client of clients) {
+        clientsByName.set(simplifyName(client.name), client)
+    }
+
+    for (const client of clients) {
+        clientsByCode.set(client.code, client)
+    }
+
+    for (const client of clients) {
+        if (client.address.trim() === '') continue
+        clientsByAddress.set(simplifyName(client.address), client)
+    }
+
+    for (const client of clients) {
+        if (client.phone.trim() === '') continue
+        clientsByPhone.set(simplifyName(client.phone), client)
+    }
+
+    const clientIdMap: Map<string, string> = new Map()
+
+    for (const c of crm_clients) {
+        const crmName = simplifyName(c.name)
+        const code =
+            clientsByName.get(crmName)?.code ||
+            clientsByCode.get(c.tango_code)?.code ||
+            clientsByAddress.get(simplifyName(c.address))?.code ||
+            clientsByPhone.get(simplifyName(c.phone1))?.code
+
+        clientIdMap.set(c.client_id.toString(), code ?? c.client_id.toString())
+    }
+
+    return {
+        budgets: budgets.map((budget) => ({
+            ...budget,
+            client_id: clientIdMap.get(budget.client_id.toString()) ?? budget.client_id,
+        })),
+        clients,
+        crm_clients: crm_clients.map((crm_client) => ({
+            ...crm_client,
+            client_id: clientIdMap.get(crm_client.client_id.toString()) ?? crm_client.client_id,
+        })),
+    }
+}
+
+export function simplifyName(name: string) {
+    return name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .replace(/(\d+)/g, ' $1 ')
+        .replace(/\s+/g, ' ')
+        .trim()
 }
 
 export type RawMRPData = Awaited<ReturnType<typeof queryBaseMRPData>>
