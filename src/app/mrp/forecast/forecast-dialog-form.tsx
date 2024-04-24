@@ -53,11 +53,11 @@ export default function ForecastDialogForm(props: {
         budgetsByClient.set(budget.client_id, budgets)
     }
 
-    const clients = data.clients
+    const crmClients = data.crm_clients
 
     const clientsWithBudgets = useMemo(() => {
-        return clients.filter((client) => quantityByClient.has(client.code))
-    }, [clients, quantityByClient])
+        return crmClients.filter((client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode.has(client.tango_code)))
+    }, [crmClients, quantityByClient])
 
     async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -156,10 +156,10 @@ export default function ForecastDialogForm(props: {
                             <div className='h-5' />
                             <ListSelectionDialog
                                 options={clientsWithBudgets.map((client) => ({
-                                    value: client.code.toString(),
-                                    title: client.name,
-                                    subtitle: `Presupuestos: ${budgetsByClient.get(client.code)?.length
-                                        }. Total presupuestado: ${formatStock(quantityByClient.get(client.code) ?? 0)}.`,
+                                    value: client.client_id.toString(),
+                                    title: client.name || client.business_name,
+                                    subtitle: budgetsByClient.get(client.client_id) ? `Presupuestos: ${budgetsByClient.get(client.client_id)?.length
+                                        }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.` : '(sin registros en CRM)',
                                 }))}
                                 onApply={(selected) => {
                                     if (selected.length === clientsWithBudgets.length) {
@@ -168,7 +168,7 @@ export default function ForecastDialogForm(props: {
                                         setClientInclusionList(selected)
                                     }
                                 }}
-                                defaultValues={clientInclusionList ?? clientsWithBudgets.map((client) => client.code.toString())}
+                                defaultValues={clientInclusionList ?? clientsWithBudgets.map((client) => client.client_id.toString())}
                                 title='Seleccionar clientes'
                             >
                                 <Button variant='outline' className='w-full relative' type='button'>

@@ -191,51 +191,33 @@ export function transformClientsIdsCodes({
     clients,
     crm_clients,
 }: Pick<DataExport, 'crm_clients' | 'clients' | 'budgets'>): Pick<DataExport, 'crm_clients' | 'clients' | 'budgets'> {
-    const clientsByName: Map<string, (typeof clients)[number]> = new Map()
-    const clientsByAddress: Map<string, (typeof clients)[number]> = new Map()
-    const clientsByPhone: Map<string, (typeof clients)[number]> = new Map()
     const clientsByCode: Map<string, (typeof clients)[number]> = new Map()
-
-    for (const client of clients) {
-        clientsByName.set(simplifyName(client.name), client)
-    }
 
     for (const client of clients) {
         clientsByCode.set(client.code, client)
     }
 
-    for (const client of clients) {
-        if (client.address.trim() === '') continue
-        clientsByAddress.set(simplifyName(client.address), client)
-    }
-
-    for (const client of clients) {
-        if (client.phone.trim() === '') continue
-        clientsByPhone.set(simplifyName(client.phone), client)
-    }
-
     const clientIdMap: Map<string, string> = new Map()
 
     for (const c of crm_clients) {
-        const crmName = simplifyName(c.name)
-        const code =
-            clientsByName.get(crmName)?.code ||
-            clientsByCode.get(c.tango_code)?.code ||
-            clientsByAddress.get(simplifyName(c.address))?.code ||
-            clientsByPhone.get(simplifyName(c.phone1))?.code
+        const code = clientsByCode.get(c.tango_code)?.code
 
-        clientIdMap.set(c.client_id.toString(), code ?? c.client_id.toString())
+        if (!code) {
+            continue
+        }
+
+        clientIdMap.set(c.client_id.toString(), code)
     }
 
     return {
         budgets: budgets.map((budget) => ({
             ...budget,
-            client_id: clientIdMap.get(budget.client_id.toString()) ?? budget.client_id,
+            client_id: clientIdMap.get(budget.client_id.toString()) ?? budget.client_id.toString(),
         })),
         clients,
         crm_clients: crm_clients.map((crm_client) => ({
             ...crm_client,
-            client_id: clientIdMap.get(crm_client.client_id.toString()) ?? crm_client.client_id,
+            client_id: clientIdMap.get(crm_client.client_id.toString()) ?? crm_client.client_id.toString(),
         })),
     }
 }

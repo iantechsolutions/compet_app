@@ -19,8 +19,8 @@ export default function ForecastProfileCard(props: {
 
     const data = useMRPData()
 
-    const quantityByClient = new Map<number, number>()
-    const budgetsByClient = new Map<number, CrmBudget[]>()
+    const quantityByClient = new Map<string, number>()
+    const budgetsByClient = new Map<string, CrmBudget[]>()
 
     for (const budgetProduct of data.budget_products) {
         const budget = data.budgetsById.get(budgetProduct.budget_id)
@@ -38,10 +38,9 @@ export default function ForecastProfileCard(props: {
     const crmClients = data.crm_clients
 
     const clientsWithBudgets = useMemo(() => {
-        return crmClients.filter(
-            (client) => quantityByClient.has(client.client_id) && !profile.clientInclusionList?.includes(client.client_id.toString()),
-        )
+        return crmClients.filter((client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode.has(client.tango_code)))
     }, [crmClients, quantityByClient])
+
 
     return (
         <li>
@@ -67,16 +66,15 @@ export default function ForecastProfileCard(props: {
                                 options={clientsWithBudgets.map((client) => ({
                                     value: client.client_id.toString(),
                                     title: client.name || client.business_name,
-                                    subtitle: `Presupuestos: ${
-                                        budgetsByClient.get(client.client_id)?.length
-                                    }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`,
+                                    subtitle: `Presupuestos: ${budgetsByClient.get(client.client_id)?.length
+                                        }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`,
                                 }))}
                                 title='Clientes incluidos'
                                 onApply={() => void 0}
                                 defaultValues={clientsWithBudgets.map((c) => c.client_id.toString())}
                             >
                                 <a href='javascript:void(0)' className='ml-1 text-blue-500 underline'>
-                                    ({clientsWithBudgets.length} seleccionados)
+                                    ({profile.clientInclusionList.length} seleccionados)
                                 </a>
                             </ListSelectionDialog>
                         </p>
