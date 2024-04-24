@@ -22,8 +22,8 @@ export function SelectCRMClients() {
 
     const data = useMRPData()
 
-    const quantityByClient = new Map<number, number>()
-    const budgetsByClient = new Map<number, CrmBudget[]>()
+    const quantityByClient = new Map<string, number>()
+    const budgetsByClient = new Map<string, CrmBudget[]>()
 
     for (const budgetProduct of data.budget_products) {
         const budget = data.budgetsById.get(budgetProduct.budget_id)
