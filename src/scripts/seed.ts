@@ -5,7 +5,7 @@ import { settings } from '~/server/db/schema'
 
 await db.insert(settings).values({
     key: 'mrp.export-file',
-    value: '"ea43f9b3-5ae8-4e21-831c-4f6ef7324b4a-9aas34.flatted.json"',
+    value: '"808225cc-dfd3-43eb-b5f4-039fed6532b2-9aas34.flatted.json"',
 })
 
 await db.insert(settings).values({
