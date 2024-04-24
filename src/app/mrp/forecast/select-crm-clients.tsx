@@ -18,7 +18,7 @@ import type { CrmBudget } from '~/lib/types'
 import { formatStock } from '~/lib/utils'
 
 export function SelectCRMClients() {
-    const [unselected, setSelected] = useState<Set<number>>(new Set())
+    const [unselected, setSelected] = useState<Set<string>>(new Set())
 
     const data = useMRPData()
 
