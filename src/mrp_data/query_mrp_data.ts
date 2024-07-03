@@ -212,11 +212,13 @@ export function transformClientsIdsCodes({
     return {
         budgets: budgets.map((budget) => ({
             ...budget,
+            // Id del tango o el original (si el crm no conoce el id del tango)
             client_id: clientIdMap.get(budget.client_id.toString()) ?? budget.client_id.toString(),
         })),
         clients,
         crm_clients: crm_clients.map((crm_client) => ({
             ...crm_client,
+            // Id del tango o el original (si el crm no conoce el id del tango)
             client_id: clientIdMap.get(crm_client.client_id.toString()) ?? crm_client.client_id.toString(),
         })),
     }

@@ -42,6 +42,8 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
         stockOfProductsByMonth.set(product.code, stockOfProductByMonth(product.stock, eventsByProductCode.get(product.code)!, months))
     }
 
+    // product_id: { month_code: number }
+
     const eventsOfProductsByMonth = new Map<string, Map<string, ProductEvent[]>>()
     for (const product of data.products) {
         eventsOfProductsByMonth.set(product.code, eventsOfProductByMonth(eventsByProductCode.get(product.code)!, months))
