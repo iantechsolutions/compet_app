@@ -3,7 +3,7 @@ import { utapi } from '~/server/uploadthing'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const mrpDataRouter = createTRPCRouter({
-    mrpDataInfo: protectedProcedure.query(({}) => {
+    mrpDataInfo: protectedProcedure.query(() => {
         return getMrpExportInfo()
     }),
     obtainDataExportInfo: protectedProcedure.mutation(({ ctx }) => {
@@ -23,7 +23,7 @@ async function getMrpExportInfo() {
         )
     }
 
-    const files = await utapi.getFileUrls(mrpExportFile)
+    const { data: files } = await utapi.getFileUrls([mrpExportFile])
 
     if (files.length == 0) {
         throw new Error(
