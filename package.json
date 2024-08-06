@@ -49,6 +49,7 @@
     "drizzle-orm": "^0.30.7",
     "drizzle-zod": "^0.5.1",
     "flatted": "^3.2.9",
+    "hono": "^4.5.4",
     "json-complete": "^2.0.1",
     "jwt-simple": "^0.5.6",
     "lucide-react": "^0.298.0",

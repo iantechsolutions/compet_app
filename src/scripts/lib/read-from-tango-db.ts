@@ -239,8 +239,10 @@ export async function readDataFromDB(opts?: {
 
     await connection.close()
 
+    const productsFiltered = products.filter((product) => product.code.startsWith('A000') || product.code.startsWith('Z000'))
+
     return {
-        products,
+        products: productsFiltered,
         products_stock_commited,
         providers,
         product_providers,

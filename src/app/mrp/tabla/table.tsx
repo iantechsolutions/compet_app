@@ -207,9 +207,9 @@ export function Table(props: { user?: NavUserData }) {
     function handleListScroll(e: ListOnScrollProps) {
         if (e.scrollOffset === 0) {
             // This events fires before the layout effect, for this reason we need to delay the effect
-            ;(window as any).listScrollTimeout = setTimeout(() => ((window as any).listScroll = e.scrollOffset), 500)
+            ; (window as any).listScrollTimeout = setTimeout(() => ((window as any).listScroll = e.scrollOffset), 500)
         } else {
-            ;(window as any).listScroll = e.scrollOffset
+            ; (window as any).listScroll = e.scrollOffset
             clearTimeout((window as any).listScrollTimeout)
         }
     }
@@ -276,22 +276,33 @@ export function Table(props: { user?: NavUserData }) {
 
 function useFilters() {
     const [filtersHideAllZero, setName] = useQueryState('hide_zero', {
+        clearOnDefault: true,
         defaultValue: true,
         parse: (v) => v === 'true',
     })
+
     const [filtersSearch, setSearch] = useQueryState('search', {
+        clearOnDefault: true,
         defaultValue: '',
     })
+
     const [filtersHideProviders, setProviders] = useQueryState('hide-providers', {
+        clearOnDefault: true,
         defaultValue: new Set<string>(),
         parse: (v) => new Set(v.split(',')),
         serialize: (v) => Array.from(v).join(','),
+    })
+
+    const [suppliesOf, setSuppliesOf] = useQueryState('supplies-of', {
+        defaultValue: '',
+        clearOnDefault: true,
     })
 
     const filters = {
         hideAllZero: filtersHideAllZero,
         hideProviders: filtersHideProviders,
         search: filtersSearch,
+        suppliesOf: suppliesOf.trim() || undefined,
     }
 
     function setFilters(f: Filters) {
@@ -305,6 +316,10 @@ function useFilters() {
 
         if (f.search !== filters.search) {
             setSearch(f.search)
+        }
+
+        if (f.suppliesOf !== suppliesOf) {
+            setSuppliesOf(f.suppliesOf || '')
         }
     }
 
@@ -347,6 +362,19 @@ function useFiltered(data: MRPData, filters: Filters) {
                 }
 
                 return false
+            })
+        }
+        if (filters.suppliesOf) {
+            const product = data.productsByCode.get(filters.suppliesOf)
+            if (!product) {
+                return []
+            }
+
+            const productsIds = new Set(product.supplies.map(p => p.supply_product_code))
+            // productsIds.add(product.code)
+
+            list = list.filter((product) => {
+                return productsIds.has(product.code)
             })
         }
 

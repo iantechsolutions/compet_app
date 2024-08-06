@@ -93,6 +93,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
         monthCodeFromDate(dayjs().toDate()),
     ]
 
+    // key: product_code, value: average sold quantity in the last 6 months
     const productSoldAverageMonthlyByCode = new Map<string, number>()
 
     for (const [code, soldMonthly] of productsSoldMonthlyByCode.entries()) {
@@ -113,6 +114,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
             for (const product_code of productSoldAverageMonthlyByCode.keys()) {
                 const quantity = productSoldAverageMonthlyByCode.get(product_code)!
 
+                // ForecastDataEvent (not same as ProductEvent)
                 events.push({
                     type: 'sold',
                     product_code,

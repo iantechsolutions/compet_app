@@ -27,7 +27,11 @@ export default function ProductLayoutComponent(props: { children: React.ReactNod
     }
 
     return (
-        <AppLayout title={<h1>{product.description}</h1>} user={props?.user} sidenav={<AppSidenav />}>
+        <AppLayout title={<div>
+            <h1>{product.description}</h1>
+            <p className='text-sm'>{product.code}</p>
+        </div>
+        } user={props?.user} sidenav={<AppSidenav />}>
             <ProductProvider product={product}>{props.children}</ProductProvider>
         </AppLayout>
     )

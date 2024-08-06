@@ -16,6 +16,7 @@ export type Filters = {
     search: string
     hideAllZero: boolean
     hideProviders: Set<string>
+    suppliesOf?: string
 }
 
 export function FiltersDialog(props: {
@@ -31,6 +32,13 @@ export function FiltersDialog(props: {
         setFilters({
             ...filters,
             search: event.target.value,
+        })
+    }
+
+    function handleSuppliesOfChange(event: React.ChangeEvent<HTMLInputElement>) {
+        setFilters({
+            ...filters,
+            suppliesOf: event.target.value.trim() || undefined,
         })
     }
 
@@ -81,6 +89,7 @@ export function FiltersDialog(props: {
                     <DialogDescription>Elegir que información mostrar</DialogDescription>
                 </DialogHeader>
                 <Input id='search' placeholder='Buscar...' className='w-full' value={filters.search} onChange={handleSearchChange} />
+                <Input id='supplies_of_code' placeholder='Código de producto' className='w-full' value={filters.suppliesOf || ''} onChange={handleSuppliesOfChange} />
 
                 <div className='flex items-center space-x-2'>
                     <Checkbox id='terms' checked={filters.hideAllZero} onCheckedChange={setHideAllZero} />

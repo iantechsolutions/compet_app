@@ -28,7 +28,7 @@ export type ProductEvent = {
     productAccumulativeStock: number
 }
 
-// Transformamos los datos en el cliente para que sean faciles de consumir y mostrar
+// Transformamos los datos en el cliente para que sean fáciles de consumir y mostrar
 function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | undefined, forecastParams: ForecastProfile | undefined) {
     const data = mapData(rawData, forecastData)
 
@@ -196,10 +196,12 @@ function listAllEvents(data: MappedData) {
 
     const today = dayjs().startOf('day').toDate()
 
+    // Take forecast data and transform it into events that the MRP can understand
     if (data.forecastData) {
         for (const event of data.forecastData.events) {
+            // Transform ForecastDataEvent to ProductEvent
             events.push({
-                type: 'forecast',
+                type: 'forecast', // It indicates that it is a forecast event (not a real life event)
                 forecastType: event.type,
                 referenceId: -1,
                 date: event.date,
@@ -213,6 +215,7 @@ function listAllEvents(data: MappedData) {
         }
     }
 
+    // Events from imports
     for (const productImport of data.productImports) {
         const date = dayjs(productImport.arrival_date).add(15, 'day').toDate()
         events.push({
@@ -227,6 +230,7 @@ function listAllEvents(data: MappedData) {
         })
     }
 
+    // Events from orders
     for (const orderProduct of data.orderProducts) {
         const date = new Date(data.ordersByOrderNumber.get(orderProduct.order_number)!.delivery_date)
 
