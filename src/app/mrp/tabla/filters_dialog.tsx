@@ -4,6 +4,7 @@ import { useWindowSize } from '@uidotdev/usehooks'
 import { Settings2Icon } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import { FixedSizeList as List } from 'react-window'
+import { ComboboxDemo } from '~/components/combobox'
 import ListSelectionDialog from '~/components/list-selection-dialog'
 import { useMRPData } from '~/components/mrp-data-provider'
 import { Button } from '~/components/ui/button'
@@ -24,6 +25,8 @@ export function FiltersDialog(props: {
     onApply: (filters: Filters) => void
     number: number
 }) {
+    const data = useMRPData();
+    const products = data.products;
     const [filters, setFilters] = useState<Filters>(props.initialFilters)
 
     const closeId = useId()
@@ -35,10 +38,10 @@ export function FiltersDialog(props: {
         })
     }
 
-    function handleSuppliesOfChange(event: React.ChangeEvent<HTMLInputElement>) {
+    function handleSuppliesOfChange(value: string) {
         setFilters({
             ...filters,
-            suppliesOf: event.target.value.trim() || undefined,
+            suppliesOf: value.trim() || undefined,
         })
     }
 
@@ -89,8 +92,22 @@ export function FiltersDialog(props: {
                     <DialogDescription>Elegir que información mostrar</DialogDescription>
                 </DialogHeader>
                 <Input id='search' placeholder='Buscar...' className='w-full' value={filters.search} onChange={handleSearchChange} />
-                <Input id='supplies_of_code' placeholder='Código de producto' className='w-full' value={filters.suppliesOf || ''} onChange={handleSuppliesOfChange} />
-
+                {/* <Input id='supplies_of_code' placeholder='Código de producto' className='w-full' value={filters.suppliesOf || ''} onChange={handleSuppliesOfChange} /> */}
+                <ComboboxDemo
+                    title='Codigo de producto'
+                    placeholder='Seleccione un producto finalizado por el que buscar'
+                    value={filters.suppliesOf || ''}
+                    onSelectionChange={(value) => {
+                        handleSuppliesOfChange(value)
+                    }}
+                    options={
+                        products.filter(x => x.supplies && x.supplies.length > 0).map((product) => ({
+                            value: product.code,
+                            label: product.code,
+                        }))
+                    }
+                >
+                </ComboboxDemo>
                 <div className='flex items-center space-x-2'>
                     <Checkbox id='terms' checked={filters.hideAllZero} onCheckedChange={setHideAllZero} />
                     <label
