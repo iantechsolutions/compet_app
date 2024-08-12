@@ -364,8 +364,19 @@ function useFiltered(data: MRPData, filters: Filters) {
             if (!product) {
                 return []
             }
+            let supplies = product.supplies.map(p => p.supply_product_code)
+            let index = 0
 
-            const productsIds = new Set(product.supplies.map(p => p.supply_product_code))
+            while (index < supplies.length) {
+                const prod = data.productsByCode.get(supplies[index] ?? "");
+                console.log(prod);
+                if (prod?.supplies) {
+                    supplies = supplies.concat(prod.supplies.map(p => p.supply_product_code));
+                }
+                index += 1;
+            }
+            const productsIds = new Set(supplies)
+
             list = list.filter((product) => {
                 return productsIds.has(product.code)
             })
