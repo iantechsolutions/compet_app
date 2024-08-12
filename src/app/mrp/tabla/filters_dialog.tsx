@@ -1,7 +1,7 @@
 'use client'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { useWindowSize } from '@uidotdev/usehooks'
-import { Settings2Icon } from 'lucide-react'
+import { Ban, Settings2Icon } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import { FixedSizeList as List } from 'react-window'
 import { ComboboxDemo } from '~/components/combobox'
@@ -38,10 +38,10 @@ export function FiltersDialog(props: {
         })
     }
 
-    function handleSuppliesOfChange(value: string) {
+    function handleSuppliesOfChange(value: string | undefined) {
         setFilters({
             ...filters,
-            suppliesOf: value.trim() || undefined,
+            suppliesOf: value?.trim() || undefined,
         })
     }
 
@@ -93,21 +93,28 @@ export function FiltersDialog(props: {
                 </DialogHeader>
                 <Input id='search' placeholder='Buscar...' className='w-full' value={filters.search} onChange={handleSearchChange} />
                 {/* <Input id='supplies_of_code' placeholder='Código de producto' className='w-full' value={filters.suppliesOf || ''} onChange={handleSuppliesOfChange} /> */}
-                <ComboboxDemo
-                    title='Codigo de producto'
-                    placeholder='Seleccione un producto finalizado por el que buscar'
-                    value={filters.suppliesOf || ''}
-                    onSelectionChange={(value) => {
-                        handleSuppliesOfChange(value)
-                    }}
-                    options={
-                        products.filter(x => x.supplies && x.supplies.length > 0).map((product) => ({
-                            value: product.code,
-                            label: product.code,
-                        }))
-                    }
-                >
-                </ComboboxDemo>
+                <div className='flex flex-row items-center gap-5'>
+                    <ComboboxDemo
+                        title='Codigo de producto'
+                        placeholder='Seleccione un producto finalizado por el que buscar'
+                        value={filters.suppliesOf || ''}
+                        onSelectionChange={(value) => {
+                            handleSuppliesOfChange(value)
+                        }}
+                        options={
+                            products.filter(x => x.supplies && x.supplies.length > 0).map((product) => ({
+                                value: product.code,
+                                label: product.code,
+                            }))
+                        }
+                    >
+                    </ComboboxDemo>
+                    <Button variant={'ghost'}
+                        // className='h-5 w-5'
+                        onClick={(e) => handleSuppliesOfChange(undefined)} >
+                        <Ban height={20} width={20} />
+                    </Button>
+                </div>
                 <div className='flex items-center space-x-2'>
                     <Checkbox id='terms' checked={filters.hideAllZero} onCheckedChange={setHideAllZero} />
                     <label

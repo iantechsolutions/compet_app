@@ -141,7 +141,6 @@ function ListRowContainer({
 function ListRow({ index, style }: { index: number; style: React.CSSProperties }) {
     const ctx = useContext(listRowContext)
     const products = ctx.filteredProducts
-
     const data = useMRPData()
     const product = products[index]!
 
@@ -174,7 +173,6 @@ export function Table(props: { user?: NavUserData }) {
     const [filters, setFilters] = useFilters()
 
     const filtered = useFiltered(data, filters)
-
     const size = useWindowSize()
 
     const h = (size.height ?? 1000) - 110
@@ -330,7 +328,6 @@ function useFiltered(data: MRPData, filters: Filters) {
     return useMemo(() => {
         let list = data.products
         const months = data.months
-
         if (filters.hideAllZero) {
             list = data.products.filter((product) => {
                 if (product.stock != 0) return true
@@ -343,7 +340,6 @@ function useFiltered(data: MRPData, filters: Filters) {
                 return false
             })
         }
-
         if (filters.search) {
             list = list.filter((product) => {
                 return (
@@ -352,8 +348,7 @@ function useFiltered(data: MRPData, filters: Filters) {
                 )
             })
         }
-
-        if (filters.hideProviders.size > 0) {
+        if (filters.hideProviders.size > 0 && !(filters.hideProviders.has("") && filters.hideProviders.size == 1)) {
             list = list.filter((product) => {
                 for (const provider of product.providers) {
                     if (!filters.hideProviders.has(provider.provider_code)) {
@@ -371,15 +366,10 @@ function useFiltered(data: MRPData, filters: Filters) {
             }
 
             const productsIds = new Set(product.supplies.map(p => p.supply_product_code))
-            // productsIds.add(product.code)
-
             list = list.filter((product) => {
                 return productsIds.has(product.code)
             })
-            console.log("lista productos", list);
-            console.log("producto supplies", product.supplies);
         }
-
         return list
     }, [data, filters])
 }
