@@ -18,28 +18,6 @@ import {
 } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 
-const _frameworks = [
-    {
-        value: "next.js",
-        label: "Next.js",
-    },
-    {
-        value: "sveltekit",
-        label: "SvelteKit",
-    },
-    {
-        value: "nuxt.js",
-        label: "Nuxt.js",
-    },
-    {
-        value: "remix",
-        label: "Remix",
-    },
-    {
-        value: "astro",
-        label: "Astro",
-    },
-];
 
 export interface ComboboxProps {
     title: string;
@@ -61,6 +39,7 @@ export function ComboboxDemo({
     const [open, setOpen] = React.useState(false);
     const initialOption = options.find((option) => option.value === value);
     const [_value, _setValue] = React.useState(value ?? "");
+    const [input, setInput] = React.useState("");
     const [label, setLabel] = React.useState(initialOption?.label ?? "");
     const handleSelectionChange = (currentLabel: string) => {
         const newLabel = currentLabel === label.toLowerCase() ? "" : currentLabel;
@@ -86,11 +65,11 @@ export function ComboboxDemo({
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
-                <Command>
-                    <CommandInput placeholder={placeholder} />
+                <Command >
+                    <CommandInput placeholder={placeholder} onValueChange={(e) => setInput(e)} />
                     <CommandEmpty>No option found.</CommandEmpty>
                     <CommandGroup>
-                        {options?.map((option) => (
+                        {options?.filter(x => x.label.includes(input)).map((option) => (
                             <CommandItem
                                 key={option.value}
                                 value={option.label}

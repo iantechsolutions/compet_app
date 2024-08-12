@@ -376,6 +376,8 @@ function useFiltered(data: MRPData, filters: Filters) {
             list = list.filter((product) => {
                 return productsIds.has(product.code)
             })
+            console.log("lista productos", list);
+            console.log("producto supplies", product.supplies);
         }
 
         return list
