@@ -150,7 +150,6 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
             // if (budget.validity_date && new Date(budget.validity_date) < new Date()) continue
 
             // TODO: Preguntar por que fecha utilizar según el presupuesto
-            // console.log(budget.date, budget.next_contact_date)
 
             if (!budget.date) continue
             if (new Date(budget.date) < new Date()) continue
