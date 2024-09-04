@@ -17,8 +17,14 @@ import { Button } from '~/components/ui/button'
 import type { CrmBudget } from '~/lib/types'
 import { formatStock } from '~/lib/utils'
 
-export function SelectCRMClients() {
-    const [unselected, setSelected] = useState<Set<string>>(new Set())
+export function SelectCRMClients(
+    props:{
+        setSelected: (selected: Set<string>) => void
+        unselected: Set<string>
+    }
+) {
+    const setSelected = props.setSelected;
+    const unselected = props.unselected;
 
     const data = useMRPData()
 
