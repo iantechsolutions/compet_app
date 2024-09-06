@@ -24,7 +24,6 @@ export default function StackedAreaChart({ data }: GraphicProps) {
         }
     };
 
-    // const transformedArray: Record<string, string | number>[] = [];
     // const allFields = new Set<string>();
     const result: {}[] = [];
 
@@ -35,10 +34,8 @@ export default function StackedAreaChart({ data }: GraphicProps) {
         for (const field of value) {
             transformedValue[field.motive] = field.amount;
         }
-        console.log("transformedValue", transformedValue)
         result.push(transformedValue);
     }
-    console.log("result", result)
     // // Asegurarse de que cada objeto tenga todos los campos, asignando 0 a los campos faltantes
     // for (const obj of transformedArray) {
     //     for (const field of allFields) {
@@ -54,7 +51,6 @@ export default function StackedAreaChart({ data }: GraphicProps) {
     // if (result.length === 0) {
     //     return <div>No hay datos para mostrar</div>
     // }
-    console.log("transformedArray", result)
     return (
         <ResponsiveContainer width="48%" height="48%" aspect={2}>
             <>
