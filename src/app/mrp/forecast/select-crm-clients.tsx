@@ -138,12 +138,12 @@ export function SelectCRMClients(
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button variant='outline' className="rounded-2xl bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-800 px-4 py-2" >Clientes Forecast</Button>
+                <Button variant='outline' className="rounded-2xl bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-800 px-4 py-2" >Clientes</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Cliente para forecast</AlertDialogTitle>
-                    <AlertDialogDescription>Seleccione que clientes del CRM debe considerar para el forecast</AlertDialogDescription>
+                    <AlertDialogTitle>Clientes a filtrar</AlertDialogTitle>
+                    <AlertDialogDescription>Seleccione que clientes deben tomarse en cuenta para el calculo de estadisticas</AlertDialogDescription>
                 </AlertDialogHeader>
                 <List height={window.innerHeight - 200} itemCount={clientsWithBudgets.length} itemSize={70} width={'100%'}>
                     {Row}

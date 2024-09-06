@@ -70,8 +70,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
 
     function handlefromDateChange(date: Date) {
-
-        setConsumption(getConsumptionStats(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode));
+        const {list: consumptionStats, totalConsumedAmount, totalMotiveConsumption} = getConsumptionStats(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode)
+        setConsumption(consumptionStats);
         getSalesAndBudgets(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
         getSoldProportions(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
         getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
@@ -80,8 +80,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     function getConsumptionStats(fromDate: Date, toDate: Date, clientExemptionList: string[] | null, providerExemptionList: string[] | null, productCode: string) {
         let events = data?.eventsByProductCode.get(productCode) ?? []
+        let totalConsumedAmount = 0;
+        const totalMotiveConsumption = new Map<string, number>();
         events = events.filter((event) =>
-            // event.referenceId === orderProduct.id
             new Date(String(event.date)) &&
             new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate
         );
@@ -91,7 +92,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             if (event.assemblyId) {
                 const assembly = data?.assemblyById.get(event.assemblyId);
                 let totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
-
+                totalConsumedAmount += totalConsumptionOnEvent;
                 let day = '';
                 if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
                     day = new Date(String(event.date)).toISOString().slice(0, 10);
@@ -100,6 +101,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                 const key: [string, string] = [day, event.parentEvent?.productCode ?? ''];
                 const currentAmount = tupleToAmountMap.get(key) ?? 0;
                 tupleToAmountMap.set(key, currentAmount + totalConsumptionOnEvent);
+                const currentMotiveAmount = totalMotiveConsumption.get(event.parentEvent?.productCode ?? '') ?? 0;
+                totalMotiveConsumption.set(event.parentEvent?.productCode ?? "", currentMotiveAmount + totalConsumptionOnEvent);
             }
         });
 
@@ -119,6 +122,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                     amount: product.ordered_quantity,
                     }
                 );
+                const currentMotiveAmount = totalMotiveConsumption.get("Venta Directa") ?? 0;
+                totalMotiveConsumption.set("Venta Directa", currentMotiveAmount + product.ordered_quantity);
+                totalConsumedAmount += product.ordered_quantity;
             }
         })
 
@@ -129,7 +135,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         
         
 
-        return [...eventsList, ...salesList];
+        return {list: [...eventsList, ...salesList], totalConsumedAmount, totalMotiveConsumption};
     }
     function getSalesAndBudgets(fromDate: Date, toDate: Date, clientExemptionList: string[] | null, providerExemptionList: string[] | null, productCode: string) {
         const budgets = data?.budgets.filter((budget) =>
@@ -215,14 +221,17 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         const orderedQuantities = validOrderProducts.map((order_product) => order_product.ordered_quantity);
         const sortedQuantities = orderedQuantities.slice().sort((a, b) => a - b);
         const mid = Math.floor(sortedQuantities.length / 2);
-        const median = sortedQuantities.length % 2 !== 0 ? sortedQuantities[mid] : ((sortedQuantities[mid - 1] ?? 0) + (sortedQuantities[mid] ?? 0)) / 2;
+        console.log("sortedQuantities", sortedQuantities);
+        const median = sortedQuantities.length % 2 !== 0 
+                ? sortedQuantities[mid] 
+                : sortedQuantities[mid - 1];
 
         return {
-            MaximumSales: Math.max(...orderedQuantities),
-            MinimumSales: Math.min(...orderedQuantities),
-            AverageSales: orderedQuantities.reduce((acc, quantity) => acc + quantity, 0) / orderedQuantities.length,
-            TotalSales: orderedQuantities.length,
-            MedianSales: median
+            MaximumSales: orderedQuantities. length > 0 ? Math.max(...orderedQuantities) : 0,
+            MinimumSales: orderedQuantities. length > 0 ? Math.min(...orderedQuantities) : 0,
+            AverageSales: orderedQuantities. length > 0 ?  orderedQuantities.reduce((acc, quantity) => acc + quantity, 0) / orderedQuantities.length : 0,
+            TotalSales: orderedQuantities. length > 0 ?  orderedQuantities.length : 0,
+            MedianSales: orderedQuantities. length > 0 ?  median : 0
 
         }
     }
@@ -230,31 +239,17 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     const [unselectedClients, setSelected] = useState<Set<string>>(new Set())
     // setConsumption();
-    const consumptionStats = getConsumptionStats(new Date('2023-09-04'), new Date(), Array.from(unselectedClients), Array.from(providersSelected), productCode)
-    // const consumptionStats: { date: string, motive: string, amount: number }[] = [
-    //     { date: '2023-08-05', motive: 'Consumo', amount: 100 },
-    //     { date: '2023-08-05', motive: 'Ventas', amount: 150 },
-    //     { date: '2023-08-04', motive: 'Consumo', amount: 80 },
-    //     {date: '2023-08-04', motive: 'Ventas', amount: 120},
-    //     {date: '2023-08-03', motive: "Consumo", amount: 90},
-    //     {date: '2023-08-03', motive: "Ventas", amount: 130},
-    //     {date: '2023-08-02', motive: "Consumo", amount: 70},
-    //     {date: '2023-08-02', motive: "Ventas", amount: 110},
-    //     {date: '2023-08-01', motive: "Consumo", amount: 60},
-    //     {date: '2023-08-01', motive: "Ventas", amount: 100},
-    //     {date: '2023-08-01', motive: "Insumo 2", amount: 120}
-
-    // ]
-    console.log("consumptionStats", consumptionStats);
+    const {list:consumptionStats,totalConsumedAmount, totalMotiveConsumption} = getConsumptionStats(new Date('2023-09-04'), new Date(), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+    
+    console.log("totalConsumedAmount", totalConsumedAmount);
+    console.log("totalMotiveConsumption", totalMotiveConsumption);
     const salesAndBudgets = getSalesAndBudgets(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-    console.log("salesAndBudgets");
-    console.log(salesAndBudgets);
+    
     const soldProportions = getSoldProportions(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-    console.log("soldProportions");
-    console.log(soldProportions);
+    
     const generalStatistics = getGeneralStatistics(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-    console.log("generalStatistics");
-    console.log(generalStatistics);
+    
+
 
     return (
         <AppLayout
@@ -310,6 +305,15 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                     <p className="font-medium text-lg text-gray-700">
                         Mediana de ventas: <span className="font-normal text-gray-600">{generalStatistics.MedianSales}</span>
                     </p>
+                </div>
+                <br/>
+                <h1 className="font-bold text-2xl text-gray-800 mb-4">Estadísticas de consumo</h1>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
+                        <p className="font-medium text-lg text-gray-700">
+                            {motive}: <span className="font-normal text-gray-600">{Math.round(100*amount/totalConsumedAmount)}% del consumo</span>
+                        </p>
+                    ))}
                 </div>
             </div>
             <div className="bg-white shadow-md rounded-lg p-6 mt-6">

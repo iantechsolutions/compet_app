@@ -49,7 +49,7 @@ export default function ProductPage() {
                 </div>
                 </div>
                 <Link href={'/mrp/estadisticas/' + productCode}>
-                    <Button>Abrir Estadisticas</Button>
+                    <Button variant="outline">Ver estadisticas</Button>
                 </Link>
             </div>
             <ProductEventsChart key={product.code} product={product} months={data.months} />
