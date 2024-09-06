@@ -69,6 +69,7 @@ export default withUt({
             },
             fontFamily: {
                 sans: ['var(--font-sans)', ...fontFamily.sans],
+                "spline-sans": ['"Montserrat"', "sans-serif"],
             },
         },
     },
