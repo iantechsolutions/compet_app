@@ -43,17 +43,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     
     
     const [toDate, setToDate] = useState<Date | undefined>(new Date());
-    
-    console.log("fechas");
-    console.log(fromDate);
-    console.log(toDate);
-    const [unselectedClients, setSelected] = useState<Set<string>>(new Set())
+        const [unselectedClients, setSelected] = useState<Set<string>>(new Set())
     const { list: consumptionStats, totalConsumedAmount: totalTemp, totalMotiveConsumption: totalMotiveTemp } = getConsumptionStats(new Date('2023-09-04'), new Date(), Array.from(unselectedClients), Array.from(providersSelected), productCode);
     const tempSales = getSalesAndBudgets( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-    console.log("fromDate",fromDate);
-    console.log("toDate",toDate);
     const tempSoldProportions = getSoldProportions( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-    console.log("tempSoldProportions", tempSoldProportions);
     const tempGeneral = getGeneralStatistics( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);    
     const [consumption, setConsumption] = useState<{
         date: string;
@@ -90,7 +83,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
 
     function handlefromDateChange(date: Date | undefined) {
-        console.log("tuvo cambio???????");
         if (toDate && date) {
             setFromDate(date);
             const { list: consumptionStats, totalConsumedAmount, totalMotiveConsumption } = getConsumptionStats(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode)
@@ -100,7 +92,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             const tempSales = getSalesAndBudgets(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setSalesAndBudgets(tempSales);
             const tempProportions = getSoldProportions(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-            console.log("tempSoldProportions", tempSoldProportions);
             setSoldProportions(tempProportions);
             const tempStatistics = getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setGeneralStatistics(tempStatistics);
@@ -119,7 +110,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             const tempSales = getSalesAndBudgets(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setSalesAndBudgets(tempSales);
             const tempProportions = getSoldProportions(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-            console.log("tempSoldProportions", tempSoldProportions);
+
             setSoldProportions(tempProportions);
             const tempStatistics = getGeneralStatistics(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setGeneralStatistics(tempStatistics);        
@@ -270,7 +261,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         const orderedQuantities = validOrderProducts.map((order_product) => order_product.ordered_quantity);
         const sortedQuantities = orderedQuantities.slice().sort((a, b) => a - b);
         const mid = Math.floor(sortedQuantities.length / 2);
-        console.log("sortedQuantities", sortedQuantities);
         const median = sortedQuantities.length % 2 !== 0
             ? sortedQuantities[mid]
             : sortedQuantities[mid - 1];
@@ -313,8 +303,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                                 if (!selected.has(provider.code)) {
                                     value.add(provider.code)
                                 }
-                            }
-                            console.log(providersSelected);
+                            }                            
                             setProvidersSelected(value);
                             // re ejecute funciones estadistica
                         }}
