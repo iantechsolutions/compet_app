@@ -28,6 +28,7 @@ import { string } from "zod";
 import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
 import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
 import SimpleBartChart from "~/components/estadisticas/simpleBartChart";
+import { DatePicker } from "~/components/day-picker";
 export default function StatisticsPage(props: { user?: NavUserData }) {
     const data = useMRPData();
     const params = useParams<{ code: string }>()
@@ -38,8 +39,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const [providersSelected, setProvidersSelected] = useState<Set<string>>(new Set());
     const temporaryDate = new Date();
     temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
-    const [fromDate, setFromDate] = useState<Date>(temporaryDate);
-    const [toDate, setToDate] = useState<Date>(new Date());
+    const [fromDate, setFromDate] = useState<Date>();
+    const [toDate, setToDate] = useState<Date>();
     const [consumption, setConsumption] = useState<{
         date: string;
         motive: string;
@@ -70,11 +71,13 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
 
     function handlefromDateChange(date: Date) {
+        if(toDate){
 
-        setConsumption(getConsumptionStats(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode));
-        getSalesAndBudgets(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-        getSoldProportions(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-        getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            setConsumption(getConsumptionStats(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode));
+            getSalesAndBudgets(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            getSoldProportions(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+        }
     }
 
 
@@ -103,7 +106,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             }
         });
 
-        let salesList:{
+        let salesList: {
             date: string;
             motive: string;
             amount: number;
@@ -112,12 +115,12 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         sales.forEach((sale) => {
             const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
             const product = order_products?.find((order_product) => order_product.product_code === productCode);
-            if (product){
+            if (product) {
                 salesList.push({
                     date: new Date(String(sale.order_date)).toISOString().slice(0, 10),
                     motive: "Venta Directa",
                     amount: product.ordered_quantity,
-                    }
+                }
                 );
             }
         })
@@ -126,8 +129,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             const [date, motive] = key;
             return { date, motive, amount };
         });
-        
-        
+
+
 
         return [...eventsList, ...salesList];
     }
@@ -264,33 +267,39 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             </div>
             }
             user={props?.user} sidenav={<AppSidenav />}>
-            <div className="flex gap-1">
-                <ListSelectionDialog
-                    title='Proveedores'
-                    options={filteredProviders.map((p) => ({
-                        title: p.name,
-                        subtitle: p.code + ' - ' + (p.address || '') + ' ' + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
-                        value: p.code,
-                    }))}
-                    defaultValues={defaultValues}
-                    onApply={(selectedList) => {
-                        const selected = new Set(selectedList)
-                        const value = new Set<string>()
-                        for (const provider of filteredProviders) {
-                            if (!selected.has(provider.code)) {
-                                value.add(provider.code)
+            <div className="flex justify-between">
+                <div className="flex gap-1">
+                    <ListSelectionDialog
+                        title='Proveedores'
+                        options={filteredProviders.map((p) => ({
+                            title: p.name,
+                            subtitle: p.code + ' - ' + (p.address || '') + ' ' + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
+                            value: p.code,
+                        }))}
+                        defaultValues={defaultValues}
+                        onApply={(selectedList) => {
+                            const selected = new Set(selectedList)
+                            const value = new Set<string>()
+                            for (const provider of filteredProviders) {
+                                if (!selected.has(provider.code)) {
+                                    value.add(provider.code)
+                                }
                             }
-                        }
-                        console.log(providersSelected);
-                        setProvidersSelected(value);
-                        // re ejecute funciones estadistica
-                    }}
-                >
-                    <Button variant='outline' className="rounded-2xl bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-800 px-4 py-2">
-                        Proveedores
-                    </Button>
-                </ListSelectionDialog>
-                <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
+                            console.log(providersSelected);
+                            setProvidersSelected(value);
+                            // re ejecute funciones estadistica
+                        }}
+                    >
+                        <Button variant='outline' className="rounded-2xl bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-800 px-4 py-2">
+                            Proveedores
+                        </Button>
+                    </ListSelectionDialog>
+                    <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
+                </div>
+                <div>
+                    <DatePicker onChange={setFromDate} value={fromDate} message="Fecha desde" />
+                    <DatePicker onChange={setToDate} value={toDate} message="Fecha hasta" />
+                </div>
             </div>
             <div className="bg-white shadow-md rounded-lg p-6 mt-6">
                 <h1 className="font-bold text-2xl text-gray-800 mb-4">Estadísticas generales</h1>
