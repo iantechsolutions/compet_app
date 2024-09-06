@@ -56,35 +56,38 @@ export default function StackedAreaChart({ data }: GraphicProps) {
     // }
     console.log("transformedArray", result)
     return (
-        <ResponsiveContainer width="48%" aspect={2}>
-            <AreaChart
-                width={500}
-                height={400}
-                data={result}
-                margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                }}
-            >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name"
-                />
-                <YAxis />
-                <Tooltip />
-
-                {Array.from(uniqueMotives).map((motive, index) => (
-                    <Area
-                        key={index}
-                        type="monotone"
-                        dataKey={motive}
-                        stackId="1"
-                        stroke={colors[index % colors.length]}
-                        fill={colors[index % colors.length]}
+        <ResponsiveContainer width="48%" height="48%" aspect={2}>
+            <>
+                <p className=" py-2 pl-6">●  Consumo del insumo en el tiempo</p>
+                <AreaChart
+                    width={500}
+                    height={400}
+                    data={result}
+                    margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                    }}
+                >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name"
                     />
-                ))}
-            </AreaChart>
+                    <YAxis />
+                    <Tooltip />
+
+                    {Array.from(uniqueMotives).map((motive, index) => (
+                        <Area
+                            key={index}
+                            type="monotone"
+                            dataKey={motive}
+                            stackId="1"
+                            stroke={colors[index % colors.length]}
+                            fill={colors[index % colors.length]}
+                        />
+                    ))}
+                </AreaChart>
+            </>
         </ResponsiveContainer>
     )
 }
