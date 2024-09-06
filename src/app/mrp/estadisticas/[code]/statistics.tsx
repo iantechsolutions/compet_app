@@ -97,7 +97,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             setTotalMotiveConsumption(totalMotiveConsumption);
             const tempSales = getSalesAndBudgets(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setSalesAndBudgets(tempSales);
-            const tempProportions = getSoldProportions(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempProportions = getSoldProportions(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
             console.log("tempSoldProportions", tempSoldProportions);
             setSoldProportions(tempProportions);
             const tempStatistics = getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
@@ -116,7 +116,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             setTotalMotiveConsumption(totalMotiveConsumption);
             const tempSales = getSalesAndBudgets(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setSalesAndBudgets(tempSales);
-            const tempProportions = getSoldProportions(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempProportions = getSoldProportions(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
             console.log("tempSoldProportions", tempSoldProportions);
             setSoldProportions(tempProportions);
             const tempStatistics = getGeneralStatistics(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
