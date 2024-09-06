@@ -15,10 +15,18 @@ import {
 
 interface DatePickerProps {
     message?:string;
-    value?: Date
-    onChange: React.Dispatch<React.SetStateAction<Date|undefined>>;
+    InitialValue?: Date
+    onChange: React.Dispatch<Date|undefined>;
 }
 export function DatePicker(props: DatePickerProps) {
+  let initialDate = props.InitialValue
+  if(props.message=="Fecha desde"){
+    const tempDate = new Date();
+    tempDate.setFullYear(tempDate.getFullYear() - 1);
+    initialDate = tempDate
+  }
+  const [value, setSelectedDate] = React.useState<Date | undefined>(initialDate)
+  
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -26,18 +34,21 @@ export function DatePicker(props: DatePickerProps) {
           variant={"outline"}
           className={cn(
             "w-[280px] justify-start text-left font-normal",
-            !props.value && "text-muted-foreground"
+            !value && "text-muted-foreground"
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {props.value ? format(props.value, "PPP") : <span>{props.message ?? "Elija una fecha"}</span>}
+          {value ? format(value, "PPP") : <span>{props.message ?? "Elija una fecha"}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
-          selected={props.value}
-          onSelect={props.onChange}
+          selected={value}
+          onSelect={(date)=>{
+            props.onChange(date)
+            setSelectedDate(date)
+          }}
           initialFocus
         />
       </PopoverContent>

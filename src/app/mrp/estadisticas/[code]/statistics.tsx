@@ -39,13 +39,29 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const [providersSelected, setProvidersSelected] = useState<Set<string>>(new Set());
     const temporaryDate = new Date();
     temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
-    const [fromDate, setFromDate] = useState<Date>();
-    const [toDate, setToDate] = useState<Date>();
+    const [fromDate, setFromDate] = useState<Date | undefined>(temporaryDate);
+    const [toDate, setToDate] = useState<Date | undefined>(new Date());
+    console.log("fechas");
+    console.log(fromDate);
+    console.log(toDate);
+    const [unselectedClients, setSelected] = useState<Set<string>>(new Set())
+    const { list: consumptionStats, totalConsumedAmount: totalTemp, totalMotiveConsumption: totalMotiveTemp } = getConsumptionStats(new Date('2023-09-04'), new Date(), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+    const tempSales = getSalesAndBudgets( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+    const tempSoldProportions = getSoldProportions(fromDate ?? new Date('2023-09-04'),toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+    
+    const tempGeneral = getGeneralStatistics(fromDate ?? new Date('2023-09-04'), toDate ??new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+
+    
     const [consumption, setConsumption] = useState<{
         date: string;
         motive: string;
         amount: number;
-    }[]>([]);
+    }[]>(consumptionStats);
+    const [salesAndBudgets, setSalesAndBudgets] = useState<{ salesList: { date: string, totalSales: number }[], budgetsList: { date: string, totalBudgets: number }[] }>(tempSales);
+    const [soldProportions, setSoldProportions] = useState<{ name: string | undefined, totalSales: number, amountOfSales: number }[]>(tempSoldProportions);
+    const [generalStatistics, setGeneralStatistics] = useState<{ MaximumSales: number, MinimumSales: number, AverageSales: number, TotalSales: number, MedianSales: number | undefined }>(tempGeneral);
+    const [totalConsumedAmount, setTotalConsumedAmount] = useState<number>(totalTemp);
+    const [totalMotiveConsumption, setTotalMotiveConsumption] = useState<Map<string, number>>(totalMotiveTemp);
     const productsByProvider = useMemo(() => {
         const map = new Map<string, number>()
 
@@ -70,16 +86,39 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }, [allProviersCodes, providersSelected])
 
 
-    function handlefromDateChange(date: Date) {
-        if (toDate) {
+    function handlefromDateChange(date: Date | undefined) {
+        if (toDate && date) {
+            setFromDate(date);
             const { list: consumptionStats, totalConsumedAmount, totalMotiveConsumption } = getConsumptionStats(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode)
             setConsumption(consumptionStats);
-            getSalesAndBudgets(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-            getSoldProportions(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-            getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            setTotalConsumedAmount(totalConsumedAmount);
+            setTotalMotiveConsumption(totalMotiveConsumption);
+            const tempSales = getSalesAndBudgets(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            setSalesAndBudgets(tempSales);
+            const tempProportions = getSoldProportions(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            setSoldProportions(tempProportions);
+            const tempStatistics = getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            setGeneralStatistics(tempStatistics);
+
         }
     }
 
+
+    function handletoDateChange(date: Date | undefined) {
+        if (fromDate && date) {
+            setToDate(date);
+            const { list: consumptionStats, totalConsumedAmount, totalMotiveConsumption } = getConsumptionStats(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode)
+            setConsumption(consumptionStats);
+            setTotalConsumedAmount(totalConsumedAmount);
+            setTotalMotiveConsumption(totalMotiveConsumption);
+            const tempSales = getSalesAndBudgets(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            setSalesAndBudgets(tempSales);
+            const tempProportions = getSoldProportions(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            setSoldProportions(tempProportions);
+            const tempStatistics = getGeneralStatistics(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            setGeneralStatistics(tempStatistics);        
+        }
+    }
 
     function getConsumptionStats(fromDate: Date, toDate: Date, clientExemptionList: string[] | null, providerExemptionList: string[] | null, productCode: string) {
         let events = data?.eventsByProductCode.get(productCode) ?? []
@@ -240,19 +279,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
 
 
-    const [unselectedClients, setSelected] = useState<Set<string>>(new Set())
-    // setConsumption();
-    const { list: consumptionStats, totalConsumedAmount, totalMotiveConsumption } = getConsumptionStats(new Date('2023-09-04'), new Date(), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-
-    console.log("totalConsumedAmount", totalConsumedAmount);
-    console.log("totalMotiveConsumption", totalMotiveConsumption);
-    const salesAndBudgets = getSalesAndBudgets(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-
-    const soldProportions = getSoldProportions(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-
-    const generalStatistics = getGeneralStatistics(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-
-
+    
 
     return (
         <AppLayout
@@ -292,8 +319,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                     <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
                 </div>
                 <div>
-                    <DatePicker onChange={setFromDate} value={fromDate} message="Fecha desde" />
-                    <DatePicker onChange={setToDate} value={toDate} message="Fecha hasta" />
+                    <DatePicker onChange={(e)=>handlefromDateChange(e)} InitialValue={fromDate ?? temporaryDate} message="Fecha desde" />
+                    <DatePicker onChange={(e)=>handletoDateChange(e)} InitialValue={toDate ?? new Date()} message="Fecha hasta" />
                 </div>
             </div>
             <div className="bg-white shadow-md rounded-lg p-6 mt-6">
@@ -328,7 +355,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <div className="bg-white shadow-md rounded-lg p-6 mt-6">
                 <h1 className="font-bold text-2xl text-gray-800 mb-6">Graficos</h1>
                 <div className="flex flex-wrap gap-x-4 gap-y-6 items-center">
-                    <StackedAreaChart data={consumptionStats} />
+                    <StackedAreaChart data={consumption} />
                     <SimpleBartChart data={soldProportions} />
                     <SimpleLineChart data={salesAndBudgets} />
                 </div>

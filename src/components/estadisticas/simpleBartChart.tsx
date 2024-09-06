@@ -1,9 +1,9 @@
 "use client"
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 interface graphicProps {
-    data: { name?: string, totalSales:number, amountOfSales: number }[];
+    data: { name?: string, totalSales: number, amountOfSales: number }[];
 }
-export default function SimpleBartChart({data}: graphicProps) {
+export default function SimpleBartChart({ data }: graphicProps) {
     return (
         <ResponsiveContainer width="48%" aspect={2}>
             <BarChart

@@ -51,9 +51,9 @@ export default function StackedAreaChart({ data }: GraphicProps) {
         "#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#d0ed57", "#a4de6c", "#8dd1e1", "#83a6ed", "#8e4585", "#ff8042"
     ];
 
-    if (result.length === 0) {
-        return <div>No hay datos para mostrar</div>
-    }
+    // if (result.length === 0) {
+    //     return <div>No hay datos para mostrar</div>
+    // }
     console.log("transformedArray", result)
     return (
         <ResponsiveContainer width="48%" aspect={2}>
