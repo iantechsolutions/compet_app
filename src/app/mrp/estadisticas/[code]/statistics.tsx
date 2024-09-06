@@ -37,9 +37,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const providers = data.providers;
     const products = data.products;
     const [providersSelected, setProvidersSelected] = useState<Set<string>>(new Set());
-    const temporaryDate = new Date();
-    temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
-    const [fromDate, setFromDate] = useState<Date | undefined>(temporaryDate);
+    // const temporaryDate = new Date();
+    // temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
+    const [fromDate, setFromDate] = useState<Date | undefined>(new Date(new Date().setFullYear(new Date().getFullYear() - 1)));
     const [toDate, setToDate] = useState<Date | undefined>(new Date());
     console.log("fechas");
     console.log(fromDate);
@@ -51,7 +51,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     console.log("toDate",toDate);
     const tempSoldProportions = getSoldProportions( new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
     console.log("tempSoldProportions", tempSoldProportions);
-    const tempGeneral = getGeneralStatistics(fromDate ?? new Date('2023-09-04'), toDate ??new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+    const tempGeneral = getGeneralStatistics( new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
 
     
     const [consumption, setConsumption] = useState<{
@@ -89,6 +89,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
 
     function handlefromDateChange(date: Date | undefined) {
+        console.log("tuvo cambio???????");
         if (toDate && date) {
             setFromDate(date);
             const { list: consumptionStats, totalConsumedAmount, totalMotiveConsumption } = getConsumptionStats(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode)
@@ -100,7 +101,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             const tempProportions = getSoldProportions(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
             console.log("tempSoldProportions", tempSoldProportions);
             setSoldProportions(tempProportions);
-            const tempStatistics = getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempStatistics = getGeneralStatistics(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setGeneralStatistics(tempStatistics);
 
         }
@@ -119,7 +120,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             const tempProportions = getSoldProportions(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
             console.log("tempSoldProportions", tempSoldProportions);
             setSoldProportions(tempProportions);
-            const tempStatistics = getGeneralStatistics(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempStatistics = getGeneralStatistics(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setGeneralStatistics(tempStatistics);        
         }
     }
@@ -323,7 +324,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                     <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
                 </div>
                 <div>
-                    <DatePicker onChange={(e)=>handlefromDateChange(e)} InitialValue={fromDate ?? temporaryDate} message="Fecha desde" />
+                    <DatePicker onChange={(e)=>handlefromDateChange(e)} InitialValue={fromDate ?? undefined} message="Fecha desde" />
                     <DatePicker onChange={(e)=>handletoDateChange(e)} InitialValue={toDate ?? new Date()} message="Fecha hasta" />
                 </div>
             </div>
