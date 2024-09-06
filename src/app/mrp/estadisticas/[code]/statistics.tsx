@@ -1,7 +1,7 @@
 "use client"
 import { useParams } from "next/navigation";
 import { CheckCheckIcon, CheckIcon, XSquareIcon } from 'lucide-react'
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import ListSelectionDialog from "~/components/list-selection-dialog";
@@ -30,6 +30,9 @@ import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
 import SimpleBartChart from "~/components/estadisticas/simpleBartChart";
 import { DatePicker } from "~/components/day-picker";
 export default function StatisticsPage(props: { user?: NavUserData }) {
+    const temporaryDate = new Date();
+    temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
+    const [fromDate, setFromDate] = useState<Date | undefined>(temporaryDate);
     const data = useMRPData();
     const params = useParams<{ code: string }>()
     const productCode = decodeURIComponent(params?.code ?? '')
@@ -37,10 +40,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const providers = data.providers;
     const products = data.products;
     const [providersSelected, setProvidersSelected] = useState<Set<string>>(new Set());
-    // const temporaryDate = new Date();
-    // temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
-    const [fromDate, setFromDate] = useState<Date | undefined>(new Date(new Date().setFullYear(new Date().getFullYear() - 1)));
+    
+    
     const [toDate, setToDate] = useState<Date | undefined>(new Date());
+    
     console.log("fechas");
     console.log(fromDate);
     console.log(toDate);
@@ -49,11 +52,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const tempSales = getSalesAndBudgets( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
     console.log("fromDate",fromDate);
     console.log("toDate",toDate);
-    const tempSoldProportions = getSoldProportions( new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+    const tempSoldProportions = getSoldProportions( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
     console.log("tempSoldProportions", tempSoldProportions);
-    const tempGeneral = getGeneralStatistics( new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-
-    
+    const tempGeneral = getGeneralStatistics( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);    
     const [consumption, setConsumption] = useState<{
         date: string;
         motive: string;
@@ -98,10 +99,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             setTotalMotiveConsumption(totalMotiveConsumption);
             const tempSales = getSalesAndBudgets(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setSalesAndBudgets(tempSales);
-            const tempProportions = getSoldProportions(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempProportions = getSoldProportions(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             console.log("tempSoldProportions", tempSoldProportions);
             setSoldProportions(tempProportions);
-            const tempStatistics = getGeneralStatistics(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempStatistics = getGeneralStatistics(date, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setGeneralStatistics(tempStatistics);
 
         }
@@ -117,10 +118,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             setTotalMotiveConsumption(totalMotiveConsumption);
             const tempSales = getSalesAndBudgets(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setSalesAndBudgets(tempSales);
-            const tempProportions = getSoldProportions(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempProportions = getSoldProportions(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             console.log("tempSoldProportions", tempSoldProportions);
             setSoldProportions(tempProportions);
-            const tempStatistics = getGeneralStatistics(new Date('2023-09-04'), new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempStatistics = getGeneralStatistics(fromDate, date, Array.from(unselectedClients), Array.from(providersSelected), productCode);
             setGeneralStatistics(tempStatistics);        
         }
     }
@@ -185,6 +186,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         return { list: [...eventsList, ...salesList], totalConsumedAmount, totalMotiveConsumption };
     }
     function getSalesAndBudgets(fromDate: Date, toDate: Date, clientExemptionList: string[] | null, providerExemptionList: string[] | null, productCode: string) {
+        const fromDateCopy = new Date(fromDate);
         const budgets = data?.budgets.filter((budget) =>
             !clientExemptionList?.includes(budget.client_id) &&
             new Date(String(budget.date)) &&
@@ -195,7 +197,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         const sales = data?.orders.filter((order) => !clientExemptionList?.includes(order.client_code));
         let salesList = [];
         let budgetsList = [];
-        while (fromDate.getTime() <= toDate.getTime()) {
+        while (fromDateCopy.getTime() <= toDate.getTime()) {
             const day = fromDate.toISOString().slice(0, 10);
             const salesOnDay = sales?.filter((sale) =>
                 new Date(String(sale?.order_date)) instanceof Date && !isNaN(new Date(String(sale.order_date)).getTime()) &&
@@ -223,7 +225,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             });
             budgetsList.push({ date: day, totalBudgets });
 
-            fromDate.setDate(fromDate.getDate() + 1);
+            fromDateCopy.setDate(fromDateCopy.getDate() + 1);
         }
         return { salesList, budgetsList };
     }
@@ -324,8 +326,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                     <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
                 </div>
                 <div>
-                    <DatePicker onChange={(e)=>handlefromDateChange(e)} InitialValue={fromDate ?? undefined} message="Fecha desde" />
-                    <DatePicker onChange={(e)=>handletoDateChange(e)} InitialValue={toDate ?? new Date()} message="Fecha hasta" />
+                    <DatePicker onChange={(e)=>handlefromDateChange(e)} value={fromDate ?? undefined} message="Fecha desde" />
+                    <DatePicker onChange={(e)=>handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
                 </div>
             </div>
             <div className="bg-white shadow-md rounded-lg p-6 mt-6">
