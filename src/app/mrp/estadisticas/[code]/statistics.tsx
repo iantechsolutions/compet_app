@@ -99,11 +99,33 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             }
         });
 
-        const list = Array.from(tupleToAmountMap.entries()).map(([key, amount]) => {
+        let salesList:{
+            date: string;
+            motive: string;
+            amount: number;
+        }[] = [];
+        const sales = data?.orders.filter((order) => !clientExemptionList?.includes(order.client_code) && new Date(String(order.order_date)) && new Date(String(order.order_date)) >= fromDate && new Date(String(order.order_date)) <= toDate);
+        sales.forEach((sale) => {
+            const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+            const product = order_products?.find((order_product) => order_product.product_code === productCode);
+            if (product){
+                salesList.push({
+                    date: new Date(String(sale.order_date)).toISOString().slice(0, 10),
+                    motive: "Venta Directa",
+                    amount: product.ordered_quantity,
+                    }
+                );
+            }
+        })
+
+        const eventsList = Array.from(tupleToAmountMap.entries()).map(([key, amount]) => {
             const [date, motive] = key;
             return { date, motive, amount };
         });
-        return list;
+        
+        
+
+        return [...eventsList, ...salesList];
     }
     function getSalesAndBudgets(fromDate: Date, toDate: Date, clientExemptionList: string[] | null, providerExemptionList: string[] | null, productCode: string) {
         const budgets = data?.budgets.filter((budget) => 
