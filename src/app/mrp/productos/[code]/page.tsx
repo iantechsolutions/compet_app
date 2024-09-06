@@ -13,6 +13,8 @@ import { ProductEventRow } from './event_row'
 import { ForecastSupplyEventsRow } from './forecast_supply_events_row'
 import { useCurrentProduct } from './product_provider'
 import { useProductPageData } from './use_product_page_data'
+import { Button } from '~/components/ui/button'
+import Link from 'next/link'
 
 export default function ProductPage() {
     const data: MRPData = useMRPData()
@@ -27,21 +29,28 @@ export default function ProductPage() {
 
     return (
         <>
-            <div className=''>
-                <Badge>
-                    {product.description} - {product.additional_description}
-                </Badge>
-                <Badge className='ml-2'>Stock: {product.stock}</Badge>
-                <Badge className='ml-2'>Comprometido: {product.commited}</Badge>
-            </div>
-            <div className='py-2'>
-                {product?.providers.map((provider, i) => {
-                    return (
-                        <Badge key={i} variant='secondary' className='mr-2'>
-                            {data.providersByCode.get(provider.provider_code)?.name ?? provider.provider_code}
-                        </Badge>
-                    )
-                })}
+            <div className='flex flex-row justify-between'>
+                <div>
+                <div className=''>
+                    <Badge>
+                        {product.description} - {product.additional_description}
+                    </Badge>
+                    <Badge className='ml-2'>Stock: {product.stock}</Badge>
+                    <Badge className='ml-2'>Comprometido: {product.commited}</Badge>
+                </div>
+                <div className='py-2'>
+                    {product?.providers.map((provider, i) => {
+                        return (
+                            <Badge key={i} variant='secondary' className='mr-2'>
+                                {data.providersByCode.get(provider.provider_code)?.name ?? provider.provider_code}
+                            </Badge>
+                        )
+                    })}
+                </div>
+                </div>
+                <Link href={'/mrp/estadisticas/' + productCode}>
+                    <Button>Abrir Estadisticas</Button>
+                </Link>
             </div>
             <ProductEventsChart key={product.code} product={product} months={data.months} />
             <div className='max-w-full overflow-x-auto'>
