@@ -39,8 +39,9 @@ export function DatePicker(props: DatePickerProps) {
         <Calendar
           mode="single"
           selected={props.value}
-          onSelect={(date)=>props.onChange(date)}
+          // onSelect={(date)=>props.onChange(date)}
           defaultMonth={props.value ?? new Date()}
+          onDayClick={(date)=>props.onChange(date)}
         />
       </PopoverContent>
     </Popover>

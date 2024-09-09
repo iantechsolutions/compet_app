@@ -1,7 +1,7 @@
 "use client"
 import { useParams } from "next/navigation";
 import { CheckCheckIcon, CheckIcon, Loader2Icon, XSquareIcon } from 'lucide-react'
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import ListSelectionDialog from "~/components/list-selection-dialog";
@@ -43,21 +43,35 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     
     const [loading,setLoading] = useState<boolean>(false);
     const [toDate, setToDate] = useState<Date | undefined>(new Date());
-        const [unselectedClients, setSelected] = useState<Set<string>>(new Set())
-    const { list: consumptionStats, totalConsumedAmount: totalTemp, totalMotiveConsumption: totalMotiveTemp } = getConsumptionStats(new Date('2023-09-04'), new Date(), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-    const tempSales = getSalesAndBudgets( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-    const tempSoldProportions = getSoldProportions( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
-    const tempGeneral = getGeneralStatistics( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);    
+    const [unselectedClients, setSelected] = useState<Set<string>>(new Set())
     const [consumption, setConsumption] = useState<{
         date: string;
         motive: string;
         amount: number;
-    }[]>(consumptionStats);
-    const [salesAndBudgets, setSalesAndBudgets] = useState<{ salesList: { date: string, totalSales: number }[], budgetsList: { date: string, totalBudgets: number }[] }>(tempSales);
-    const [soldProportions, setSoldProportions] = useState<{ name: string | undefined, totalSales: number, amountOfSales: number }[]>(tempSoldProportions);
-    const [generalStatistics, setGeneralStatistics] = useState<{ MaximumSales: number, MinimumSales: number, AverageSales: number, TotalSales: number, MedianSales: number | undefined }>(tempGeneral);
-    const [totalConsumedAmount, setTotalConsumedAmount] = useState<number>(totalTemp);
-    const [totalMotiveConsumption, setTotalMotiveConsumption] = useState<Map<string, number>>(totalMotiveTemp);
+    }[]>();
+    const [salesAndBudgets, setSalesAndBudgets] = useState<{ salesList: { date: string, totalSales: number }[], budgetsList: { date: string, totalBudgets: number }[] }>();
+    const [soldProportions, setSoldProportions] = useState<{ name: string | undefined, totalSales: number, amountOfSales: number }[]>();
+    const [generalStatistics, setGeneralStatistics] = useState<{ MaximumSales: number, MinimumSales: number, AverageSales: number, TotalSales: number, MedianSales: number | undefined }>();
+    const [totalConsumedAmount, setTotalConsumedAmount] = useState<number>();
+    const [totalMotiveConsumption, setTotalMotiveConsumption] = useState<Map<string, number>>();
+    const [hasRun, setHasRun] = useState<boolean>(false);
+    useEffect(() => {
+        if(fromDate && toDate && !hasRun){
+            const { list: consumptionStats, totalConsumedAmount: totalTemp, totalMotiveConsumption: totalMotiveTemp } = getConsumptionStats(new Date('2023-09-04'), new Date(), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempSales = getSalesAndBudgets( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempSoldProportions = getSoldProportions( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);
+            const tempGeneral = getGeneralStatistics( fromDate ?? new Date('2023-09-04'), toDate ?? new Date('2024-09-04'), Array.from(unselectedClients), Array.from(providersSelected), productCode);    
+            setConsumption(consumptionStats);
+            setTotalConsumedAmount(totalTemp);
+            setTotalMotiveConsumption(totalMotiveTemp);
+            setSalesAndBudgets(tempSales);
+            setSoldProportions(tempSoldProportions);
+            setGeneralStatistics(tempGeneral);
+            setHasRun(true);
+        }
+    },[fromDate,toDate])
+
+    
     const productsByProvider = useMemo(() => {
         const map = new Map<string, number>()
 
@@ -328,7 +342,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                     <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
                 </div>
                 <div className="flex gap-3">
-                    <DatePicker onChange={(e)=>handlefromDateChange(e)} value={fromDate ?? undefined} message="Fecha desde" />
+                    <DatePicker onChange={(e)=>setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" />
                     <DatePicker onChange={(e)=>handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
                     <Button  
                     onClick={handleUpdateFilters}
@@ -342,36 +356,36 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                 <h1 className="font-bold text-2xl text-gray-800 mb-4">Estadísticas generales</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <p className="font-medium text-lg text-gray-700">
-                        Ventas totales: <span className="font-normal text-gray-600">{generalStatistics.TotalSales}</span>
+                        Ventas totales: <span className="font-normal text-gray-600">{generalStatistics?.TotalSales ?? 0}</span>
                     </p>
                     <p className="font-medium text-lg text-gray-700">
-                        Máximo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics.MaximumSales}</span>
+                        Máximo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MaximumSales ?? 0}</span>
                     </p>
                     <p className="font-medium text-lg text-gray-700">
-                        Mínimo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics.MinimumSales}</span>
+                        Mínimo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MinimumSales ?? 0}</span>
                     </p>
                     <p className="font-medium text-lg text-gray-700">
-                        Unid. promedio por venta: <span className="font-normal text-gray-600">{generalStatistics.AverageSales}</span>
+                        Unid. promedio por venta: <span className="font-normal text-gray-600">{generalStatistics?.AverageSales ?? 0}</span>
                     </p>
                     <p className="font-medium text-lg text-gray-700">
-                        Mediana de unid. por venta: <span className="font-normal text-gray-600">{generalStatistics.MedianSales}</span>
+                        Mediana de unid. por venta: <span className="font-normal text-gray-600">{generalStatistics?.MedianSales ?? 0}</span>
                     </p>
                 </div>
                 <br />
                 <h1 className="font-bold text-2xl text-gray-800 mb-4">Estadísticas de consumo</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
+                    {totalMotiveConsumption ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
                         <p className="font-medium text-lg text-gray-700">
-                            {motive}: <span className="font-normal text-gray-600">{Math.round(100 * amount / totalConsumedAmount)}% del consumo</span>
+                            {motive}: <span className="font-normal text-gray-600">{Math.round(100 * amount / (totalConsumedAmount ?? 1))}% del consumo</span>
                         </p>
-                    ))}
+                    )) : null}
                 </div>
             </div>
             <div className="bg-white shadow-md rounded-lg p-6 mt-6">
                 <h1 className="font-bold text-2xl text-gray-800 mb-6">Graficos</h1>
                 <div className="flex flex-wrap gap-x-4 gap-y-6 items-center">
-                    <StackedAreaChart data={consumption} />
-                    <SimpleBartChart data={soldProportions} />
+                    <StackedAreaChart data={consumption ?? []} />
+                    <SimpleBartChart data={soldProportions ?? []} />
                     <SimpleLineChart data={salesAndBudgets} />
                 </div>
             </div>
