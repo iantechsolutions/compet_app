@@ -1,10 +1,10 @@
 'use client'
-
+import { getUserSetting, setUserSetting } from '~/lib/settings'
 import dayjs from 'dayjs'
-import { Loader2Icon } from 'lucide-react'
+import { Loader2Icon, LucideAlignHorizontalSpaceBetween } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AppSidenav from '~/components/app-sidenav'
 import AppLayout from '~/components/applayout'
 import DataUploadingCard from '~/components/data-uploading-card'
@@ -16,12 +16,15 @@ import { Card } from '~/components/ui/card'
 import { useGlobalState, useOnMounted } from '~/lib/hooks'
 import { nullProfile } from '~/lib/nullForecastProfile'
 import { cn } from '~/lib/utils'
+import { api } from '~/trpc/react'
 import type { RouterOutputs } from '~/trpc/shared'
+import { Input } from '~/components/ui/input'
 
 export default function DataSettingsPage(props: {
-    user?: NavUserData
+    user?: NavUserData & { id: string }
     dataInfo: RouterOutputs['mrpData']['mrpDataInfo']
     forecastProfile: RouterOutputs['forecast']['currentProfile']
+    mails: string[] | null
 }) {
     const date = dayjs(props.dataInfo.exportDate)
     const data = useMRPData()
@@ -93,6 +96,10 @@ export default function DataSettingsPage(props: {
             <hr className='my-5 block' />
 
             <RemoteUpdateComponent />
+            
+            <hr className='my-5 block' />
+            
+            <MailSendingConfiguration id={props.user?.id ?? ""}/>
         </AppLayout>
     )
 }
@@ -247,4 +254,117 @@ function RemoteUpdateComponent() {
             )}
         </section>
     )
+}
+
+
+function MailSendingConfiguration(user: NavUserData & { id: string }) {
+    const [hasQueried, setHasQueried] = useState(false);
+
+    // const { data: mails } = api.mail.getMails.useQuery({ userId: user.id });
+    const { data: mails } = api.mail.getMails.useQuery(
+        { userId: user.id ?? "" },
+        {
+          enabled: !!user.id && !hasQueried,
+          onSuccess: () => {
+            console.log("mails", mails);
+            setHasQueried(true);
+          },
+        }
+      );
+
+    useEffect(() => {
+        console.log("mails", mails);
+        if(mails && mails.length=== 0){
+            setMails([""]);
+        }
+        else{
+            setMails(mails ?? [""]);
+        }
+        
+    },[mails])
+    const { mutateAsync: setMailsList,isLoading } = api.mail.setMails.useMutation();
+    if(mails && mails.length === 0) {
+        setMailsList({mails: [], userId: user.id});
+    }
+    const [mailsList, setMails] = useState<string[]>(mails  ?? [""]);
+    function handleEmailChange(mail:string, index: number) {
+        const newMails = [...mailsList];
+        newMails[index] = mail;
+        setMails(newMails);
+    }
+    function handleMailListSave(newMails: string[]) {
+        console.log(newMails);
+        setMailsList({mails: newMails, userId: user.id});
+    }
+    function insertMailAtIndex(index: number) {
+        setMails((prevMails) => {
+            const updatedMails = [...prevMails];
+            const currentEntry = updatedMails[index];
+            updatedMails.splice(index, 0, currentEntry ?? "");
+            return updatedMails;
+        });
+    }
+    
+    return (
+        <section className='w-full max-w-[600px]'>
+            <Title>Mails a los que notificar en caso de stock critico</Title>
+            {/* <Button 
+            className='mb-5'
+            onClick={() => {
+                setMails([...mailsList, '']);
+            }
+            
+            }>
+                Agregar mail
+            </Button> */}
+            <br/>
+            {
+                mailsList && mailsList.map((mail, index) => (
+                    <div key={index}
+                     className='mb-4 p-4 flex items-center gap-3'
+                    >
+                        <div>
+                            <Input
+                                id='name'
+                                name='name'
+                                value={mailsList[index]}
+                                onChange={(e) => handleEmailChange(e.target.value,index)}
+                                placeholder='xxx@xxx.com'
+                                required
+                            />
+                        </div>
+                        <Button
+                            disabled={isLoading}
+                            onClick={() => {
+                                insertMailAtIndex(index);
+                            }}
+                        >
+                            Agregar
+                        </Button>
+                        <Button
+                            disabled={mailsList.length === 1 || isLoading}
+                            onClick={() => {
+                                const newMails = [...mailsList];
+                                newMails.splice(index, 1);
+                                setMails(newMails);
+                            }}
+                            variant="destructive"
+                        >
+                            Eliminar
+                        </Button>
+                    </div>
+                ))
+            }
+            <Button
+                onClick={() => {
+                    handleMailListSave(mailsList);
+                }}
+                disabled={isLoading}
+                >
+                    {isLoading && <Loader2Icon className='mr-2 animate-spin' />}
+                    Guardar mails
+                </Button>
+            
+        </section>
+    );
 }

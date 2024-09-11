@@ -2,7 +2,7 @@ import { createTRPCRouter } from '~/server/api/trpc'
 import { forecastRouter } from './routers/forecast'
 import { mrpDataRouter } from './routers/mrp-data'
 import { statisticsRouter } from './routers/statistics'
-
+import { mailRouter } from './routers/mail'
 /**
  * This is the primary router for your server.
  *
@@ -12,6 +12,7 @@ export const appRouter = createTRPCRouter({
     forecast: forecastRouter,
     mrpData: mrpDataRouter,
     statistics: statisticsRouter,
+    mail: mailRouter,
 })
 
 // export type definition of API

@@ -1,4 +1,7 @@
 "use client"
+import { ring2 } from 'ldrs'
+
+
 import { useParams } from "next/navigation";
 import { CheckCheckIcon, CheckIcon, Loader2Icon, XSquareIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from "react";
@@ -33,6 +36,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const temporaryDate = new Date();
     temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
     const [fromDate, setFromDate] = useState<Date | undefined>(temporaryDate);
+    const [isLoading, setIsLoading] = useState(true);
     const data = useMRPData();
     const params = useParams<{ code: string }>()
     const productCode = decodeURIComponent(params?.code ?? '')
@@ -40,8 +44,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const providers = data.providers;
     const products = data.products;
     const [providersSelected, setProvidersSelected] = useState<Set<string>>(new Set());
-    
-    const [loading,setLoading] = useState<boolean>(false);
     const [toDate, setToDate] = useState<Date | undefined>(new Date());
     const [unselectedClients, setSelected] = useState<Set<string>>(new Set())
     const [consumption, setConsumption] = useState<{
@@ -55,6 +57,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const [totalConsumedAmount, setTotalConsumedAmount] = useState<number>();
     const [totalMotiveConsumption, setTotalMotiveConsumption] = useState<Map<string, number>>();
     const [hasRun, setHasRun] = useState<boolean>(false);
+    ring2.register()
     useEffect(() => {
         if(fromDate && toDate && !hasRun){
             const { list: consumptionStats, totalConsumedAmount: totalTemp, totalMotiveConsumption: totalMotiveTemp } = getConsumptionStats(new Date('2023-09-04'), new Date(), Array.from(unselectedClients), Array.from(providersSelected), productCode);
@@ -68,6 +71,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             setSoldProportions(tempSoldProportions);
             setGeneralStatistics(tempGeneral);
             setHasRun(true);
+            setIsLoading(false);
         }
     },[fromDate,toDate])
 
@@ -94,32 +98,25 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const defaultValues = useMemo(() => {
         return Array.from(allProviersCodes).filter((code) => !providersSelected.has(code))
     }, [allProviersCodes, providersSelected])
-
-
-    function handlefromDateChange(date: Date | undefined) {
-        if (date) {
-            setFromDate(date);
-        }
-    }
     function handleUpdateFilters(){
         if(fromDate && toDate){
             try{
-            setLoading(true);
-            const { list: consumptionStats, totalConsumedAmount, totalMotiveConsumption } = getConsumptionStats(fromDate, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode)
-            setConsumption(consumptionStats);
-            setTotalConsumedAmount(totalConsumedAmount);
-            setTotalMotiveConsumption(totalMotiveConsumption);
-            const tempSales = getSalesAndBudgets(fromDate, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-            setSalesAndBudgets(tempSales);
-            const tempProportions = getSoldProportions(fromDate, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-            setSoldProportions(tempProportions);
-            const tempStatistics = getGeneralStatistics(fromDate, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
-            setGeneralStatistics(tempStatistics);
-            setLoading(false);
-        }
-        catch(e){
-            setLoading(false);
-        }
+                setIsLoading(true);
+                const { list: consumptionStats, totalConsumedAmount, totalMotiveConsumption } = getConsumptionStats(fromDate, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode)
+                setConsumption(consumptionStats);
+                setTotalConsumedAmount(totalConsumedAmount);
+                setTotalMotiveConsumption(totalMotiveConsumption);
+                const tempSales = getSalesAndBudgets(fromDate, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+                setSalesAndBudgets(tempSales);
+                const tempProportions = getSoldProportions(fromDate, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+                setSoldProportions(tempProportions);
+                const tempStatistics = getGeneralStatistics(fromDate, toDate, Array.from(unselectedClients), Array.from(providersSelected), productCode);
+                setGeneralStatistics(tempStatistics);
+                setIsLoading(false);
+            }
+            catch(e){
+                setIsLoading(false);
+            }
         }
     }
 
@@ -289,7 +286,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
 
     
-    if (loading){
+    if (isLoading){
         return (
             <AppLayout
             title={<div>
@@ -298,97 +295,145 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             </div>
             }
             user={props?.user} sidenav={<AppSidenav />}>
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2Icon className='mr-2 animate-spin' size={48} />
-                    <p className="text-lg font-semibold text-gray-800">Cargando...</p>
+                <div className="flex justify-between">
+                    <div className="flex gap-1">
+                        <ListSelectionDialog
+                            title='Proveedores'
+                            options={filteredProviders.map((p) => ({
+                                title: p.name,
+                                subtitle: p.code + ' - ' + (p.address || '') + ' ' + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
+                                value: p.code,
+                            }))}
+                            defaultValues={defaultValues}
+                            onApply={(selectedList) => {
+                                const selected = new Set(selectedList)
+                                const value = new Set<string>()
+                                for (const provider of filteredProviders) {
+                                    if (!selected.has(provider.code)) {
+                                        value.add(provider.code)
+                                    }
+                                }                        
+                                setProvidersSelected(value);
+                                // re ejecute funciones estadistica
+                            }}
+                        >
+                            <Button variant='outline' className="rounded-2xl bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-800 px-4 py-2">
+                                Proveedores
+                            </Button>
+                        </ListSelectionDialog>
+                        <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
+                    </div>
+                    <div className="flex gap-3">
+                        <DatePicker onChange={(e)=>setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" />
+                        <DatePicker onChange={(e)=>handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
+                        <Button  
+                        onClick={handleUpdateFilters}
+                        className="rounded-2xl bg-black text-gray-200 border-gray-700 hover:bg-gray-900 hover:border-gray-800 hover:text-gray-100 px-4 py-2">
+                            Filtrar
+                        </Button>
+                    </div>
+                
+                </div>
+                <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+                    <l-ring-2
+                    size="40"
+                    stroke="5"
+                    stroke-length="0.25"
+                    bg-opacity="0.1"
+                    speed="0.8" 
+                    color="black" 
+                    ></l-ring-2>    
+                CARGANDO 
                 </div>
             </AppLayout>
         )
     }
-    return (
-        <AppLayout
-            title={<div>
-                <h1>{product?.description ?? "Producto no encontrado"}</h1>
-                <p className='text-sm'>{product?.code ?? "Producto no encontrado"}</p>
-            </div>
-            }
-            user={props?.user} sidenav={<AppSidenav />}>
-            <div className="flex justify-between">
-                <div className="flex gap-1">
-                    <ListSelectionDialog
-                        title='Proveedores'
-                        options={filteredProviders.map((p) => ({
-                            title: p.name,
-                            subtitle: p.code + ' - ' + (p.address || '') + ' ' + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
-                            value: p.code,
-                        }))}
-                        defaultValues={defaultValues}
-                        onApply={(selectedList) => {
-                            const selected = new Set(selectedList)
-                            const value = new Set<string>()
-                            for (const provider of filteredProviders) {
-                                if (!selected.has(provider.code)) {
-                                    value.add(provider.code)
-                                }
-                            }                        
-                            setProvidersSelected(value);
-                            // re ejecute funciones estadistica
-                        }}
-                    >
-                        <Button variant='outline' className="rounded-2xl bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-800 px-4 py-2">
-                            Proveedores
+    else{
+        return (
+            <AppLayout
+                title={<div>
+                    <h1>{product?.description ?? "Producto no encontrado"}</h1>
+                    <p className='text-sm'>{product?.code ?? "Producto no encontrado"}</p>
+                </div>
+                }
+                user={props?.user} sidenav={<AppSidenav />}>
+                <div className="flex justify-between">
+                    <div className="flex gap-1">
+                        <ListSelectionDialog
+                            title='Proveedores'
+                            options={filteredProviders.map((p) => ({
+                                title: p.name,
+                                subtitle: p.code + ' - ' + (p.address || '') + ' ' + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
+                                value: p.code,
+                            }))}
+                            defaultValues={defaultValues}
+                            onApply={(selectedList) => {
+                                const selected = new Set(selectedList)
+                                const value = new Set<string>()
+                                for (const provider of filteredProviders) {
+                                    if (!selected.has(provider.code)) {
+                                        value.add(provider.code)
+                                    }
+                                }                        
+                                setProvidersSelected(value);
+                                // re ejecute funciones estadistica
+                            }}
+                        >
+                            <Button variant='outline' className="rounded-2xl bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-800 px-4 py-2">
+                                Proveedores
+                            </Button>
+                        </ListSelectionDialog>
+                        <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
+                    </div>
+                    <div className="flex gap-3">
+                        <DatePicker onChange={(e)=>setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" />
+                        <DatePicker onChange={(e)=>handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
+                        <Button  
+                        onClick={handleUpdateFilters}
+                        className="rounded-2xl bg-black text-gray-200 border-gray-700 hover:bg-gray-900 hover:border-gray-800 hover:text-gray-100 px-4 py-2">
+                            Filtrar
                         </Button>
-                    </ListSelectionDialog>
-                    <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
+                    </div>
+                    
                 </div>
-                <div className="flex gap-3">
-                    <DatePicker onChange={(e)=>setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" />
-                    <DatePicker onChange={(e)=>handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
-                    <Button  
-                    onClick={handleUpdateFilters}
-                    className="rounded-2xl bg-black text-gray-200 border-gray-700 hover:bg-gray-900 hover:border-gray-800 hover:text-gray-100 px-4 py-2">
-                        Filtrar
-                    </Button>
-                </div>
-                
-            </div>
-            <div className="bg-white shadow-md rounded-lg p-6 mt-6">
-                <h1 className="font-bold text-2xl text-gray-800 mb-4">Estadísticas generales</h1>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <p className="font-medium text-lg text-gray-700">
-                        Ventas totales: <span className="font-normal text-gray-600">{generalStatistics?.TotalSales ?? 0}</span>
-                    </p>
-                    <p className="font-medium text-lg text-gray-700">
-                        Máximo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MaximumSales ?? 0}</span>
-                    </p>
-                    <p className="font-medium text-lg text-gray-700">
-                        Mínimo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MinimumSales ?? 0}</span>
-                    </p>
-                    <p className="font-medium text-lg text-gray-700">
-                        Unid. promedio por venta: <span className="font-normal text-gray-600">{generalStatistics?.AverageSales ?? 0}</span>
-                    </p>
-                    <p className="font-medium text-lg text-gray-700">
-                        Mediana de unid. por venta: <span className="font-normal text-gray-600">{generalStatistics?.MedianSales ?? 0}</span>
-                    </p>
-                </div>
-                <br />
-                <h1 className="font-bold text-2xl text-gray-800 mb-4">Estadísticas de consumo</h1>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {totalMotiveConsumption ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
+                <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+                    <h1 className="font-bold text-2xl text-gray-800 mb-4">Estadísticas generales</h1>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <p className="font-medium text-lg text-gray-700">
-                            {motive}: <span className="font-normal text-gray-600">{Math.round(100 * amount / (totalConsumedAmount ?? 1))}% del consumo</span>
+                            Ventas totales: <span className="font-normal text-gray-600">{generalStatistics?.TotalSales ?? 0}</span>
                         </p>
-                    )) : null}
+                        <p className="font-medium text-lg text-gray-700">
+                            Máximo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MaximumSales ?? 0}</span>
+                        </p>
+                        <p className="font-medium text-lg text-gray-700">
+                            Mínimo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MinimumSales ?? 0}</span>
+                        </p>
+                        <p className="font-medium text-lg text-gray-700">
+                            Unid. promedio por venta: <span className="font-normal text-gray-600">{generalStatistics?.AverageSales ?? 0}</span>
+                        </p>
+                        <p className="font-medium text-lg text-gray-700">
+                            Mediana de unid. por venta: <span className="font-normal text-gray-600">{generalStatistics?.MedianSales ?? 0}</span>
+                        </p>
+                    </div>
+                    <br />
+                    <h1 className="font-bold text-2xl text-gray-800 mb-4">Estadísticas de consumo</h1>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {totalMotiveConsumption ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
+                            <p className="font-medium text-lg text-gray-700">
+                                {motive}: <span className="font-normal text-gray-600">{Math.round(100 * amount / (totalConsumedAmount ?? 1))}% del consumo</span>
+                            </p>
+                        )) : null}
+                    </div>
                 </div>
-            </div>
-            <div className="bg-white shadow-md rounded-lg p-6 mt-6">
-                <h1 className="font-bold text-2xl text-gray-800 mb-6">Graficos</h1>
-                <div className="flex flex-wrap gap-x-4 gap-y-6 items-center">
-                    <StackedAreaChart data={consumption ?? []} />
-                    <SimpleBartChart data={soldProportions ?? []} />
-                    <SimpleLineChart data={salesAndBudgets} />
+                <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+                    <h1 className="font-bold text-2xl text-gray-800 mb-6">Graficos</h1>
+                    <div className="flex flex-wrap gap-x-4 gap-y-6 items-center">
+                        <StackedAreaChart data={consumption ?? []} />
+                        <SimpleBartChart data={soldProportions ?? []} />
+                        <SimpleLineChart data={salesAndBudgets} />
+                    </div>
                 </div>
-            </div>
-        </AppLayout>
-    )
+            </AppLayout>
+        )
+    }
 }
