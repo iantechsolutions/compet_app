@@ -317,9 +317,9 @@ app.get("/startmailchain", async (c) => {
     }
     async function sendMails(){
         console.log("empieza", new Date());
-        // const session = await getServerAuthSession();
+        try{
         const sessions = await db.query.sessions.findMany();
-        console.log("sessions", sessions);
+        // const sessions:any[] = []
         sessions.forEach(async (session)=>{
         const mails = await api.mail.getMails.query({
             userId: session?.userId ?? ""
@@ -406,6 +406,10 @@ app.get("/startmailchain", async (c) => {
         }
         })
         console.log("termina", new Date());
+    }
+    catch(e){
+        console.log(e);
+}
     }
     console.log("llega");
 
