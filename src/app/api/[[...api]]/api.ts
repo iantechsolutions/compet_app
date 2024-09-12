@@ -404,6 +404,7 @@ app.get("/startmailchain", async (c) => {
         console.log("termina", new Date());
         }
         })
+        console.log("termina", new Date());
     }
     console.log("llega");
 
