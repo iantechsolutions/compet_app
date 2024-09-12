@@ -319,6 +319,7 @@ app.get("/startmailchain", async (c) => {
         console.log("empieza", new Date());
         // const session = await getServerAuthSession();
         const sessions = await db.query.sessions.findMany();
+        console.log("sessions", sessions);
         sessions.forEach(async (session)=>{
         const mails = await api.mail.getMails.query({
             userId: session?.userId ?? ""
