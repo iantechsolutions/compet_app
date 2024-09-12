@@ -418,7 +418,7 @@ app.get("/startmailchain", async (c) => {
     //     '0 40 18 * * 4', // cronTime
     //     function () {
     //         console.log('You will see this message every second');
-            const res = sendMails();
+            const res = await sendMails();
     //     }, // onTick
     //     onComplete, // onComplete
     //     true, // start
