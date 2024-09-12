@@ -19,6 +19,8 @@ import { cn } from '~/lib/utils'
 import { api } from '~/trpc/react'
 import type { RouterOutputs } from '~/trpc/shared'
 import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { CustomHover } from '~/components/custom-hover'
 
 export default function DataSettingsPage(props: {
     user?: NavUserData & { id: string }
@@ -259,7 +261,7 @@ function RemoteUpdateComponent() {
 
 function MailSendingConfiguration(user: NavUserData & { id: string }) {
     const [hasQueried, setHasQueried] = useState(false);
-
+    const [hasQueriedConfig, setHasQueriedConfig] = useState(false);
     // const { data: mails } = api.mail.getMails.useQuery({ userId: user.id });
     const { data: mails } = api.mail.getMails.useQuery(
         { userId: user.id ?? "" },
@@ -272,6 +274,17 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
         }
       );
 
+      const { data: mailsConfig } = api.mail.getMailsConfig.useQuery(
+        { userId: user.id ?? "" },
+        {
+          enabled: !!user.id && !hasQueriedConfig,
+          onSuccess: () => {
+            console.log("mails", mails);
+            setHasQueriedConfig(true);
+          },
+        }
+      );
+    
     useEffect(() => {
         console.log("mails", mails);
         if(mails && mails.length=== 0){
@@ -282,11 +295,27 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
         }
         
     },[mails])
+    useEffect(() => {
+        console.log("mailConfig", mailsConfig);
+        if(mailsConfig){
+            setFirstCheck(mailsConfig.firstCheck ?? 2);
+            setSecondCheck(mailsConfig.secondCheck ?? 12);
+            setBelowNMonths(mailsConfig.BelowNMonths ?? 0);
+        }
+        // else{
+        //     setMails(mails ?? [""]);
+        // }
+        
+    },[mailsConfig])
     const { mutateAsync: setMailsList,isLoading } = api.mail.setMails.useMutation();
+    const {mutateAsync: setMailConfig, isLoading: isMailConfigLoading} = api.mail.setMailConfig.useMutation();
     if(mails && mails.length === 0) {
         setMailsList({mails: [], userId: user.id});
     }
     const [mailsList, setMails] = useState<string[]>(mails  ?? [""]);
+    const [firstCheck, setFirstCheck] = useState<number>(mailsConfig?.firstCheck ?? 2);
+    const [secondCheck, setSecondCheck] = useState<number>(mailsConfig?.secondCheck ?? 12);
+    const [belowNMonths, setBelowNMonths] = useState<number>(mailsConfig?.BelowNMonths ?? 0);
     function handleEmailChange(mail:string, index: number) {
         const newMails = [...mailsList];
         newMails[index] = mail;
@@ -295,6 +324,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
     function handleMailListSave(newMails: string[]) {
         console.log(newMails);
         setMailsList({mails: newMails, userId: user.id});
+        setMailConfig({firstCheck, secondCheck, BelowNMonths: belowNMonths, userId: user.id});
     }
     function insertMailAtIndex(index: number) {
         setMails((prevMails) => {
@@ -307,6 +337,60 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
     
     return (
         <section className='w-full max-w-[600px]'>
+        <>
+            <Title>Configuracion de stock critico</Title>
+            <div className='mb-3'>
+                <div className='flex justify-between'>
+                    <p className='py-2'>Cantidad de meses primera revision</p>
+                    {/* <CustomHover hoverText="?" hoverContent='' /> */}
+                    <CustomHover hoverText="?" hoverContent={<p className="text-sm">Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)</p>} />
+                </div>
+                <Input
+                    disabled={isLoading || isMailConfigLoading}
+                    id='name'
+                    name='name'
+                    type='number'
+                    value={firstCheck}
+                    onChange={(e) => setFirstCheck(Number(e.target.value))}
+                    placeholder='2'
+                    required
+                />
+            </div>
+            <div className='mb-3'>
+            <div className='flex justify-between'>
+
+                <p className='py-2'>Cantidad de meses segunda revision</p>
+                <CustomHover hoverText="?" hoverContent={<p className="text-sm">Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)</p>} />
+                </div>
+                <Input
+                    disabled={isLoading || isMailConfigLoading}
+                    id='name'
+                    name='name'
+                    value={secondCheck}
+                    type='number'
+                    onChange={(e) => setSecondCheck(Number(e.target.value))}
+                    placeholder='12'
+                    required
+                />
+            </div>
+            <div className='mb-3'>
+            <div className='flex justify-between'>
+
+                <p className='py-2'>Cantidad de meses para regularización del stock</p>
+                <CustomHover hoverText="?" hoverContent={<p className="text-sm">No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses <br/> Ej: Si un insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1</p>} />
+                </div>
+                <Input
+                    disabled={isLoading || isMailConfigLoading}
+                    id='name'
+                    name='name'
+                    value={belowNMonths}
+                    type='number'
+                    onChange={(e) => setBelowNMonths(Number(e.target.value))}
+                    placeholder='0'
+                    required
+                />
+            </div>
+        </>
             <Title>Mails a los que notificar en caso de stock critico</Title>
             {/* <Button 
             className='mb-5'
@@ -334,7 +418,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                             />
                         </div>
                         <Button
-                            disabled={isLoading}
+                            disabled={isLoading || isMailConfigLoading}
                             onClick={() => {
                                 insertMailAtIndex(index);
                             }}
@@ -342,7 +426,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                             Agregar
                         </Button>
                         <Button
-                            disabled={mailsList.length === 1 || isLoading}
+                            disabled={mailsList.length === 1 || isLoading || isMailConfigLoading}
                             onClick={() => {
                                 const newMails = [...mailsList];
                                 newMails.splice(index, 1);
@@ -359,10 +443,10 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                 onClick={() => {
                     handleMailListSave(mailsList);
                 }}
-                disabled={isLoading}
+                disabled={isLoading || isMailConfigLoading}
                 >
-                    {isLoading && <Loader2Icon className='mr-2 animate-spin' />}
-                    Guardar mails
+                    {(isLoading || isMailConfigLoading) && <Loader2Icon className='mr-2 animate-spin' />}
+                    Guardar configuracion
                 </Button>
             
         </section>
