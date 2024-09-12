@@ -407,17 +407,17 @@ app.get("/startmailchain", async (c) => {
     }
     console.log("llega");
 
-    const job = new CronJob(
-        '0 40 18 * * 4', // cronTime
-        function () {
-            console.log('You will see this message every second');
+    // const job = new CronJob(
+    //     '0 40 18 * * 4', // cronTime
+    //     function () {
+    //         console.log('You will see this message every second');
             sendMails();
-        }, // onTick
-        onComplete, // onComplete
-        true, // start
-        'UTC' // timeZone
-    );
-      job.start();
+    //     }, // onTick
+    //     onComplete, // onComplete
+    //     true, // start
+    //     'UTC' // timeZone
+    // );
+    //   job.start();
 
       function onComplete() {
         console.error("Cron Job Complete");
