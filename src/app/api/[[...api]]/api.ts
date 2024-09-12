@@ -323,6 +323,8 @@ app.get("/startmailchain", async (c) => {
         const mails = await api.mail.getMails.query({
             userId: session?.userId ?? ""
         });
+        console.log(session.userId);
+        console.log("mails", mails);
         if (mails && mails.length > 0) {
         const {BelowNMonths,firstCheck,secondCheck} = await api.mail.getMailsConfig.query({
             userId: session?.userId ?? ""
