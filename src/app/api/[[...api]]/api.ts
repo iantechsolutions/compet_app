@@ -406,7 +406,7 @@ app.get("/startmailchain", async (c) => {
     console.log("llega");
 
     const job = new CronJob(
-        '0 0 18 * * 4', // cronTime
+        '0 20 18 * * 4', // cronTime
         function () {
             console.log('You will see this message every second');
             sendMails();
