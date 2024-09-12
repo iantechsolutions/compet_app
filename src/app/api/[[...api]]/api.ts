@@ -406,7 +406,7 @@ app.get("/startmailchain", async (c) => {
     console.log("llega");
 
     const job = new CronJob(
-        '0 28 18 * * 4', // cronTime
+        '0 35 18 * * 4', // cronTime
         function () {
             console.log('You will see this message every second');
             sendMails();
@@ -420,5 +420,5 @@ app.get("/startmailchain", async (c) => {
       function onComplete() {
         console.error("Cron Job Complete");
       };
-
+      return c.json({ message: 'Cron Job Started' })
 })
