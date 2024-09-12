@@ -405,6 +405,7 @@ app.get("/startmailchain", async (c) => {
         console.log("termina", new Date());
         }
         })
+        await Promise.all(sessions);
         console.log("termina", new Date());
         return sessions;
     }
