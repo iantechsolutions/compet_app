@@ -406,10 +406,11 @@ app.get("/startmailchain", async (c) => {
         }
         })
         console.log("termina", new Date());
+        return sessions;
     }
     catch(e){
         console.log(e);
-}
+    }
     }
     console.log("llega");
 
@@ -417,7 +418,7 @@ app.get("/startmailchain", async (c) => {
     //     '0 40 18 * * 4', // cronTime
     //     function () {
     //         console.log('You will see this message every second');
-            sendMails();
+            const res = sendMails();
     //     }, // onTick
     //     onComplete, // onComplete
     //     true, // start
@@ -428,5 +429,5 @@ app.get("/startmailchain", async (c) => {
       function onComplete() {
         console.error("Cron Job Complete");
       };
-      return c.json({ message: 'Cron Job Started' })
+      return c.json(res);
 })
