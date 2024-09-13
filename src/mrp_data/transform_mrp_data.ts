@@ -190,7 +190,7 @@ export type MRPData = ReturnType<typeof transformMRPData>
 export type MRPProduct = MRPData['products'][number]
 
 // Generamos una lista de eventos generales ordenados por fecha
-function listAllEvents(data: MappedData) {
+export function listAllEvents(data: MappedData) {
     const events: ProductEvent[] = []
 
     const today = dayjs().startOf('day').toDate()
@@ -253,7 +253,7 @@ function listAllEvents(data: MappedData) {
 // Les agregamos eventos de suministro para poder calcular el stock de forma correcta
 // Esto sucita cuando se agotan los productos que son armados y se tienen que crear nuevos armados,
 // en estos casos se asocia al pedido la materia prima necesaria para armar el producto
-function listAllEventsWithSupplyEvents(data: MappedData) {
+export function listAllEventsWithSupplyEvents(data: MappedData) {
     let events = [...listAllEvents(data)]
 
     const stockOfProductTmp = new Map<string, number>()
@@ -342,7 +342,7 @@ function listAllEventsWithSupplyEvents(data: MappedData) {
     return events
 }
 
-function listProductsEvents(data: MappedData, events: ProductEvent[]) {
+export function listProductsEvents(data: MappedData, events: ProductEvent[]) {
     const eventsByProductCode = new Map<string, ProductEvent[]>()
 
     for (const product of data.products) {
@@ -358,7 +358,7 @@ function listProductsEvents(data: MappedData, events: ProductEvent[]) {
     return eventsByProductCode
 }
 
-function stockOfProductByMonth(initialStock: number, productEvents: ProductEvent[], months: string[]) {
+export function stockOfProductByMonth(initialStock: number, productEvents: ProductEvent[], months: string[]) {
     const stockByMonth = new Map<string, number>()
 
     let stock = initialStock
@@ -426,7 +426,7 @@ function eventsOfProductByMonth(productEvents: ProductEvent[], months: string[])
 }
 
 // Generamos mapas para acceder a los datos de forma más eficiente
-function mapData(rawData: RawMRPData, forecastData?: ForecastData) {
+export function mapData(rawData: RawMRPData, forecastData?: ForecastData) {
     // Productos y provedores por código
     const productsByCode = new Map(rawData.products.map((product) => [product.code, product]))
     const providersByCode = new Map(rawData.providers.map((provider) => [provider.code, provider]))
