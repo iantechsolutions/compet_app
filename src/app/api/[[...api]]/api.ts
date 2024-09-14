@@ -661,7 +661,7 @@ app.get("/startmailchain", async (c) => {
 
     const job = new CronJob(
         '0 0 10 * * 1', // cronTime
-        function () {
+        async function () {
             console.log('You will see this message every second');
             const res = await sendMails();
         }, // onTick
@@ -674,5 +674,5 @@ app.get("/startmailchain", async (c) => {
       function onComplete() {
         console.error("Cron Job Complete");
       };
-      return c.json(res);
+      return c.json("Empezada la cadena");
 })
