@@ -3,6 +3,8 @@ import { forecastRouter } from './routers/forecast'
 import { mrpDataRouter } from './routers/mrp-data'
 import { statisticsRouter } from './routers/statistics'
 import { mailRouter } from './routers/mail'
+import ConsultsPage from '~/app/mrp/consulta/consultPage'
+import { consultRouter } from './routers/consult'
 /**
  * This is the primary router for your server.
  *
@@ -13,6 +15,7 @@ export const appRouter = createTRPCRouter({
     mrpData: mrpDataRouter,
     statistics: statisticsRouter,
     mail: mailRouter,
+    consults: consultRouter,
 })
 
 // export type definition of API
