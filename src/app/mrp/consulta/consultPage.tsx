@@ -1,4 +1,5 @@
 "use client";
+import dayjs from "dayjs";
 import { Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
@@ -8,6 +9,7 @@ import { useMRPData } from "~/components/mrp-data-provider";
 import { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { excludeProducts } from "~/server/api/constants";
 import { api } from "~/trpc/react";
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
@@ -33,9 +35,12 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
 
   useEffect(() => {
     if (data) {
-      const months = data.months;
+      // const months = data.months;
+      const prod = data.products.filter(product =>
+        !excludeProducts.some(excludedProduct => product.code.toLowerCase().startsWith(excludedProduct))
+    )
       setProducts(
-        data.products
+        prod
         // .filter((product) => {
         //   if (product.stock !== 0) return true;
 
@@ -61,6 +66,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
       });
 
       // Response is a single object { isPossible: boolean, buildDate?: Date }
+      console.log("date", res.buildDate);
       setAvailabilityResult({
         isPossible: res.isPossible,
         buildDate: res.buildDate || null,
@@ -209,7 +215,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
       <div className="flex items-center">
         <span className="text-gray-500 text-lg">Fecha de Refill de stock: </span>
         <span className="ml-2 text-lg font-medium text-gray-700">
-          {availabilityResult.buildDate ? new Date(availabilityResult.buildDate).toLocaleDateString() : ""}
+          {availabilityResult.buildDate ? dayjs(new Date((availabilityResult.buildDate + 172800000))).format("MM/YYYY") : ""}
         </span>
       </div>
       }
