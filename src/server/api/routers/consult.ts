@@ -33,8 +33,9 @@ export const consultRouter = createTRPCRouter({
                 // }
                 if((productConsumo.get(product.code) ?? 0) > product.stock-product.commited) {
                     if(product.supplies && product.supplies.length > 0 ){
-                        productConsumo.set(product.code, 0)
+                        // productConsumo.set(product.code, 0)
                         product.supplies.forEach(supply=>{
+                            console.log("supply",supply.quantity);
                             productConsumo.set(supply.supply_product_code, ((productConsumo.get(supply.product_code) ?? 0) + (supply.quantity * (productConsumo.get(product.code) ?? 0))))
                         })                        
                     }
