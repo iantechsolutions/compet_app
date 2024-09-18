@@ -676,3 +676,141 @@ app.get("/startmailchain", async (c) => {
       };
       return c.json("Empezada la cadena");
 })
+
+
+
+
+
+
+
+app.get("/individualMail/:session", async (c) => {
+    type MappedData = ReturnType<typeof mapData>
+    const sessionId = c.req.param('session')
+    console.log("sessionId",sessionId);
+    async function sendMails(){
+        console.log("empieza", new Date());
+        
+        try{
+        const visitedMails:string[] = [];
+        // const sessions = await db.query.sessions.findMany();
+        // const sessions:any[] = []
+        // sessions.forEach(async (session)=>{
+        // const session = await getServerAuthSession()
+        // const mails = await api.mail.getMails.query({
+        //     userId: session?.userId ?? ""
+        // });
+        let mails = await getUserSetting<string[]>('mrp.mails', sessionId ?? "")
+        console.log("mails",mails);
+        if (mails && mails.length > 0) {
+            // mails.forEach((mail)=>{
+            //     if(!visitedMails.includes(mail)){
+            //         visitedMails.push(mail);
+            //     }
+            //     mails = (mails?.filter((mail)=> mail !== mail) ?? []);
+            // })
+        // const {BelowNMonths,firstCheck,secondCheck} = await api.mail.getMailsConfig.query({
+        //     userId: session?.userId ?? ""
+        // })
+        const BelowNMonths = await getUserSetting<number>('mrp.mails.ignoreIfMonths', sessionId ?? "")
+        const firstCheck = await getUserSetting<number>('mrp.mails.firstSearch', sessionId ?? "")
+        const secondCheck = await getUserSetting<number>('mrp.mails.secondSearch', sessionId ?? "")
+        
+        const rawdata = await queryBaseMRPData();
+        const forecastProfileId = await getUserSetting<number>('mrp.current_forecast_profile', sessionId ?? "")
+        let forecastProfile: ForecastProfile | null =
+        forecastProfileId != null
+                ? (await db.query.forecastProfiles.findFirst({
+                    where: eq(forecastProfiles.id, forecastProfileId),
+                })) ?? null
+                : null
+
+        if (!forecastProfile) {
+            forecastProfile = nullProfile
+        }
+        const forecastData = await queryForecastData(forecastProfile, rawdata)
+        const data = mapData(rawdata, forecastData)
+        const events = listAllEventsWithSupplyEvents(data);
+        const eventsByProductCode = listProductsEvents(data, events)
+        // console.log("eventsByProductCode",eventsByProductCode);
+        const splicedMonths = getMonths(firstCheck ?? 2);
+        const months = getMonths(secondCheck ?? 12);
+        const _stockOfProductsByMonth = new Map<string, Map<string, number>>()
+        for (const product of data.products) {
+            _stockOfProductsByMonth.set(product.code, stockOfProductByMonth(product.stock, eventsByProductCode.get(product.code)!, months))
+        }
+        const finalList: {productCode:string, quantity: number, date:string, regularizationDate: string }[] = [];
+        // console.log(_stockOfProductsByMonth);
+        for (const product of data.products){
+            const stockByMonth = _stockOfProductsByMonth.get(product.code) ?? new Map<string, number>();
+            let critical = false;
+            let quantity = 0;
+            let criticalMonth = "";
+            let fixedMonth = null;
+            // console.log("product",product.code);
+            splicedMonths.map((month, index)=>{
+                if((stockByMonth.get(month) ?? 0) < 0){
+                    quantity = stockByMonth.get(month) ?? 0;
+                    criticalMonth = month;
+                    critical = true;
+                }
+            })
+            const reversedMonths = months.toReversed();
+            if(critical){
+                let reversedMonths = months.toReversed();
+                if(months.includes(criticalMonth)){
+                    reversedMonths = months.slice(months.indexOf(criticalMonth)).toReversed();
+                }
+                reversedMonths.forEach((month, index)=>{
+                    if((stockByMonth.get(month) ?? 0) >= 0){
+                        fixedMonth = month;
+                    }
+                })
+                if(fixedMonth){
+                    if(dayjs(criticalMonth).diff(dayjs(fixedMonth), 'month') > (BelowNMonths ?? 0)){
+                        finalList.push({productCode: product.code, quantity, date: criticalMonth, regularizationDate: fixedMonth});
+                    }
+                }
+                else{
+                    finalList.push({productCode: product.code, quantity, date: criticalMonth, regularizationDate: 'No hay fecha de regularización en los proximos ' + (secondCheck ?? 12) + ' meses'});
+                }
+                
+            }
+        }
+        console.log("mails", mails);
+        const { data:emailData, error } = await resend.emails.send({
+            from: 'desarrollo <desarrollo@resend.dev>',
+            to: mails ?? "",
+            subject: 'Productos faltantes',
+            react: EmailTemplate({
+                productList: finalList
+            }),
+        });
+        console.log("emailData",emailData);
+        console.log("error",error);
+        }
+       
+        console.log("termina", new Date());
+        return sessionId;
+    }
+    catch(e){
+        console.log(e);
+    }
+    }
+
+    // const job = new CronJob(
+    //     '0 0 10 * * 1', // cronTime
+    //     async function () {
+    //         console.log('You will see this message every second');
+            const res = await sendMails();
+    //     }, // onTick
+    //     onComplete, // onComplete
+    //     true, // start
+    //     'UTC' // timeZone
+    // );
+    //   job.start();
+
+    //   function onComplete() {
+    //     console.error("Cron Job Complete");
+    //   };
+      return c.json("Enviado mail de muestra");
+})

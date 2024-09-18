@@ -66,10 +66,12 @@ export function ComboboxDemo({
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
                 <Command >
-                    <CommandInput placeholder={placeholder} onValueChange={(e) => setInput(e)} />
+                    <CommandInput placeholder={placeholder} onValueChange={(e) => {
+                        setInput(e);
+                    }} />
                     <CommandEmpty>No option found.</CommandEmpty>
                     <CommandGroup>
-                        {options?.filter(x => x.label.includes(input)).map((option) => (
+                        {options?.filter(x => x.label.toLowerCase().includes(input.toLowerCase())).slice(0,15).map((option) => (
                             <CommandItem
                                 key={option.value}
                                 value={option.label}

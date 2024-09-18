@@ -308,7 +308,9 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
         
     },[mailsConfig])
     const { mutateAsync: setMailsList,isLoading } = api.mail.setMails.useMutation();
+
     const {mutateAsync: setMailConfig, isLoading: isMailConfigLoading} = api.mail.setMailConfig.useMutation();
+
     if(mails && mails.length === 0) {
         setMailsList({mails: [], userId: user.id});
     }
@@ -326,6 +328,14 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
         setMailsList({mails: newMails, userId: user.id});
         setMailConfig({firstCheck, secondCheck, BelowNMonths: belowNMonths, userId: user.id});
     }
+
+    async function handleMailTest(newMails: string[]){
+        setMailsList({mails: newMails, userId: user.id});
+        setMailConfig({firstCheck, secondCheck, BelowNMonths: belowNMonths, userId: user.id});
+        await fetch('/api/individualMail/'+ user.id);
+        console.log('/api/individualMail/'+ user.id)
+    }
+
     function insertMailAtIndex(index: number) {
         setMails((prevMails) => {
             const updatedMails = [...prevMails];
@@ -439,6 +449,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                     </div>
                 ))
             }
+            <div className="mb-4 p-4 flex items-center gap-3">
             <Button
                 onClick={() => {
                     handleMailListSave(mailsList);
@@ -448,6 +459,16 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                     {(isLoading || isMailConfigLoading) && <Loader2Icon className='mr-2 animate-spin' />}
                     Guardar configuracion
                 </Button>
+            <Button
+                onClick={() => {
+                    handleMailTest(mailsList)
+                }}
+                disabled={isLoading || isMailConfigLoading}
+                >
+                    {(isLoading || isMailConfigLoading) && <Loader2Icon className='mr-2 animate-spin' />}
+                    Guardar y enviar mails
+                </Button>
+                    </div>
             
         </section>
     );

@@ -27,6 +27,12 @@ export default async function Home() {
                         Configuración de datos
                     </Button>
                 </Link>
+
+                <Link href='/mrp/consulta' prefetch>
+                    <Button className='w-full' variant='outline'>
+                        Consulta de produccion
+                    </Button>
+                </Link>
             </div>
         </AppLayout>
     )
