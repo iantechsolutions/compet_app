@@ -71,7 +71,7 @@ export function ComboboxDemo({
                     }} />
                     <CommandEmpty>No option found.</CommandEmpty>
                     <CommandGroup>
-                        {options?.filter(x => x.label.toLowerCase().includes(input.toLowerCase())).map((option) => (
+                        {options?.filter(x => x.label.toLowerCase().includes(input.toLowerCase())).slice(0,15).map((option) => (
                             <CommandItem
                                 key={option.value}
                                 value={option.label}

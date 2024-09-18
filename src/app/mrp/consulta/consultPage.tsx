@@ -35,16 +35,17 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     if (data) {
       const months = data.months;
       setProducts(
-        data.products.filter((product) => {
-          if (product.stock !== 0) return true;
+        data.products
+        // .filter((product) => {
+        //   if (product.stock !== 0) return true;
 
-          for (const m of months) {
-            const stock = product.stock_at.get(m);
-            if (stock !== 0) return true;
-          }
+        //   for (const m of months) {
+        //     const stock = product.stock_at.get(m);
+        //     if (stock !== 0) return true;
+        //   }
 
-          return false;
-        })
+        //   return false;
+        // })
       );
     }
   }, [data]);
@@ -84,10 +85,10 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     setProductList(newProductList);
   }
 
-  function insertProductAtIndex(index: number) {
+  function insertProductAfterIndex(index: number) {
     if (!productList) return;
     const newProductList = [...productList];
-    newProductList.splice(index, 0, { productCode: "", quantity: 0 });
+    newProductList.splice(index + 1, 0, { productCode: "", quantity: 0 });
     setProductList(newProductList);
   }
 
@@ -156,7 +157,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                       <Button
                         disabled={isLoading}
                         className="w-full"
-                        onClick={() => insertProductAtIndex(index)}
+                        onClick={() => insertProductAfterIndex(index)}
                       >
                         Agregar
                       </Button>

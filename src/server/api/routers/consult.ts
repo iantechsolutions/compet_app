@@ -17,26 +17,30 @@ export const consultRouter = createTRPCRouter({
         input.listado.forEach((product) => {
             productConsumo.set(product.productCode, product.quantity)
         })
-        let i = 0;
         let unDateable = false;
         let buildDates: Date[] = [];
-        for (i = 0; i < productConsumo.size; i++) {
+        let i = 0;
+        console.log("productConsumo",productConsumo);
+        while (i < productConsumo.size) {
+            
             const product = data.products.find((product) => product.code === Array.from(productConsumo.keys())[i])
+            console.log(product?.code);
             if (product) {
-                const productConsumption = productConsumo.get(product.code)
-                if (productConsumption) {
-                    productConsumo.set(product.code, productConsumption + (productConsumo.get(product.code) ?? 0))
-                }
+                // console.log("productConsumo",productConsumo);
+                // const productConsumption = productConsumo.get(product.code)
+                // if (productConsumption) {
+                //     productConsumo.set(product.code, productConsumption + (productConsumo.get(product.code) ?? 0))
+                // }
                 if((productConsumo.get(product.code) ?? 0) > product.stock-product.commited) {
-                    if(product.supplies && product.supplies.length > 0){
+                    if(product.supplies && product.supplies.length > 0 ){
+                        productConsumo.set(product.code, 0)
                         product.supplies.forEach(supply=>{
-                            productConsumo.set(supply.product_code, ((productConsumo.get(supply.product_code) ?? 0) + (supply.quantity * (productConsumo.get(product.code) ?? 0))))
-                        })
+                            productConsumo.set(supply.supply_product_code, ((productConsumo.get(supply.product_code) ?? 0) + (supply.quantity * (productConsumo.get(product.code) ?? 0))))
+                        })                        
                     }
                     else{
                         let validAmount = false;
                         product.imports.filter(impor=>new Date(String(impor.arrival_date)).getTime() > new Date().getTime()).forEach(impor=>{
-                            console.log("fecha",impor.arrival_date);
                             if((productConsumo.get(product.code) ?? 0) < (product.stock - product.commited + impor.ordered_quantity) && !validAmount ){
                                 const tempDate = new Date(String(impor.arrival_date)) 
                                 buildDates.push(tempDate);
@@ -49,7 +53,9 @@ export const consultRouter = createTRPCRouter({
                     }
                 }
             }
+            i++;
         }
+        console.log("productConsumo",productConsumo);
         if (buildDates.length > 0 || unDateable){
             return {
                 isPossible: false,
