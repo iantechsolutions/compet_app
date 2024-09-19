@@ -90,7 +90,6 @@ app.get("/startmailchain", async (c) => {
         const data = mapData(rawdata, forecastData)
         const events = listAllEventsWithSupplyEvents(data);
         const eventsByProductCode = listProductsEvents(data, events)
-        // console.log("eventsByProductCode",eventsByProductCode);
         const splicedMonths = getMonths(firstCheck ?? 2);
         const months = getMonths(secondCheck ?? 12);
         const _stockOfProductsByMonth = new Map<string, Map<string, number>>()
@@ -98,14 +97,12 @@ app.get("/startmailchain", async (c) => {
             _stockOfProductsByMonth.set(product.code, stockOfProductByMonth(product.stock, eventsByProductCode.get(product.code)!, months))
         }
         const finalList: {productCode:string, quantity: number, date:string, regularizationDate: string }[] = [];
-        // console.log(_stockOfProductsByMonth);
         for (const product of data.products){
             const stockByMonth = _stockOfProductsByMonth.get(product.code) ?? new Map<string, number>();
             let critical = false;
             let quantity = 0;
             let criticalMonth = "";
             let fixedMonth = null;
-            // console.log("product",product.code);
             splicedMonths.map((month, index)=>{
                 if((stockByMonth.get(month) ?? 0) < 0){
                     quantity = stockByMonth.get(month) ?? 0;
@@ -157,7 +154,6 @@ app.get("/startmailchain", async (c) => {
     const job = new CronJob(
         '0 0 10 * * 1', // cronTime
         async function () {
-            console.log('You will see this message every second');
             const res = await sendMails();
         }, // onTick
         onComplete, // onComplete
@@ -206,7 +202,6 @@ app.get("/individualMail/:session", async (c) => {
         const data = mapData(rawdata, forecastData)
         const events = listAllEventsWithSupplyEvents(data);
         const eventsByProductCode = listProductsEvents(data, events)
-        // console.log("eventsByProductCode",eventsByProductCode);
         const splicedMonths = getMonths(firstCheck ?? 2);
         const months = getMonths(secondCheck ?? 12);
         const _stockOfProductsByMonth = new Map<string, Map<string, number>>()
@@ -214,14 +209,12 @@ app.get("/individualMail/:session", async (c) => {
             _stockOfProductsByMonth.set(product.code, stockOfProductByMonth(product.stock, eventsByProductCode.get(product.code)!, months))
         }
         const finalList: {productCode:string, quantity: number, date:string, regularizationDate: string }[] = [];
-        // console.log(_stockOfProductsByMonth);
         for (const product of data.products){
             const stockByMonth = _stockOfProductsByMonth.get(product.code) ?? new Map<string, number>();
             let critical = false;
             let quantity = 0;
             let criticalMonth = "";
             let fixedMonth = null;
-            // console.log("product",product.code);
             splicedMonths.map((month, index)=>{
                 if((stockByMonth.get(month) ?? 0) < 0){
                     quantity = stockByMonth.get(month) ?? 0;
@@ -251,7 +244,6 @@ app.get("/individualMail/:session", async (c) => {
                 
             }
         }
-        console.log("mails", mails);
         const { data:emailData, error } = await resend.emails.send({
             from: 'desarrollo <desarrollo@iantech.com.ar>',
             to: mails ?? "",
@@ -260,10 +252,8 @@ app.get("/individualMail/:session", async (c) => {
                 productList: finalList
             }),
         });
-        console.log("emailData",emailData);
         console.log("error",error);
         }
-       
         console.log("termina", new Date());
         return sessionId;
     }
@@ -275,7 +265,6 @@ app.get("/individualMail/:session", async (c) => {
     // const job = new CronJob(
     //     '0 0 10 * * 1', // cronTime
     //     async function () {
-    //         console.log('You will see this message every second');
             const res = await sendMails();
     //     }, // onTick
     //     onComplete, // onComplete

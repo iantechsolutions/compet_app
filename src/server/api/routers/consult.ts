@@ -49,33 +49,20 @@ export const consultRouter = createTRPCRouter({
         let unDateable = false;
         let buildDates: Date[] = [];
         let i = 0;
-        console.log("productConsumo",productConsumo);
         while (i < productConsumo.size) {
             const curatedProducts = data.products.filter(product =>
                 !excludeProducts.some(excludedProduct => product.code.toLowerCase().startsWith(excludedProduct))
             )
             const product = curatedProducts.find((product) => product.code === Array.from(productConsumo.keys())[i])
-            console.log(product?.code);
             if (product) {
                 const expiredNotImportEvents = (eventsByProductCode.get(product.code) ?? []).filter(
                     (event) => event.expired && event.type !== 'import',
                 )
                 const commited = expiredNotImportEvents.reduce((sum, event) => sum + event.quantity, 0)
-        
-
-
-
-                console.log(product.stock,commited);
-                // console.log("productConsumo",productConsumo);
-                // const productConsumption = productConsumo.get(product.code)
-                // if (productConsumption) {
-                //     productConsumo.set(product.code, productConsumption + (productConsumo.get(product.code) ?? 0))
-                // }
                 if((productConsumo.get(product.code) ?? 0) > product.stock - commited) {
                     if(product.supplies && product.supplies.length > 0 ){
                         // productConsumo.set(product.code, 0)
                         product.supplies.forEach(supply=>{
-                            console.log("supply",supply.quantity);
                             productConsumo.set(supply.supply_product_code, ((productConsumo.get(supply.product_code) ?? 0) + (supply.quantity * ((productConsumo.get(product.code) ?? 0) - (product.stock - commited )))))
                         })                        
                     }
@@ -83,7 +70,6 @@ export const consultRouter = createTRPCRouter({
                         let validAmount = false;
                         product.imports.filter(impor=>new Date(String(impor.arrival_date)).getTime() > new Date().getTime()).forEach(impor=>{
                             if((productConsumo.get(product.code) ?? 0) < (product.stock - commited + impor.ordered_quantity) && !validAmount ){
-                                console.log("arrival_date", impor.arrival_date);
                                 const tempDate = new Date(String(impor.arrival_date))
                                 buildDates.push(tempDate);
                                 validAmount = true;
@@ -97,7 +83,6 @@ export const consultRouter = createTRPCRouter({
             }
             i++;
         }
-        console.log("productConsumo",productConsumo);
         if (buildDates.length > 0 || unDateable){
             return {
                 isPossible: false,

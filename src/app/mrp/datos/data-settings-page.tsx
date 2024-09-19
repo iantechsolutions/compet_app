@@ -98,10 +98,10 @@ export default function DataSettingsPage(props: {
             <hr className='my-5 block' />
 
             <RemoteUpdateComponent />
-            
+
             <hr className='my-5 block' />
-            
-            <MailSendingConfiguration id={props.user?.id ?? ""}/>
+
+            <MailSendingConfiguration id={props.user?.id ?? ""} />
         </AppLayout>
     )
 }
@@ -267,38 +267,34 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
     const { data: mails } = api.mail.getMails.useQuery(
         { userId: user.id ?? "" },
         {
-          enabled: !!user.id && !hasQueried,
-          onSuccess: () => {
-            console.log("mails", mails);
-            setHasQueried(true);
-          },
+            enabled: !!user.id && !hasQueried,
+            onSuccess: () => {
+                setHasQueried(true);
+            },
         }
-      );
+    );
 
-      const { data: mailsConfig } = api.mail.getMailsConfig.useQuery(
+    const { data: mailsConfig } = api.mail.getMailsConfig.useQuery(
         { userId: user.id ?? "" },
         {
-          enabled: !!user.id && !hasQueriedConfig,
-          onSuccess: () => {
-            console.log("mails", mails);
-            setHasQueriedConfig(true);
-          },
+            enabled: !!user.id && !hasQueriedConfig,
+            onSuccess: () => {
+                setHasQueriedConfig(true);
+            },
         }
-      );
-    
+    );
+
     useEffect(() => {
-        console.log("mails", mails);
-        if(mails && mails.length=== 0){
+        if (mails && mails.length === 0) {
             setMails([""]);
         }
-        else{
+        else {
             setMails(mails ?? [""]);
         }
-        
-    },[mails])
+
+    }, [mails])
     useEffect(() => {
-        console.log("mailConfig", mailsConfig);
-        if(mailsConfig){
+        if (mailsConfig) {
             setFirstCheck(mailsConfig.firstCheck ?? 2);
             setSecondCheck(mailsConfig.secondCheck ?? 12);
             setBelowNMonths(mailsConfig.BelowNMonths ?? 0);
@@ -306,34 +302,32 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
         // else{
         //     setMails(mails ?? [""]);
         // }
-        
-    },[mailsConfig])
-    const { mutateAsync: setMailsList,isLoading } = api.mail.setMails.useMutation();
 
-    const {mutateAsync: setMailConfig, isLoading: isMailConfigLoading} = api.mail.setMailConfig.useMutation();
+    }, [mailsConfig])
+    const { mutateAsync: setMailsList, isLoading } = api.mail.setMails.useMutation();
 
-    if(mails && mails.length === 0) {
-        setMailsList({mails: [], userId: user.id});
+    const { mutateAsync: setMailConfig, isLoading: isMailConfigLoading } = api.mail.setMailConfig.useMutation();
+
+    if (mails && mails.length === 0) {
+        setMailsList({ mails: [], userId: user.id });
     }
-    const [mailsList, setMails] = useState<string[]>(mails  ?? [""]);
+    const [mailsList, setMails] = useState<string[]>(mails ?? [""]);
     const [firstCheck, setFirstCheck] = useState<number>(mailsConfig?.firstCheck ?? 2);
     const [secondCheck, setSecondCheck] = useState<number>(mailsConfig?.secondCheck ?? 12);
     const [belowNMonths, setBelowNMonths] = useState<number>(mailsConfig?.BelowNMonths ?? 0);
-    function handleEmailChange(mail:string, index: number) {
+    function handleEmailChange(mail: string, index: number) {
         const newMails = [...mailsList];
         newMails[index] = mail;
         setMails(newMails);
     }
     function handleMailListSave(newMails: string[]) {
-        console.log(newMails);
-        setMailsList({mails: newMails, userId: user.id});
-        setMailConfig({firstCheck, secondCheck, BelowNMonths: belowNMonths, userId: user.id});
+        setMailsList({ mails: newMails, userId: user.id });
+        setMailConfig({ firstCheck, secondCheck, BelowNMonths: belowNMonths, userId: user.id });
     }
 
-    async function handleMailTest(newMails: string[]){
+    async function handleMailTest(newMails: string[]) {
         setSendingMails(true);
-        await fetch('/api/individualMail/'+ user.id);
-        console.log('/api/individualMail/'+ user.id)
+        await fetch('/api/individualMail/' + user.id);
         setSendingMails(false);
     }
 
@@ -345,63 +339,63 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             return updatedMails;
         });
     }
-    
+
     return (
         <section className='w-full max-w-[600px]'>
-        <>
-            <Title>Configuracion de stock critico</Title>
-            <div className='mb-3'>
-                <div className='flex justify-between'>
-                    <p className='py-2'>Cantidad de meses primera revision</p>
-                    {/* <CustomHover hoverText="?" hoverContent='' /> */}
-                    <CustomHover hoverText="?" hoverContent={<p className="text-sm">Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)</p>} />
+            <>
+                <Title>Configuracion de stock critico</Title>
+                <div className='mb-3'>
+                    <div className='flex justify-between'>
+                        <p className='py-2'>Cantidad de meses primera revision</p>
+                        {/* <CustomHover hoverText="?" hoverContent='' /> */}
+                        <CustomHover hoverText="?" hoverContent={<p className="text-sm">Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)</p>} />
+                    </div>
+                    <Input
+                        disabled={isLoading || isMailConfigLoading}
+                        id='name'
+                        name='name'
+                        type='number'
+                        value={firstCheck}
+                        onChange={(e) => setFirstCheck(Number(e.target.value))}
+                        placeholder='2'
+                        required
+                    />
                 </div>
-                <Input
-                    disabled={isLoading || isMailConfigLoading}
-                    id='name'
-                    name='name'
-                    type='number'
-                    value={firstCheck}
-                    onChange={(e) => setFirstCheck(Number(e.target.value))}
-                    placeholder='2'
-                    required
-                />
-            </div>
-            <div className='mb-3'>
-            <div className='flex justify-between'>
+                <div className='mb-3'>
+                    <div className='flex justify-between'>
 
-                <p className='py-2'>Cantidad de meses segunda revision</p>
-                <CustomHover hoverText="?" hoverContent={<p className="text-sm">Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)</p>} />
+                        <p className='py-2'>Cantidad de meses segunda revision</p>
+                        <CustomHover hoverText="?" hoverContent={<p className="text-sm">Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)</p>} />
+                    </div>
+                    <Input
+                        disabled={isLoading || isMailConfigLoading}
+                        id='name'
+                        name='name'
+                        value={secondCheck}
+                        type='number'
+                        onChange={(e) => setSecondCheck(Number(e.target.value))}
+                        placeholder='12'
+                        required
+                    />
                 </div>
-                <Input
-                    disabled={isLoading || isMailConfigLoading}
-                    id='name'
-                    name='name'
-                    value={secondCheck}
-                    type='number'
-                    onChange={(e) => setSecondCheck(Number(e.target.value))}
-                    placeholder='12'
-                    required
-                />
-            </div>
-            <div className='mb-3'>
-            <div className='flex justify-between'>
+                <div className='mb-3'>
+                    <div className='flex justify-between'>
 
-                <p className='py-2'>Cantidad de meses para regularización del stock</p>
-                <CustomHover hoverText="?" hoverContent={<p className="text-sm">No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses <br/> Ej: Si un insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1</p>} />
+                        <p className='py-2'>Cantidad de meses para regularización del stock</p>
+                        <CustomHover hoverText="?" hoverContent={<p className="text-sm">No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses <br /> Ej: Si un insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1</p>} />
+                    </div>
+                    <Input
+                        disabled={isLoading || isMailConfigLoading}
+                        id='name'
+                        name='name'
+                        value={belowNMonths}
+                        type='number'
+                        onChange={(e) => setBelowNMonths(Number(e.target.value))}
+                        placeholder='0'
+                        required
+                    />
                 </div>
-                <Input
-                    disabled={isLoading || isMailConfigLoading}
-                    id='name'
-                    name='name'
-                    value={belowNMonths}
-                    type='number'
-                    onChange={(e) => setBelowNMonths(Number(e.target.value))}
-                    placeholder='0'
-                    required
-                />
-            </div>
-        </>
+            </>
             <Title>Mails a los que notificar en caso de stock critico</Title>
             {/* <Button 
             className='mb-5'
@@ -412,18 +406,18 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             }>
                 Agregar mail
             </Button> */}
-            <br/>
+            <br />
             {
                 mailsList && mailsList.map((mail, index) => (
                     <div key={index}
-                     className='mb-4 p-4 flex items-center gap-3'
+                        className='mb-4 p-4 flex items-center gap-3'
                     >
                         <div>
                             <Input
                                 id='name'
                                 name='name'
                                 value={mailsList[index]}
-                                onChange={(e) => handleEmailChange(e.target.value,index)}
+                                onChange={(e) => handleEmailChange(e.target.value, index)}
                                 placeholder='xxx@xxx.com'
                                 required
                             />
@@ -451,26 +445,26 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                 ))
             }
             <div className="mb-4 p-4 flex items-center gap-3">
-            <Button
-                onClick={() => {
-                    handleMailListSave(mailsList);
-                }}
-                disabled={isLoading || isMailConfigLoading || sendingMails}
+                <Button
+                    onClick={() => {
+                        handleMailListSave(mailsList);
+                    }}
+                    disabled={isLoading || isMailConfigLoading || sendingMails}
                 >
                     {(isLoading) && <Loader2Icon className='mr-2 animate-spin' />}
                     Guardar configuracion
                 </Button>
-            <Button
-                onClick={() => {
-                    handleMailTest(mailsList)
-                }}
-                disabled={isLoading || isMailConfigLoading || sendingMails}
+                <Button
+                    onClick={() => {
+                        handleMailTest(mailsList)
+                    }}
+                    disabled={isLoading || isMailConfigLoading || sendingMails}
                 >
                     {(sendingMails) && <Loader2Icon className='mr-2 animate-spin' />}
                     Enviar mails
                 </Button>
-                    </div>
-            
+            </div>
+
         </section>
     );
 }
