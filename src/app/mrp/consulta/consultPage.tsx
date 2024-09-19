@@ -36,9 +36,13 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   useEffect(() => {
     if (data) {
       // const months = data.months;
-      const prod = data.products.filter(product =>
-        !excludeProducts.some(excludedProduct => product.code.toLowerCase().startsWith(excludedProduct))
-    )
+      console.log("pre", data.products.length)
+      const prod = data.products
+      .filter(product =>
+
+        !excludeProducts.some(excludedProduct => product.code.toLowerCase().startsWith(excludedProduct.toLowerCase()))
+      )
+      console.log("post", prod.length)
       setProducts(
         prod
         // .filter((product) => {

@@ -7,6 +7,6 @@ export default async function Page() {
     const session = await getServerAuthSession()
     const dataInfo = await api.mrpData.mrpDataInfo.query()
     const forecastProfile = await api.forecast.currentProfile.query()
-    const mails = await getUserSetting<string[]>('mrp.mails', session?.user.id ?? "");
+    const mails = await getUserSetting<string[]>('mrp.mails',"");
     return <DataSettingsPage user={session?.user} dataInfo={dataInfo} forecastProfile={forecastProfile} mails={mails}/>
 }

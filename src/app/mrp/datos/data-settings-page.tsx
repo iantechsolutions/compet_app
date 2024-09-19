@@ -261,6 +261,7 @@ function RemoteUpdateComponent() {
 
 function MailSendingConfiguration(user: NavUserData & { id: string }) {
     const [hasQueried, setHasQueried] = useState(false);
+    const [sendingMails, setSendingMails] = useState(false);
     const [hasQueriedConfig, setHasQueriedConfig] = useState(false);
     // const { data: mails } = api.mail.getMails.useQuery({ userId: user.id });
     const { data: mails } = api.mail.getMails.useQuery(
@@ -330,10 +331,10 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
     }
 
     async function handleMailTest(newMails: string[]){
-        setMailsList({mails: newMails, userId: user.id});
-        setMailConfig({firstCheck, secondCheck, BelowNMonths: belowNMonths, userId: user.id});
+        setSendingMails(true);
         await fetch('/api/individualMail/'+ user.id);
         console.log('/api/individualMail/'+ user.id)
+        setSendingMails(false);
     }
 
     function insertMailAtIndex(index: number) {
@@ -428,7 +429,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                             />
                         </div>
                         <Button
-                            disabled={isLoading || isMailConfigLoading}
+                            disabled={isLoading || isMailConfigLoading || sendingMails}
                             onClick={() => {
                                 insertMailAtIndex(index);
                             }}
@@ -436,7 +437,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                             Agregar
                         </Button>
                         <Button
-                            disabled={mailsList.length === 1 || isLoading || isMailConfigLoading}
+                            disabled={mailsList.length === 1 || isLoading || isMailConfigLoading || sendingMails}
                             onClick={() => {
                                 const newMails = [...mailsList];
                                 newMails.splice(index, 1);
@@ -454,19 +455,19 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                 onClick={() => {
                     handleMailListSave(mailsList);
                 }}
-                disabled={isLoading || isMailConfigLoading}
+                disabled={isLoading || isMailConfigLoading || sendingMails}
                 >
-                    {(isLoading || isMailConfigLoading) && <Loader2Icon className='mr-2 animate-spin' />}
+                    {(isLoading) && <Loader2Icon className='mr-2 animate-spin' />}
                     Guardar configuracion
                 </Button>
             <Button
                 onClick={() => {
                     handleMailTest(mailsList)
                 }}
-                disabled={isLoading || isMailConfigLoading}
+                disabled={isLoading || isMailConfigLoading || sendingMails}
                 >
-                    {(isLoading || isMailConfigLoading) && <Loader2Icon className='mr-2 animate-spin' />}
-                    Guardar y enviar mails
+                    {(sendingMails) && <Loader2Icon className='mr-2 animate-spin' />}
+                    Enviar mails
                 </Button>
                     </div>
             

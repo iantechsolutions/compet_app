@@ -11,7 +11,7 @@ export const mailRouter = createTRPCRouter({
                 userId: z.string(),
             }),
         ).query(async ({ ctx, input }) => {
-            return await getUserSetting<string[]>('mrp.mails', input.userId);
+            return await getUserSetting<string[]>('mrp.mails', "");
         }),
     getMailsConfig: protectedProcedure
         .input(
@@ -19,9 +19,9 @@ export const mailRouter = createTRPCRouter({
                 userId: z.string(),
             }),
         ).query(async ({ ctx, input }) => {
-            const firstCheck = await getUserSetting<number>('mrp.mails.firstSearch', input.userId);
-            const secondCheck = await getUserSetting<number>('mrp.mails.secondSearch', input.userId)
-            const BelowNMonths = await getUserSetting<number>('mrp.mails.ignoreIfMonths', input.userId)
+            const firstCheck = await getUserSetting<number>('mrp.mails.firstSearch', "");
+            const secondCheck = await getUserSetting<number>('mrp.mails.secondSearch', "")
+            const BelowNMonths = await getUserSetting<number>('mrp.mails.ignoreIfMonths', "")
             return { firstCheck, secondCheck, BelowNMonths };
         }),
     setMails: protectedProcedure
@@ -35,7 +35,7 @@ export const mailRouter = createTRPCRouter({
             if (ctx.session.user.id !== input.userId) {
                 throw new ClientSessionError('No puedes cambiar los correos de otro usuario')
             }
-            await setUserSetting<string[]>('mrp.mails', input.userId, input.mails ?? [])
+            await setUserSetting<string[]>('mrp.mails', "", input.mails ?? [])
         }),
     setMailConfig: protectedProcedure
         .input(
@@ -50,9 +50,9 @@ export const mailRouter = createTRPCRouter({
             if (ctx.session.user.id !== input.userId) {
                 throw new ClientSessionError('No puedes cambiar los correos de otro usuario')
             }
-            await setUserSetting<number>('mrp.mails.firstSearch', input.userId, input.firstCheck ?? 2)
-            await setUserSetting<number>('mrp.mails.secondSearch', input.userId, input.secondCheck ?? 12)
-            await setUserSetting<number>('mrp.mails.ignoreIfMonths', input.userId, input.BelowNMonths ?? 0)
+            await setUserSetting<number>('mrp.mails.firstSearch', "", input.firstCheck ?? 2)
+            await setUserSetting<number>('mrp.mails.secondSearch', "", input.secondCheck ?? 12)
+            await setUserSetting<number>('mrp.mails.ignoreIfMonths', "", input.BelowNMonths ?? 0)
         })
 })
 
