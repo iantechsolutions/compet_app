@@ -54,16 +54,16 @@ app.get('/products',async (c)=>{
 
 
 
-function dateToCronPlus1(date: Date): string {
-    const minutes = date.getMinutes();
-    const hours = date.getHours();
-    const dayOfMonth = date.getDate();
-    const month = date.getMonth() + 1; // Los meses en JS son 0 indexados, así que sumamos 1
-    const dayOfWeek = date.getDay(); // Domingo es 0, Lunes es 1, etc.
+// function dateToCronPlus1(date: Date): string {
+//     const minutes = date.getMinutes();
+//     const hours = date.getHours();
+//     const dayOfMonth = date.getDate();
+//     const month = date.getMonth() + 1; // Los meses en JS son 0 indexados, así que sumamos 1
+//     const dayOfWeek = date.getDay(); // Domingo es 0, Lunes es 1, etc.
 
-    // Construimos la cadena en formato cron
-    return `${minutes+1} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
-}
+//     // Construimos la cadena en formato cron
+//     return `${minutes+1} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
+// }
 
 
 
