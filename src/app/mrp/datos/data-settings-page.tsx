@@ -327,7 +327,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
 
     async function handleMailTest(newMails: string[]) {
         setSendingMails(true);
-        await fetch('/api/individualMail/' + user.id);
+        await fetch('/api/individualMail');
         setSendingMails(false);
     }
 
