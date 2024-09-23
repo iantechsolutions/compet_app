@@ -326,6 +326,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
     }
 
     async function handleMailTest(newMails: string[]) {
+        console.log("Current Time", new Date());
         setSendingMails(true);
         await fetch('/api/individualMail/' + user.id);
         setSendingMails(false);
