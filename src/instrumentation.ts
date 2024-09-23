@@ -26,12 +26,10 @@ function dateToCronPlus1(date: Date): string {
     // Construimos la cadena en formato cron
     return `${minutes+1} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
 }
-
+const created = [];
  
 export async function register() {
-  console.log("Registering service worker...");
-    let job = null
-    
+  console.log("Registering service worker...");    
       async function sendMails(){
         const resend = new Resend(env.RESEND_API_KEY);
         type MappedData = ReturnType<typeof mapData>
@@ -133,12 +131,12 @@ export async function register() {
           console.log(e);
       }
       }
-    if(!job){
+    if(created.length==0){
         const period = dateToCronPlus1(new Date());
         console.log("Period", period);
-    job = new CronJob(
-        // '0 4 16 * * 1', // cronTime
-        period,
+    const job = new CronJob(
+        '0 22 16 * * 1', // cronTime
+        // period,
         async function () {
             console.log("Started CronJob", new Date());
             
@@ -153,6 +151,7 @@ export async function register() {
       function onComplete() {
         console.error("Cron Job Complete");
       };
+      created.push("");
     }
       
 }
