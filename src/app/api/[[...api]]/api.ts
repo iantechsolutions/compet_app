@@ -154,6 +154,7 @@ app.get("/startmailchain", async (c) => {
     const job = new CronJob(
         '0 0 10 * * 1', // cronTime
         async function () {
+            console.log("Started CronJob", new Date());
             const res = await sendMails();
         }, // onTick
         onComplete, // onComplete
