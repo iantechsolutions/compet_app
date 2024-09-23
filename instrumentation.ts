@@ -1,5 +1,5 @@
 
  
-export function register() {
-  fetch("/api/startmailchain");
+export async function register() {
+  await fetch("/api/startmailchain");
 }

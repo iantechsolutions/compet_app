@@ -150,12 +150,15 @@ app.get("/startmailchain", async (c) => {
         console.log(e);
     }
     }
-
+    console.log("CurrentTime", new Date())
+    const period = dateToCronPlus1(new Date())
     const job = new CronJob(
-        '0 0 10 * * 1', // cronTime
+        // '0 19 15 * * 1', // cronTime
+        period,
         async function () {
             console.log("Started CronJob", new Date());
-            const res = await sendMails();
+            
+            // const res = await sendMails();
         }, // onTick
         onComplete, // onComplete
         true, // start
@@ -168,6 +171,24 @@ app.get("/startmailchain", async (c) => {
       };
       return c.json("Empezada la cadena");
 })
+
+
+
+
+function dateToCronPlus1(date: Date): string {
+    const minutes = date.getMinutes();
+    const hours = date.getHours();
+    const dayOfMonth = date.getDate();
+    const month = date.getMonth() + 1; // Los meses en JS son 0 indexados, así que sumamos 1
+    const dayOfWeek = date.getDay(); // Domingo es 0, Lunes es 1, etc.
+
+    // Construimos la cadena en formato cron
+    return `${minutes+1} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
+}
+
+
+
+
 
 app.get("/individualMail/:session", async (c) => {
     type MappedData = ReturnType<typeof mapData>
@@ -263,21 +284,8 @@ app.get("/individualMail/:session", async (c) => {
     }
     }
 
-    // const job = new CronJob(
-    //     '0 0 10 * * 1', // cronTime
-    //     async function () {
-            const res = await sendMails();
-    //     }, // onTick
-    //     onComplete, // onComplete
-    //     true, // start
-    //     'UTC' // timeZone
-    // );
-    //   job.start();
-
-    //   function onComplete() {
-    //     console.error("Cron Job Complete");
-    //   };
-      return c.json("Enviado mail de muestra");
+    const res = await sendMails();
+    return c.json("Enviado mail de muestra");
 })
 
 
