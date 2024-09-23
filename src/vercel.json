@@ -1,6 +1,6 @@
 {
     "crons": [{
       "path": "/api/individualMail",
-      "schedule": "0 * 16 * * 1"
+      "schedule": "* * * * *"
     }]
   }
