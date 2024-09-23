@@ -15,6 +15,18 @@ import { getMonths } from '~/lib/utils'
 import { queryBaseMRPData } from '~/serverfunctions'
 import { excludeProducts } from '~/server/api/constants'
 
+
+function dateToCronPlus1(date: Date): string {
+    const minutes = date.getMinutes();
+    const hours = date.getHours();
+    const dayOfMonth = date.getDate();
+    const month = date.getMonth() + 1; // Los meses en JS son 0 indexados, así que sumamos 1
+    const dayOfWeek = date.getDay(); // Domingo es 0, Lunes es 1, etc.
+
+    // Construimos la cadena en formato cron
+    return `${minutes+1} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
+}
+
  
 export async function register() {
   console.log("Registering service worker...");
@@ -122,8 +134,11 @@ export async function register() {
       }
       }
     if(!job){
+        const period = dateToCronPlus1(new Date());
+        console.log("Period", period);
     job = new CronJob(
-        '0 4 16 * * 1', // cronTime
+        // '0 4 16 * * 1', // cronTime
+        period,
         async function () {
             console.log("Started CronJob", new Date());
             
