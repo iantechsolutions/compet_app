@@ -18,7 +18,8 @@ import { excludeProducts } from '~/server/api/constants'
  
 export async function register() {
   console.log("Registering service worker...");
-
+    let job = null
+    
       async function sendMails(){
         const resend = new Resend(env.RESEND_API_KEY);
         type MappedData = ReturnType<typeof mapData>
@@ -120,8 +121,9 @@ export async function register() {
           console.log(e);
       }
       }
-    const job = new CronJob(
-        '0 00 16 * * 1', // cronTime
+    if(!job){
+    job = new CronJob(
+        '0 0 16 * * 1', // cronTime
         async function () {
             console.log("Started CronJob", new Date());
             
@@ -131,9 +133,11 @@ export async function register() {
         true, // start
         'UTC' // timeZone
     );
-      job.start();
+    job.start();
 
       function onComplete() {
         console.error("Cron Job Complete");
       };
+    }
+      
 }
