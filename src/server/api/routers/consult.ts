@@ -40,7 +40,9 @@ export const consultRouter = createTRPCRouter({
         const forecastData = await queryForecastData(forecastProfile, data)
         const evolvedData = mapData(data, forecastData)
         const events = listAllEventsWithSupplyEvents(evolvedData)
-
+        const curatedProducts = data.products.filter(product =>
+            !excludeProducts.some(excludedProduct => product.code.toLowerCase().startsWith(excludedProduct))
+        )
         const eventsByProductCode = listProductsEvents(evolvedData, events)
         const productConsumo = new Map<string,number>()
         input.listado.forEach((product) => {
@@ -49,10 +51,7 @@ export const consultRouter = createTRPCRouter({
         let unDateable = false;
         let buildDates: Date[] = [];
         let i = 0;
-        while (i < productConsumo.size) {
-            const curatedProducts = data.products.filter(product =>
-                !excludeProducts.some(excludedProduct => product.code.toLowerCase().startsWith(excludedProduct))
-            )
+        while (i < productConsumo.size) {   
             const product = curatedProducts.find((product) => product.code === Array.from(productConsumo.keys())[i])
             if (product) {
                 const expiredNotImportEvents = (eventsByProductCode.get(product.code) ?? []).filter(
@@ -63,12 +62,16 @@ export const consultRouter = createTRPCRouter({
                     if(product.supplies && product.supplies.length > 0 ){
                         // productConsumo.set(product.code, 0)
                         product.supplies.forEach(supply=>{
-                            productConsumo.set(supply.supply_product_code, ((productConsumo.get(supply.product_code) ?? 0) + (supply.quantity * ((productConsumo.get(product.code) ?? 0) - (product.stock - commited )))))
+                            productConsumo.set(supply.supply_product_code, ((productConsumo.get(supply.product_code) ?? 0) + (supply.quantity * ((productConsumo.get(product.code) ?? 0) 
+                            // - (product.stock - commited )  //?????????????? revisar
+                        ))))
                         })                        
                     }
                     else{
                         let validAmount = false;
-                        product.imports.filter(impor=>new Date(String(impor.arrival_date)).getTime() > new Date().getTime()).forEach(impor=>{
+                        product.imports.filter(impor=>new Date(String(impor.arrival_date)).getTime() > new Date().getTime())
+                        //AGREGAR SORT?????, PARA QUE EMPIEZE DESDE IMPORT MAS CERCANO
+                        .forEach(impor=>{
                             if((productConsumo.get(product.code) ?? 0) < (product.stock - commited + impor.ordered_quantity) && !validAmount ){
                                 const tempDate = new Date(String(impor.arrival_date))
                                 buildDates.push(tempDate);
@@ -83,16 +86,22 @@ export const consultRouter = createTRPCRouter({
             }
             i++;
         }
-        if (buildDates.length > 0 || unDateable){
+        if (unDateable){
             return {
                 isPossible: false,
-                buildDate: unDateable ? null : Math.max(...buildDates.map(date => date.getTime()))
+                buildDate: null 
             }
         }
-        else{
-            return{
+        else if(buildDates.length > 0){
+            return {
+                isPossible: false,
+                buildDate: Math.max(...buildDates.map(date => date.getTime()))
+            }
+        }
+        return{
                 isPossible: true,
             }
-        }
+
+        
     })
 })

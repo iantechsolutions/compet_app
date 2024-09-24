@@ -229,7 +229,6 @@ app.get("/individualMail", async (c) => {
                     critical = true;
                 }
             })
-            const reversedMonths = months.toReversed();
             if(critical){
                 let reversedMonths = months.toReversed();
                 if(months.includes(criticalMonth)){

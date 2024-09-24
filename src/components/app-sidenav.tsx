@@ -5,6 +5,7 @@ import {
     BanknoteIcon,
     BarChartBigIcon,
     BarcodeIcon,
+    CogIcon,
     DatabaseBackupIcon,
     DollarSignIcon,
     FileUpIcon,
@@ -40,6 +41,10 @@ export default function AppSidenav() {
             <SidenavItem icon={<DatabaseBackupIcon />} href='/mrp/datos'>
                 Config. datos
             </SidenavItem>
+            <SidenavItem icon={<CogIcon />} href='/mrp/consulta'>
+                Consulta prod.
+            </SidenavItem>
+            
         </Sidenav>
     )
 }
