@@ -1,8 +1,8 @@
-import { getServerAuthSession } from '~/server/auth'
-import StatisticsPage from './statistics'
+import { getServerAuthSession } from "~/server/auth";
+import StatisticsPage from "./statistics";
 
 export default async function Home() {
-    const session = await getServerAuthSession()
+  const session = await getServerAuthSession();
 
-    return <StatisticsPage user={session?.user} />
+  return <StatisticsPage user={session?.user} />;
 }

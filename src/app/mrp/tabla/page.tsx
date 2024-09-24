@@ -1,8 +1,8 @@
-import { getServerAuthSession } from '~/server/auth'
-import { Table } from './table'
+import { getServerAuthSession } from "~/server/auth";
+import { Table } from "./table";
 
 export default async function Home() {
-    const session = await getServerAuthSession()
+  const session = await getServerAuthSession();
 
-    return <Table user={session?.user} />
+  return <Table user={session?.user} />;
 }

@@ -1,386 +1,379 @@
-'use client'
+"use client";
 
 /* eslint-disable */
 
-import { useWindowSize } from '@uidotdev/usehooks'
-import { useQueryState } from 'next-usequerystate'
-import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useState } from 'react'
-import { FixedSizeList as List, type ListOnScrollProps } from 'react-window'
-import AppSidenav from '~/components/app-sidenav'
-import AppLayout from '~/components/applayout'
-import { useMRPData } from '~/components/mrp-data-provider'
-import type { NavUserData } from '~/components/nav-user-section'
-import { useOnScroll } from '~/lib/hooks'
-import { cn, formatStock } from '~/lib/utils'
-import type { MRPData, MRPProduct } from '~/mrp_data/transform_mrp_data'
-import { type Filters, FiltersDialog } from './filters_dialog'
-import { useFocus } from './focused_provider'
-import { TargetOverlayInfoCard } from './overlay'
+import { useWindowSize } from "@uidotdev/usehooks";
+import { useQueryState } from "next-usequerystate";
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useState } from "react";
+import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
+import AppSidenav from "~/components/app-sidenav";
+import AppLayout from "~/components/applayout";
+import { useMRPData } from "~/components/mrp-data-provider";
+import type { NavUserData } from "~/components/nav-user-section";
+import { useOnScroll } from "~/lib/hooks";
+import { cn, formatStock } from "~/lib/utils";
+import type { MRPData, MRPProduct } from "~/mrp_data/transform_mrp_data";
+import { type Filters, FiltersDialog } from "./filters_dialog";
+import { useFocus } from "./focused_provider";
+import { TargetOverlayInfoCard } from "./overlay";
 
 function ProductInfoCell({ product }: { product: MRPProduct }) {
-    const [currentFocus, setFocus] = useFocus()
-    const id = `product-info-cell-${product.code}`
+  const [currentFocus, setFocus] = useFocus();
+  const id = `product-info-cell-${product.code}`;
 
-    const isFocused = currentFocus?.product.code === product.code
+  const isFocused = currentFocus?.product.code === product.code;
 
-    return (
-        <button
-            className={cn('border-b border-r overflow-hidden grid grid-cols-[240px_130px] bg-white z-10 md:sticky md:left-0', {
-                'text-white bg-blue-500 boder-blue-500': isFocused,
-            })}
-            onClick={() => setFocus({ product, month: undefined, elementId: id })}
-            id={id}
-        >
-            <div className='border-r py-2 px-2 shadow-sm m-0 text-left'>
-                <p className='text-md font-medium'>{product.code}</p>
-                <p className='text-xs whitespace-nowrap font-semibold'>{product.description}</p>
-            </div>
-            <div className='py-2 px-2 m-0 flex items-center h-full'>{product.additional_description}</div>
-        </button>
-    )
+  return (
+    <button
+      className={cn("z-10 grid grid-cols-[240px_130px] overflow-hidden border-b border-r bg-white md:sticky md:left-0", {
+        "boder-blue-500 bg-blue-500 text-white": isFocused,
+      })}
+      onClick={() => setFocus({ product, month: undefined, elementId: id })}
+      id={id}
+    >
+      <div className="m-0 border-r px-2 py-2 text-left shadow-sm">
+        <p className="text-md font-medium">{product.code}</p>
+        <p className="whitespace-nowrap text-xs font-semibold">{product.description}</p>
+      </div>
+      <div className="m-0 flex h-full items-center px-2 py-2">{product.additional_description}</div>
+    </button>
+  );
 }
 
-const cellCenterBaseStyles = 'border-b border-r flex items-center w-full justify-center'
+const cellCenterBaseStyles = "border-b border-r flex items-center w-full justify-center";
 
 function StockCommitedCells({ product }: { product: MRPProduct }) {
-    const [currentFocus, setFocus] = useFocus()
+  const [currentFocus, setFocus] = useFocus();
 
-    const idStock = `stock-cell-${product.code}`
-    const idCommited = `commited-cell-${product.code}`
+  const idStock = `stock-cell-${product.code}`;
+  const idCommited = `commited-cell-${product.code}`;
 
-    const stockIsFocused =
-        currentFocus?.product.code === product.code && currentFocus?.month === undefined && currentFocus?.elementId === idStock
-    const commitedIsFocused =
-        currentFocus?.product.code === product.code && currentFocus?.month === undefined && currentFocus?.elementId === idCommited
+  const stockIsFocused =
+    currentFocus?.product.code === product.code && currentFocus?.month === undefined && currentFocus?.elementId === idStock;
+  const commitedIsFocused =
+    currentFocus?.product.code === product.code && currentFocus?.month === undefined && currentFocus?.elementId === idCommited;
 
-    return (
-        <>
-            <button
-                className={cn(cellCenterBaseStyles, {
-                    'bg-blue-500 text-white': stockIsFocused,
-                })}
-                onClick={() => setFocus({ product, month: undefined, elementId: idStock })}
-                id={idStock}
-            >
-                {formatStock(product.stock)}
-            </button>
-            <button
-                className={cn(cellCenterBaseStyles, {
-                    'bg-blue-500 text-white': commitedIsFocused,
-                })}
-                onClick={() => setFocus({ product, month: undefined, elementId: idCommited })}
-                id={idCommited}
-            >
-                {formatStock(product.commited)}
-            </button>
-        </>
-    )
+  return (
+    <>
+      <button
+        className={cn(cellCenterBaseStyles, {
+          "bg-blue-500 text-white": stockIsFocused,
+        })}
+        onClick={() => setFocus({ product, month: undefined, elementId: idStock })}
+        id={idStock}
+      >
+        {formatStock(product.stock)}
+      </button>
+      <button
+        className={cn(cellCenterBaseStyles, {
+          "bg-blue-500 text-white": commitedIsFocused,
+        })}
+        onClick={() => setFocus({ product, month: undefined, elementId: idCommited })}
+        id={idCommited}
+      >
+        {formatStock(product.commited)}
+      </button>
+    </>
+  );
 }
 
 function StockAtMonthCell({ product, month }: { product: MRPProduct; month: string }) {
-    const stock = product.stock_at.get(month) ?? 0
+  const stock = product.stock_at.get(month) ?? 0;
 
-    const [currentFocus, setFocus] = useFocus()
+  const [currentFocus, setFocus] = useFocus();
 
-    const id = `stock-at-month-cell-${product.code}-${month}`
+  const id = `stock-at-month-cell-${product.code}-${month}`;
 
-    return (
-        <button
-            key={month}
-            id={id}
-            onClick={() => setFocus({ product, month, elementId: id })}
-            className={cn(cellCenterBaseStyles, 'top-0 text-sm px-1 relative', {
-                'bg-red-200 dark:bg-red-800': stock < 0,
-                'text-stone-500': stock == 0,
-                'outline-dashed outline-2 outline-blue-500': currentFocus?.product.code === product.code && currentFocus?.month === month,
-            })}
-        >
-            {formatStock(stock)}
+  return (
+    <button
+      key={month}
+      id={id}
+      onClick={() => setFocus({ product, month, elementId: id })}
+      className={cn(cellCenterBaseStyles, "relative top-0 px-1 text-sm", {
+        "bg-red-200 dark:bg-red-800": stock < 0,
+        "text-stone-500": stock == 0,
+        "outline-dashed outline-2 outline-blue-500": currentFocus?.product.code === product.code && currentFocus?.month === month,
+      })}
+    >
+      {formatStock(stock)}
 
-            <div className='absolute bottom-1 left-1 flex gap-1'>
-                {product.imported_quantity_by_month.get(month)! > 0 && <div className='w-[16px] h-[4px] rounded-full bg-green-600'></div>}
-                {product.ordered_quantity_by_month.get(month)! > 0 && <div className='w-[16px] h-[4px] rounded-full bg-blue-600'></div>}
-                {product.used_as_supply_quantity_by_month.get(month)! > 0 && (
-                    <div className='w-[16px] h-[4px] rounded-full bg-black dark:bg-white'></div>
-                )}
-                {Math.floor(product.used_as_forecast_quantity_by_month.get(month)!) > 0 && (
-                    <div className='w-[16px] h-[4px] rounded-full bg-orange-900 opacity-25'></div>
-                )}
-            </div>
-        </button>
-    )
+      <div className="absolute bottom-1 left-1 flex gap-1">
+        {product.imported_quantity_by_month.get(month)! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-green-600"></div>}
+        {product.ordered_quantity_by_month.get(month)! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-blue-600"></div>}
+        {product.used_as_supply_quantity_by_month.get(month)! > 0 && (
+          <div className="h-[4px] w-[16px] rounded-full bg-black dark:bg-white"></div>
+        )}
+        {Math.floor(product.used_as_forecast_quantity_by_month.get(month)!) > 0 && (
+          <div className="h-[4px] w-[16px] rounded-full bg-orange-900 opacity-25"></div>
+        )}
+      </div>
+    </button>
+  );
 }
 
 function ListRowContainer({
-    children,
-    style,
-    id,
-    className,
+  children,
+  style,
+  id,
+  className,
 }: {
-    children: React.ReactNode
-    style?: React.CSSProperties
-    className?: string
-    id?: string
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  className?: string;
+  id?: string;
 }) {
-    const data = useMRPData()
-    return (
-        <div
-            className={className}
-            id={id}
-            style={{
-                ...style,
-                display: 'grid',
-                gridTemplateColumns: `371px repeat(${data.months.length + 2}, minmax(130px, 1fr))`,
-            }}
-        >
-            {children}
-        </div>
-    )
+  const data = useMRPData();
+  return (
+    <div
+      className={className}
+      id={id}
+      style={{
+        ...style,
+        display: "grid",
+        gridTemplateColumns: `371px repeat(${data.months.length + 2}, minmax(130px, 1fr))`,
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 function ListRow({ index, style }: { index: number; style: React.CSSProperties }) {
-    const ctx = useContext(listRowContext)
-    const products = ctx.filteredProducts
-    const data = useMRPData()
-    const product = products[index]!
+  const ctx = useContext(listRowContext);
+  const products = ctx.filteredProducts;
+  const data = useMRPData();
+  const product = products[index]!;
 
-    return (
-        <ListRowContainer
-            key={index}
-            style={{
-                ...style,
-                width: '', // para que el sticky funcione
-            }}
-        >
-            <ProductInfoCell product={product} />
-            <StockCommitedCells product={product} />
-            {data.months.map((month) => (
-                <StockAtMonthCell key={month} product={product} month={month} />
-            ))}
-        </ListRowContainer>
-    )
+  return (
+    <ListRowContainer
+      key={index}
+      style={{
+        ...style,
+        width: "", // para que el sticky funcione
+      }}
+    >
+      <ProductInfoCell product={product} />
+      <StockCommitedCells product={product} />
+      {data.months.map((month) => (
+        <StockAtMonthCell key={month} product={product} month={month} />
+      ))}
+    </ListRowContainer>
+  );
 }
 
 const listRowContext = createContext<{
-    filteredProducts: MRPProduct[]
+  filteredProducts: MRPProduct[];
 }>({
-    filteredProducts: [],
-})
+  filteredProducts: [],
+});
 
 export function Table(props: { user?: NavUserData }) {
-    const data = useMRPData()
+  const data = useMRPData();
 
-    const [filters, setFilters] = useFilters()
+  const [filters, setFilters] = useFilters();
 
-    const filtered = useFiltered(data, filters)
-    const size = useWindowSize()
+  const filtered = useFiltered(data, filters);
+  const size = useWindowSize();
 
-    const h = (size.height ?? 1000) - 110
-    const w = size.width ?? window.innerWidth
+  const h = (size.height ?? 1000) - 110;
+  const w = size.width ?? window.innerWidth;
 
-    const headerId = useId()
-    const scrollClassName = 'scroll-list-div'
+  const headerId = useId();
+  const scrollClassName = "scroll-list-div";
 
-    const scrolldivElement = document.getElementsByClassName(scrollClassName)[0] as HTMLElement | undefined
+  const scrolldivElement = document.getElementsByClassName(scrollClassName)[0] as HTMLElement | undefined;
 
-    useOnScroll(scrolldivElement, (scrollX, scrollY) => {
-        const headerElement = document.getElementById(headerId)
-        if (!headerElement) return
+  useOnScroll(scrolldivElement, (scrollX, scrollY) => {
+    const headerElement = document.getElementById(headerId);
+    if (!headerElement) return;
 
-        headerElement.scrollTo(scrollX, 0)
-    })
+    headerElement.scrollTo(scrollX, 0);
+  });
 
-    const headerCellClassName = 'flex items-center justify-center font-semibold bg-stone-100 h-10 px-2'
+  const headerCellClassName = "flex items-center justify-center font-semibold bg-stone-100 h-10 px-2";
 
-    const [currentFocus, _] = useFocus()
+  const [currentFocus, _] = useFocus();
 
-    const [closedOverlay, setClosedOverlay] = useState(false)
+  const [closedOverlay, setClosedOverlay] = useState(false);
 
-    useEffect(() => {
-        if (currentFocus) {
-            setClosedOverlay(false)
-        }
-    }, [currentFocus])
-
-    function handleListScroll(e: ListOnScrollProps) {
-        if (e.scrollOffset === 0) {
-            // This events fires before the layout effect, for this reason we need to delay the effect
-            ; (window as any).listScrollTimeout = setTimeout(() => ((window as any).listScroll = e.scrollOffset), 500)
-        } else {
-            ; (window as any).listScroll = e.scrollOffset
-            clearTimeout((window as any).listScrollTimeout)
-        }
+  useEffect(() => {
+    if (currentFocus) {
+      setClosedOverlay(false);
     }
+  }, [currentFocus]);
 
-    useLayoutEffect(() => {
-        document.getElementsByClassName(scrollClassName)[0]?.scrollTo(0, (window as any).listScroll)
-    }, [])
+  function handleListScroll(e: ListOnScrollProps) {
+    if (e.scrollOffset === 0) {
+      // This events fires before the layout effect, for this reason we need to delay the effect
+      (window as any).listScrollTimeout = setTimeout(() => ((window as any).listScroll = e.scrollOffset), 500);
+    } else {
+      (window as any).listScroll = e.scrollOffset;
+      clearTimeout((window as any).listScrollTimeout);
+    }
+  }
 
-    return (
-        <AppLayout
-            title={<h1>COMPET MRP</h1>}
-            user={props.user}
-            sidenav={<AppSidenav />}
-            hideMenuOnDesktop
-            noPadding
-            noUserSection
-            actions={<FiltersDialog onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
-        >
-            {currentFocus && !closedOverlay && (
-                <TargetOverlayInfoCard
-                    trackElementId={currentFocus.elementId!}
-                    column={currentFocus.month}
-                    product={currentFocus.product}
-                    productHref={`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`}
-                    onClose={() => {
-                        setClosedOverlay(true)
-                    }}
-                />
-            )}
+  useLayoutEffect(() => {
+    document.getElementsByClassName(scrollClassName)[0]?.scrollTo(0, (window as any).listScroll);
+  }, []);
 
-            <ListRowContainer id={headerId} style={{ overflowX: 'hidden' }} className='shadow-md z-10'>
-                <div className={cn(headerCellClassName, 'justify-start flex md:sticky md:left-0')}>
-                    <p>Producto</p>
-                </div>
-                <div className={cn(headerCellClassName, 'text-sm')}>
-                    <p>Stock</p>
-                </div>
-                <div className={cn(headerCellClassName, 'text-sm')}>
-                    <p>Comprometido</p>
-                </div>
-                {data.months.map((month) => (
-                    <div key={month} className={cn(headerCellClassName, 'text-sm')}>
-                        <p>{month}</p>
-                    </div>
-                ))}
-            </ListRowContainer>
-            <div className='' style={{ height: h, width: w }}>
-                <listRowContext.Provider value={{ filteredProducts: filtered }}>
-                    <List
-                        onScroll={handleListScroll}
-                        className={scrollClassName}
-                        height={h}
-                        width={w}
-                        itemCount={filtered.length}
-                        itemSize={57}
-                    >
-                        {ListRow}
-                    </List>
-                </listRowContext.Provider>
-            </div>
-        </AppLayout>
-    )
+  return (
+    <AppLayout
+      title={<h1>COMPET MRP</h1>}
+      user={props.user}
+      sidenav={<AppSidenav />}
+      hideMenuOnDesktop
+      noPadding
+      noUserSection
+      actions={<FiltersDialog onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
+    >
+      {currentFocus && !closedOverlay && (
+        <TargetOverlayInfoCard
+          trackElementId={currentFocus.elementId!}
+          column={currentFocus.month}
+          product={currentFocus.product}
+          productHref={`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`}
+          onClose={() => {
+            setClosedOverlay(true);
+          }}
+        />
+      )}
+
+      <ListRowContainer id={headerId} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
+        <div className={cn(headerCellClassName, "flex justify-start md:sticky md:left-0")}>
+          <p>Producto</p>
+        </div>
+        <div className={cn(headerCellClassName, "text-sm")}>
+          <p>Stock</p>
+        </div>
+        <div className={cn(headerCellClassName, "text-sm")}>
+          <p>Comprometido</p>
+        </div>
+        {data.months.map((month) => (
+          <div key={month} className={cn(headerCellClassName, "text-sm")}>
+            <p>{month}</p>
+          </div>
+        ))}
+      </ListRowContainer>
+      <div className="" style={{ height: h, width: w }}>
+        <listRowContext.Provider value={{ filteredProducts: filtered }}>
+          <List onScroll={handleListScroll} className={scrollClassName} height={h} width={w} itemCount={filtered.length} itemSize={57}>
+            {ListRow}
+          </List>
+        </listRowContext.Provider>
+      </div>
+    </AppLayout>
+  );
 }
 
 function useFilters() {
-    const [filtersHideAllZero, setName] = useQueryState('hide_zero', {
-        clearOnDefault: true,
-        defaultValue: true,
-        parse: (v) => v === 'true',
-    })
+  const [filtersHideAllZero, setName] = useQueryState("hide_zero", {
+    clearOnDefault: true,
+    defaultValue: true,
+    parse: (v) => v === "true",
+  });
 
-    const [filtersSearch, setSearch] = useQueryState('search', {
-        clearOnDefault: true,
-        defaultValue: '',
-    })
+  const [filtersSearch, setSearch] = useQueryState("search", {
+    clearOnDefault: true,
+    defaultValue: "",
+  });
 
-    const [filtersHideProviders, setProviders] = useQueryState('hide-providers', {
-        clearOnDefault: true,
-        defaultValue: new Set<string>(),
-        parse: (v) => new Set(v.split(',')),
-        serialize: (v) => Array.from(v).join(','),
-    })
+  const [filtersHideProviders, setProviders] = useQueryState("hide-providers", {
+    clearOnDefault: true,
+    defaultValue: new Set<string>(),
+    parse: (v) => new Set(v.split(",")),
+    serialize: (v) => Array.from(v).join(","),
+  });
 
-    const [suppliesOf, setSuppliesOf] = useQueryState('supplies-of', {
-        defaultValue: '',
-        clearOnDefault: true,
-    })
+  const [suppliesOf, setSuppliesOf] = useQueryState("supplies-of", {
+    defaultValue: "",
+    clearOnDefault: true,
+  });
 
-    const filters = {
-        hideAllZero: filtersHideAllZero,
-        hideProviders: filtersHideProviders,
-        search: filtersSearch,
-        suppliesOf: suppliesOf.trim() || undefined,
+  const filters = {
+    hideAllZero: filtersHideAllZero,
+    hideProviders: filtersHideProviders,
+    search: filtersSearch,
+    suppliesOf: suppliesOf.trim() || undefined,
+  };
+
+  function setFilters(f: Filters) {
+    if (f.hideAllZero !== filters.hideAllZero) {
+      setName(f.hideAllZero);
     }
 
-    function setFilters(f: Filters) {
-        if (f.hideAllZero !== filters.hideAllZero) {
-            setName(f.hideAllZero)
-        }
-
-        if (f.hideProviders !== filters.hideProviders) {
-            setProviders(f.hideProviders)
-        }
-
-        if (f.search !== filters.search) {
-            setSearch(f.search)
-        }
-
-        if (f.suppliesOf !== suppliesOf) {
-            setSuppliesOf(f.suppliesOf || '')
-        }
+    if (f.hideProviders !== filters.hideProviders) {
+      setProviders(f.hideProviders);
     }
 
-    return [filters, setFilters] as const
+    if (f.search !== filters.search) {
+      setSearch(f.search);
+    }
+
+    if (f.suppliesOf !== suppliesOf) {
+      setSuppliesOf(f.suppliesOf || "");
+    }
+  }
+
+  return [filters, setFilters] as const;
 }
 
 function useFiltered(data: MRPData, filters: Filters) {
-    return useMemo(() => {
-        let list = data.products
-        const months = data.months
-        if (filters.hideAllZero) {
-            list = data.products.filter((product) => {
-                if (product.stock != 0) return true
+  return useMemo(() => {
+    let list = data.products;
+    const months = data.months;
+    if (filters.hideAllZero) {
+      list = data.products.filter((product) => {
+        if (product.stock != 0) return true;
 
-                for (const m of months) {
-                    const stock = product.stock_at.get(m)
-                    if (stock != 0) return true
-                }
-
-                return false
-            })
+        for (const m of months) {
+          const stock = product.stock_at.get(m);
+          if (stock != 0) return true;
         }
-        if (filters.search) {
-            list = list.filter((product) => {
-                return (
-                    product.code.toLowerCase().includes(filters.search.trim().toLowerCase()) ||
-                    product.description.toLowerCase().includes(filters.search.trim().toLowerCase())
-                )
-            })
-        }
-        if (filters.hideProviders.size > 0 && !(filters.hideProviders.has("") && filters.hideProviders.size == 1)) {
-            list = list.filter((product) => {
-                for (const provider of product.providers) {
-                    if (!filters.hideProviders.has(provider.provider_code)) {
-                        return true
-                    }
-                }
 
-                return false
-            })
+        return false;
+      });
+    }
+    if (filters.search) {
+      list = list.filter((product) => {
+        return (
+          product.code.toLowerCase().includes(filters.search.trim().toLowerCase()) ||
+          product.description.toLowerCase().includes(filters.search.trim().toLowerCase())
+        );
+      });
+    }
+    if (filters.hideProviders.size > 0 && !(filters.hideProviders.has("") && filters.hideProviders.size == 1)) {
+      list = list.filter((product) => {
+        for (const provider of product.providers) {
+          if (!filters.hideProviders.has(provider.provider_code)) {
+            return true;
+          }
         }
-        if (filters.suppliesOf) {
-            const product = data.productsByCode.get(filters.suppliesOf)
-            if (!product) {
-                return []
-            }
-            let supplies = product.supplies.map(p => p.supply_product_code)
-            let index = 0
 
-            while (index < supplies.length) {
-                const prod = data.productsByCode.get(supplies[index] ?? "");
-                console.log(prod);
-                if (prod?.supplies) {
-                    supplies = supplies.concat(prod.supplies.map(p => p.supply_product_code));
-                }
-                index += 1;
-            }
-            const productsIds = new Set(supplies)
+        return false;
+      });
+    }
+    if (filters.suppliesOf) {
+      const product = data.productsByCode.get(filters.suppliesOf);
+      if (!product) {
+        return [];
+      }
+      let supplies = product.supplies.map((p) => p.supply_product_code);
+      let index = 0;
 
-            list = list.filter((product) => {
-                return productsIds.has(product.code)
-            })
+      while (index < supplies.length) {
+        const prod = data.productsByCode.get(supplies[index] ?? "");
+        console.log(prod);
+        if (prod?.supplies) {
+          supplies = supplies.concat(prod.supplies.map((p) => p.supply_product_code));
         }
-        return list
-    }, [data, filters])
+        index += 1;
+      }
+      const productsIds = new Set(supplies);
+
+      list = list.filter((product) => {
+        return productsIds.has(product.code);
+      });
+    }
+    return list;
+  }, [data, filters]);
 }

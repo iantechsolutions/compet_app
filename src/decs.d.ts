@@ -1,28 +1,25 @@
 class Scaledrone {
-    constructor(channelId: string, options?: any)
+  constructor(channelId: string, options?: any);
 
-    clientId: string
+  clientId: string;
 
-    on(event: string, callback: (error: any) => void): void
+  on(event: string, callback: (error: any) => void): void;
 
-    authenticate(token: string): void
+  authenticate(token: string): void;
 
-    publish(options: {
-        room: string
-        message: any
-    }): void
+  publish(options: { room: string; message: any }): void;
 
-    subscribe(room: string): {
-        on(event: string, callback: (message: any) => void): void
-    }
+  subscribe(room: string): {
+    on(event: string, callback: (message: any) => void): void;
+  };
 }
 
-declare module 'scaledrone-node' {
-    export default Scaledrone
+declare module "scaledrone-node" {
+  export default Scaledrone;
 }
 
 declare global {
-    const Scaledrone: typeof Scaledrone
+  const Scaledrone: typeof Scaledrone;
 }
 
 // declare module "json-complete" {

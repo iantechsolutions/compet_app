@@ -1,9 +1,9 @@
 {
-    "recommendations": [
-        "bradlc.vscode-tailwindcss",
-        "naumovs.color-highlight",
-        "usernamehw.errorlens",
-        "wix.vscode-import-cost",
-        "streetsidesoftware.code-spell-checker"
-    ]
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "naumovs.color-highlight",
+    "usernamehw.errorlens",
+    "wix.vscode-import-cost",
+    "streetsidesoftware.code-spell-checker"
+  ]
 }

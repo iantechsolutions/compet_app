@@ -15,7 +15,6 @@
 // import { queryBaseMRPData } from '~/serverfunctions'
 // import { excludeProducts } from '~/server/api/constants'
 
-
 // function dateToCronPlus1(date: Date): string {
 //     const minutes = date.getMinutes();
 //     const hours = date.getHours();
@@ -27,15 +26,15 @@
 //     return `${minutes+1} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
 // }
 // const created = [];
- 
+
 // export async function register() {
-//   console.log("Registering service worker...");    
+//   console.log("Registering service worker...");
 //       async function sendMails(){
 //         const resend = new Resend(env.RESEND_API_KEY);
 //         type MappedData = ReturnType<typeof mapData>
-    
+
 //           console.log("empieza", new Date());
-          
+
 //           try{
 //           const visitedMails:string[] = [];
 //           const sessions = await db.query.sessions.findMany();
@@ -51,7 +50,7 @@
 //           const BelowNMonths = await getUserSetting<number>('mrp.mails.ignoreIfMonths',  "")
 //           const firstCheck = await getUserSetting<number>('mrp.mails.firstSearch',  "")
 //           const secondCheck = await getUserSetting<number>('mrp.mails.secondSearch', "")
-          
+
 //           let rawdata = await queryBaseMRPData();
 //           rawdata.products = rawdata.products
 //           .filter(product =>
@@ -110,7 +109,7 @@
 //                   else{
 //                       finalList.push({productCode: product.code, quantity, date: criticalMonth, regularizationDate: 'No hay fecha de regularización en los proximos ' + (secondCheck ?? 12) + ' meses'});
 //                   }
-                  
+
 //               }
 //           }
 //           const { data:emailData, error } = await resend.emails.send({
@@ -139,7 +138,7 @@
 //         // period,
 //         async function () {
 //             console.log("Started CronJob", new Date());
-            
+
 //             const res = await sendMails();
 //         }, // onTick
 //         onComplete, // onComplete
@@ -153,5 +152,5 @@
 //       };
 //       created.push("");
 //     }
-      
+
 // }

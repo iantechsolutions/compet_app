@@ -1,17 +1,17 @@
-import 'dotenv/config'
+import "dotenv/config";
 
-import dayjs from 'dayjs'
-import { loadDataFromTangoToCloud } from './lib/load-data-func'
+import dayjs from "dayjs";
+import { loadDataFromTangoToCloud } from "./lib/load-data-func";
 
-console.log(`[${dayjs().format('DD/MM/YYYY HH:mm:ss')}]`)
+console.log(`[${dayjs().format("DD/MM/YYYY HH:mm:ss")}]`);
 
 try {
-    await loadDataFromTangoToCloud()
+  await loadDataFromTangoToCloud();
 } catch (error) {
-    console.error(error)
-    process.exit(1)
+  console.error(error);
+  process.exit(1);
 }
 
-console.log('Saliendo...')
+console.log("Saliendo...");
 
-process.exit(0)
+process.exit(0);

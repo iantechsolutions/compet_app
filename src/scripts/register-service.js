@@ -1,9 +1,9 @@
-import { serviceEntryPath, svc } from './lib/service.js'
+import { serviceEntryPath, svc } from "./lib/service.js";
 
-console.log(serviceEntryPath)
+console.log(serviceEntryPath);
 
-svc.on('install', () => {
-    svc.start()
-})
+svc.on("install", () => {
+  svc.start();
+});
 
-svc.install()
+svc.install();

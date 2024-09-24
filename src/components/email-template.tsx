@@ -1,41 +1,46 @@
-import * as React from 'react';
-import dayjs from 'dayjs';
+import * as React from "react";
+import dayjs from "dayjs";
 
 interface EmailTemplateProps {
-  productList: { productCode: string; quantity: number; date: string; regularizationDate: string }[];
+  productList: {
+    productCode: string;
+    quantity: number;
+    date: string;
+    regularizationDate: string;
+  }[];
 }
 
 export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({ productList }) => {
   // Styles for the template
   const styles = {
     container: {
-      fontFamily: 'Arial, sans-serif',
-      padding: '20px',
-      backgroundColor: '#f9f9f9',
-      borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+      fontFamily: "Arial, sans-serif",
+      padding: "20px",
+      backgroundColor: "#f9f9f9",
+      borderRadius: "8px",
+      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
     },
     title: {
-      color: '#333',
-      borderBottom: '2px solid #007bff',
-      paddingBottom: '10px',
-      marginBottom: '20px',
+      color: "#333",
+      borderBottom: "2px solid #007bff",
+      paddingBottom: "10px",
+      marginBottom: "20px",
     },
     productItem: {
-      padding: '15px',
-      border: '1px solid #ddd',
-      borderRadius: '8px',
-      marginBottom: '15px',
-      backgroundColor: '#fff',
+      padding: "15px",
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      marginBottom: "15px",
+      backgroundColor: "#fff",
     },
     productCode: {
-      color: '#007bff',
-      marginBottom: '10px',
-      fontWeight: 'bold',
+      color: "#007bff",
+      marginBottom: "10px",
+      fontWeight: "bold",
     },
     productDetail: {
-      margin: '5px 0',
-      color: '#555',
+      margin: "5px 0",
+      color: "#555",
     },
   };
 

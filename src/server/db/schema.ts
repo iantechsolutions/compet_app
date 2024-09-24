@@ -1,19 +1,19 @@
-import type { AdapterAccount } from '@auth/core/adapters'
-import { relations, sql } from 'drizzle-orm'
+import type { AdapterAccount } from "@auth/core/adapters";
+import { relations, sql } from "drizzle-orm";
 import {
-    boolean,
-    index,
-    integer,
-    json,
-    numeric,
-    pgTableCreator,
-    primaryKey,
-    real,
-    serial,
-    text,
-    timestamp,
-    varchar,
-} from 'drizzle-orm/pg-core'
+  boolean,
+  index,
+  integer,
+  json,
+  numeric,
+  pgTableCreator,
+  primaryKey,
+  real,
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -21,105 +21,107 @@ import {
  *
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const pgTable = pgTableCreator((name) => `compet_app_${name}`)
+export const pgTable = pgTableCreator((name) => `compet_app_${name}`);
 
-export const users = pgTable('user', {
-    id: varchar('id', { length: 255 }).notNull().primaryKey(),
-    name: varchar('name', { length: 255 }),
-    email: varchar('email', { length: 255 }).notNull(),
-    emailVerified: timestamp('emailVerified', {
-        mode: 'date',
-    }).default(sql`CURRENT_TIMESTAMP(3)`),
-    image: varchar('image', { length: 255 }),
-})
+export const users = pgTable("user", {
+  id: varchar("id", { length: 255 }).notNull().primaryKey(),
+  name: varchar("name", { length: 255 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  emailVerified: timestamp("emailVerified", {
+    mode: "date",
+  }).default(sql`CURRENT_TIMESTAMP(3)`),
+  image: varchar("image", { length: 255 }),
+});
 
 export const usersRelations = relations(users, ({ many }) => ({
-    accounts: many(accounts),
-    sessions: many(sessions),
-}))
+  accounts: many(accounts),
+  sessions: many(sessions),
+}));
 
 export const accounts = pgTable(
-    'account',
-    {
-        userId: varchar('userId', { length: 255 }).notNull(),
-        type: varchar('type', { length: 255 }).$type<AdapterAccount['type']>().notNull(),
-        provider: varchar('provider', { length: 255 }).notNull(),
-        providerAccountId: varchar('providerAccountId', { length: 255 }).notNull(),
-        refresh_token: text('refresh_token'),
-        access_token: text('access_token'),
-        expires_at: integer('expires_at'),
-        token_type: varchar('token_type', { length: 255 }),
-        scope: varchar('scope', { length: 255 }),
-        id_token: text('id_token'),
-        session_state: varchar('session_state', { length: 255 }),
-    },
-    (account) => ({
-        compoundKey: primaryKey(account.provider, account.providerAccountId),
-        userIdIdx: index('account_userId_idx').on(account.userId),
-    }),
-)
+  "account",
+  {
+    userId: varchar("userId", { length: 255 }).notNull(),
+    type: varchar("type", { length: 255 }).$type<AdapterAccount["type"]>().notNull(),
+    provider: varchar("provider", { length: 255 }).notNull(),
+    providerAccountId: varchar("providerAccountId", { length: 255 }).notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: varchar("token_type", { length: 255 }),
+    scope: varchar("scope", { length: 255 }),
+    id_token: text("id_token"),
+    session_state: varchar("session_state", { length: 255 }),
+  },
+  (account) => ({
+    compoundKey: primaryKey(account.provider, account.providerAccountId),
+    userIdIdx: index("account_userId_idx").on(account.userId),
+  }),
+);
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
-    user: one(users, { fields: [accounts.userId], references: [users.id] }),
-}))
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+}));
 
 export const sessions = pgTable(
-    'session',
-    {
-        sessionToken: varchar('sessionToken', { length: 255 }).notNull().primaryKey(),
-        userId: varchar('userId', { length: 255 }).notNull(),
-        expires: timestamp('expires', { mode: 'date' }).notNull(),
-    },
-    (session) => ({
-        userIdIdx: index('session_userId_idx').on(session.userId),
-    }),
-)
+  "session",
+  {
+    sessionToken: varchar("sessionToken", { length: 255 }).notNull().primaryKey(),
+    userId: varchar("userId", { length: 255 }).notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (session) => ({
+    userIdIdx: index("session_userId_idx").on(session.userId),
+  }),
+);
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
-    user: one(users, { fields: [sessions.userId], references: [users.id] }),
-}))
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
+}));
 
 export const verificationTokens = pgTable(
-    'verificationToken',
-    {
-        identifier: varchar('identifier', { length: 255 }).notNull(),
-        token: varchar('token', { length: 255 }).notNull(),
-        expires: timestamp('expires', { mode: 'date' }).notNull(),
-    },
-    (vt) => ({
-        compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-    }),
-)
+  "verificationToken",
+  {
+    identifier: varchar("identifier", { length: 255 }).notNull(),
+    token: varchar("token", { length: 255 }).notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (vt) => ({
+    compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
+  }),
+);
 
-export const forecastProfiles = pgTable('forecastProfile', {
-    id: serial('id').notNull().primaryKey(),
-    name: varchar('name', { length: 255 }).notNull(),
+export const forecastProfiles = pgTable("forecastProfile", {
+  id: serial("id").notNull().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
 
-    includeSales: boolean('include_sales').notNull().default(true),
-    salesIncrementFactor: real('sales_increment_factor').notNull(),
+  includeSales: boolean("include_sales").notNull().default(true),
+  salesIncrementFactor: real("sales_increment_factor").notNull(),
 
-    includeBudgets: boolean('include_budgets').notNull().default(true),
-    budgetsInclusionFactor: real('budgets_inclusion_factor').notNull(),
+  includeBudgets: boolean("include_budgets").notNull().default(true),
+  budgetsInclusionFactor: real("budgets_inclusion_factor").notNull(),
 
-    clientInclusionList: json('include_clients').$type<string[] | null>().default(null),
+  clientInclusionList: json("include_clients").$type<string[] | null>().default(null),
 
-    createdAt: timestamp('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP(3)`),
-})
+  createdAt: timestamp("created_at", { mode: "date" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP(3)`),
+});
 
-export const settings = pgTable('setting', {
-    key: varchar('key', { length: 255 }).notNull().primaryKey().unique(),
+export const settings = pgTable("setting", {
+  key: varchar("key", { length: 255 }).notNull().primaryKey().unique(),
 
-    value: json('value').$type<unknown>().default(null),
-})
+  value: json("value").$type<unknown>().default(null),
+});
 
 export const userSettings = pgTable(
-    'user_setting',
-    {
-        userId: varchar('userId', { length: 255 }).notNull(),
-        key: varchar('key', { length: 255 }).notNull(),
-        value: json('value').$type<unknown>().default(null),
-    },
-    (us) => ({
-        compoundKey: primaryKey(us.userId, us.key),
-    }),
-)
+  "user_setting",
+  {
+    userId: varchar("userId", { length: 255 }).notNull(),
+    key: varchar("key", { length: 255 }).notNull(),
+    value: json("value").$type<unknown>().default(null),
+  },
+  (us) => ({
+    compoundKey: primaryKey(us.userId, us.key),
+  }),
+);

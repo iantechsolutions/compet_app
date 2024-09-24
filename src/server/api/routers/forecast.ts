@@ -1,94 +1,94 @@
-import { eq } from 'drizzle-orm'
-import { z } from 'zod'
-import { nullProfile } from '~/lib/nullForecastProfile'
-import { getUserSetting, setUserSetting } from '~/lib/settings'
-import { createId } from '~/lib/utils'
-import { db } from '~/server/db'
-import * as schema from '~/server/db/schema'
-import { createTRPCRouter, protectedProcedure } from '../trpc'
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { nullProfile } from "~/lib/nullForecastProfile";
+import { getUserSetting, setUserSetting } from "~/lib/settings";
+import { createId } from "~/lib/utils";
+import { db } from "~/server/db";
+import * as schema from "~/server/db/schema";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const forecastRouter = createTRPCRouter({
-    createProfile: protectedProcedure
-        .input(
-            z.object({
-                name: z.string().min(1),
+  createProfile: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
 
-                includeSales: z.boolean().default(true),
-                salesIncrementFactor: z.number().default(0.01),
+        includeSales: z.boolean().default(true),
+        salesIncrementFactor: z.number().default(0.01),
 
-                includeBudgets: z.boolean().default(true),
-                budgetsInclusionFactor: z.number().default(0.01),
+        includeBudgets: z.boolean().default(true),
+        budgetsInclusionFactor: z.number().default(0.01),
 
-                clientInclusionList: z.array(z.string()).nullable().default(null),
-            }),
-        )
-        .mutation(async ({ ctx, input }) => {
-            const r = await ctx.db
-                .insert(schema.forecastProfiles)
-                .values({
-                    budgetsInclusionFactor: input.budgetsInclusionFactor,
-                    clientInclusionList: input.clientInclusionList,
-                    includeBudgets: input.includeBudgets,
-                    includeSales: input.includeSales,
-                    salesIncrementFactor: input.salesIncrementFactor,
-                    name: input.name,
-                })
-                .returning({ id: schema.forecastProfiles.id })
-            return r[0]!.id
-        }),
-    listProfiles: protectedProcedure.query(async ({ ctx }) => {
-        const profiles = await ctx.db.query.forecastProfiles.findMany()
-
-        const profileInUse = await getUserSetting<number>('mrp.current_forecast_profile', ctx.session.user.id)
-
-        return profiles.map((p) => ({
-            ...p,
-            current: p.id == profileInUse,
-        }))
+        clientInclusionList: z.array(z.string()).nullable().default(null),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const r = await ctx.db
+        .insert(schema.forecastProfiles)
+        .values({
+          budgetsInclusionFactor: input.budgetsInclusionFactor,
+          clientInclusionList: input.clientInclusionList,
+          includeBudgets: input.includeBudgets,
+          includeSales: input.includeSales,
+          salesIncrementFactor: input.salesIncrementFactor,
+          name: input.name,
+        })
+        .returning({ id: schema.forecastProfiles.id });
+      return r[0]!.id;
     }),
-    deleteProfile: protectedProcedure
-        .input(
-            z.object({
-                id: z.number(),
-            }),
-        )
-        .mutation(async ({ ctx, input }) => {
-            const profileInUse = await getUserSetting<number>('mrp.current_forecast_profile', ctx.session.user.id)
+  listProfiles: protectedProcedure.query(async ({ ctx }) => {
+    const profiles = await ctx.db.query.forecastProfiles.findMany();
 
-            if (profileInUse == input.id) {
-                throw new Error('No se puede eliminar el perfil actual')
-            }
+    const profileInUse = await getUserSetting<number>("mrp.current_forecast_profile", ctx.session.user.id);
 
-            await ctx.db.delete(schema.forecastProfiles).where(eq(schema.forecastProfiles.id, input.id))
-        }),
-    applyProfile: protectedProcedure
-        .input(
-            z.object({
-                id: z.number(),
-            }),
-        )
-        .mutation(async ({ ctx, input }) => {
-            await setUserSetting('mrp.current_forecast_profile', ctx.session.user.id, input.id)
-        }),
-    applyNullProfile: protectedProcedure.mutation(async ({ ctx }) => {
-        await setUserSetting('mrp.current_forecast_profile', ctx.session.user.id, null)
+    return profiles.map((p) => ({
+      ...p,
+      current: p.id == profileInUse,
+    }));
+  }),
+  deleteProfile: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const profileInUse = await getUserSetting<number>("mrp.current_forecast_profile", ctx.session.user.id);
+
+      if (profileInUse == input.id) {
+        throw new Error("No se puede eliminar el perfil actual");
+      }
+
+      await ctx.db.delete(schema.forecastProfiles).where(eq(schema.forecastProfiles.id, input.id));
     }),
-    currentProfile: protectedProcedure.query(({ ctx }) => {
-        return getCurrentProfile(ctx.session.user.id)
+  applyProfile: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await setUserSetting("mrp.current_forecast_profile", ctx.session.user.id, input.id);
     }),
-    obtainCurrentProfile: protectedProcedure.mutation(({ ctx }) => {
-        return getCurrentProfile(ctx.session.user.id)
-    }),
-})
+  applyNullProfile: protectedProcedure.mutation(async ({ ctx }) => {
+    await setUserSetting("mrp.current_forecast_profile", ctx.session.user.id, null);
+  }),
+  currentProfile: protectedProcedure.query(({ ctx }) => {
+    return getCurrentProfile(ctx.session.user.id);
+  }),
+  obtainCurrentProfile: protectedProcedure.mutation(({ ctx }) => {
+    return getCurrentProfile(ctx.session.user.id);
+  }),
+});
 
 async function getCurrentProfile(userId: string) {
-    const profileInUse = await getUserSetting<number>('mrp.current_forecast_profile', userId)
+  const profileInUse = await getUserSetting<number>("mrp.current_forecast_profile", userId);
 
-    if (!profileInUse) return nullProfile
+  if (!profileInUse) return nullProfile;
 
-    const profile = await db.query.forecastProfiles.findFirst({
-        where: eq(schema.forecastProfiles.id, profileInUse),
-    })
+  const profile = await db.query.forecastProfiles.findFirst({
+    where: eq(schema.forecastProfiles.id, profileInUse),
+  });
 
-    return profile ?? nullProfile
+  return profile ?? nullProfile;
 }

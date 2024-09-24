@@ -16,7 +16,8 @@
     "listen-load-data": "tsx src/scripts/listen-load-data.ts",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "format": "npx prettier --write ."
   },
   "dependencies": {
     "@auth/core": "^0.19.0",
@@ -115,7 +116,7 @@
     "mini-css-extract-plugin": "^2.9.1",
     "pg": "^8.11.5",
     "postcss": "^8.4.31",
-    "prettier": "^3.1.0",
+    "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.5.7",
     "react-email": "3.0.1",
     "tailwindcss": "^3.3.5",

@@ -1,57 +1,55 @@
-import { File } from '@web-std/file'
-import 'dotenv/config'
-import { getSetting, setSetting } from '../../lib/settings'
-import { encodeData } from '../../lib/utils'
-import { readDataFromDB } from '../../scripts/lib/read-from-tango-db'
-import { utapi } from '../../server/uploadthing'
+import { File } from "@web-std/file";
+import "dotenv/config";
+import { getSetting, setSetting } from "../../lib/settings";
+import { encodeData } from "../../lib/utils";
+import { readDataFromDB } from "../../scripts/lib/read-from-tango-db";
+import { utapi } from "../../server/uploadthing";
 
-export async function loadDataFromTangoToCloud(opts?: {
-    log: (...args: unknown[]) => unknown
-}) {
-    const log = opts?.log ?? console.log
+export async function loadDataFromTangoToCloud(opts?: { log: (...args: unknown[]) => unknown }) {
+  const log = opts?.log ?? console.log;
 
-    const rawData = await readDataFromDB({ log })
+  const rawData = await readDataFromDB({ log });
 
-    log('Datos leidos de la base de datos')
+  log("Datos leidos de la base de datos");
 
-    const encoded = encodeData(rawData)
+  const encoded = encodeData(rawData);
 
-    // log("Datos codificados", "Tamaño:", encoded.length, `${encoded.substring(0, 100)}.....`)
+  // log("Datos codificados", "Tamaño:", encoded.length, `${encoded.substring(0, 100)}.....`)
 
-    log('Subiendo datos al servidor...')
+  log("Subiendo datos al servidor...");
 
-    const [uploaded] = await utapi.uploadFiles(
-        [
-            new File([encoded], 'mrp-raw-data-export.flatted.json', {
-                type: 'application/json',
-            }),
-        ],
-        {
-            metadata: {
-                date: new Date().toISOString(),
-            },
-        },
-    )
+  const [uploaded] = await utapi.uploadFiles(
+    [
+      new File([encoded], "mrp-raw-data-export.flatted.json", {
+        type: "application/json",
+      }),
+    ],
+    {
+      metadata: {
+        date: new Date().toISOString(),
+      },
+    },
+  );
 
-    const lastUploadedFile = await getSetting<string>('mrp.export-file')
+  const lastUploadedFile = await getSetting<string>("mrp.export-file");
 
-    const key = uploaded?.data?.key
-    if (!key) {
-        throw new Error('[ERROR] No se pudo subir el archivo')
+  const key = uploaded?.data?.key;
+  if (!key) {
+    throw new Error("[ERROR] No se pudo subir el archivo");
+  }
+
+  await setSetting("mrp.export-file", key);
+  await setSetting<string>("mrp.export-date", new Date().toString());
+
+  if (lastUploadedFile) {
+    try {
+      await utapi.deleteFiles(lastUploadedFile);
+    } catch (error) {
+      console.warn("No se pudo borrar el archivo anterior");
     }
+  }
 
-    await setSetting('mrp.export-file', key)
-    await setSetting<string>('mrp.export-date', new Date().toString())
+  log("Datos subidos al servidor");
 
-    if (lastUploadedFile) {
-        try {
-            await utapi.deleteFiles(lastUploadedFile)
-        } catch (error) {
-            console.warn('No se pudo borrar el archivo anterior')
-        }
-    }
-
-    log('Datos subidos al servidor')
-
-    return rawData
+  return rawData;
 }

@@ -1,6 +1,6 @@
-import { handlers } from '~/server/auth'
+import { handlers } from "~/server/auth";
 
-const GET = handlers.GET
-const POST = handlers.POST
+const GET = handlers.GET;
+const POST = handlers.POST;
 
-export { GET, POST }
+export { GET, POST };

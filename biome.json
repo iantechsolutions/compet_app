@@ -1,45 +1,33 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.6.4/schema.json",
-	"files": {
-		"ignore": [
-			"**/.next",
-			"**/public",
-			"**/.turbo",
-			"**/typescript/*.json",
-			"**/tsconfig.json"
-		],
-		"include": [
-			"**/*.js",
-			"**/*.ts",
-			"**/*.tsx",
-			"**/*.json",
-			"**/*.jsonc"
-		]
-	},
-	"organizeImports": {
-		"enabled": true
-	},
-	"formatter": {
-		"indentWidth": 4,
-		"indentStyle": "space",
-		"lineWidth": 140,
-		"lineEnding": "lf"
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "single",
-			"jsxQuoteStyle": "single",
-			"trailingComma": "all",
-			"semicolons": "asNeeded",
-			"quoteProperties": "asNeeded"
-		}
-	},
-	"vcs": {
-		"enabled": true,
-		"clientKind": "git",
-		"defaultBranch": "main"
-	},
-	"linter": {
-		"enabled": false
-	}
+  "$schema": "https://biomejs.dev/schemas/1.6.4/schema.json",
+  "files": {
+    "ignore": ["**/.next", "**/public", "**/.turbo", "**/typescript/*.json", "**/tsconfig.json"],
+    "include": ["**/*.js", "**/*.ts", "**/*.tsx", "**/*.json", "**/*.jsonc"]
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "formatter": {
+    "indentWidth": 4,
+    "indentStyle": "space",
+    "lineWidth": 140,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "single",
+      "trailingComma": "all",
+      "semicolons": "asNeeded",
+      "quoteProperties": "asNeeded"
+    }
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "defaultBranch": "main"
+  },
+  "linter": {
+    "enabled": false
+  }
 }

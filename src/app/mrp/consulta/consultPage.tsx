@@ -31,20 +31,21 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
 
   const data = useMRPData();
   const [products, setProducts] = useState<Product[]>([]);
-  const [availabilityResult, setAvailabilityResult] = useState<{ isPossible: boolean; buildDate?: number | null } | null>(null);
+  const [availabilityResult, setAvailabilityResult] = useState<{
+    isPossible: boolean;
+    buildDate?: number | null;
+  } | null>(null);
 
   useEffect(() => {
     if (data) {
       // const months = data.months;
-      console.log("pre", data.products.length)
-      const prod = data.products
-      .filter(product =>
-
-        !excludeProducts.some(excludedProduct => product.code.toLowerCase().startsWith(excludedProduct.toLowerCase()))
-      )
-      console.log("post", prod.length)
+      console.log("pre", data.products.length);
+      const prod = data.products.filter(
+        (product) => !excludeProducts.some((excludedProduct) => product.code.toLowerCase().startsWith(excludedProduct.toLowerCase())),
+      );
+      console.log("post", prod.length);
       setProducts(
-        prod
+        prod,
         // .filter((product) => {
         //   if (product.stock !== 0) return true;
 
@@ -59,14 +60,12 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     }
   }, [data]);
 
-  const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([
-    { productCode: "", quantity: 0 },
-  ]);
+  const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
 
   async function handleAvailabilityCheck() {
     if (productList) {
       const res = await checkAvailability({
-        listado: productList
+        listado: productList,
       });
 
       // Response is a single object { isPossible: boolean, buildDate?: Date }
@@ -87,7 +86,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   }
 
   function handleProductQuantityChange(value: number, index: number) {
-    if(value < 0) return;
+    if (value < 0) return;
     if (!productList) return;
     const newProductList = [...productList];
     if (!newProductList[index]) newProductList[index] = { productCode: "", quantity: 0 };
@@ -113,11 +112,11 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
       sidenav={<AppSidenav />}
     >
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Consulta de Producción</h1>
+        <h1 className="mb-6 text-3xl font-bold">Consulta de Producción</h1>
 
         {/* Product List Styled as a Bill */}
         <div className="grid grid-cols-1 gap-4">
-          <table className="w-full text-left border-collapse border border-gray-300">
+          <table className="w-full border-collapse border border-gray-300 text-left">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border border-gray-300 px-4 py-2">Código de Producto</th>
@@ -164,11 +163,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
 
                     {/* Add Button */}
                     <td className="border border-gray-300 px-4 py-2">
-                      <Button
-                        disabled={isLoading}
-                        className="w-full"
-                        onClick={() => insertProductAfterIndex(index)}
-                      >
+                      <Button disabled={isLoading} className="w-full" onClick={() => insertProductAfterIndex(index)}>
                         Agregar
                       </Button>
                     </td>
@@ -198,35 +193,37 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
         <div className="mt-6">
           <Button className="w-full py-3 text-lg" onClick={async () => handleAvailabilityCheck()} disabled={isLoading}>
             <div className="flex flex-row">
-              {isLoading && <Loader2Icon className='animate-spin mr-2 w-full' />}
+              {isLoading && <Loader2Icon className="mr-2 w-full animate-spin" />}
               Consultar Disponibilidad
             </div>
           </Button>
         </div>
 
         {/* Display Availability Results */}
-{availabilityResult && !isLoading && (
-  <div className="mt-6 p-4 bg-white shadow-md rounded-md">
-    <h2 className="text-2xl font-bold mb-4">Resultado de Disponibilidad</h2>
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <span className={`inline-block text-lg font-semibold ${availabilityResult.isPossible ? 'text-green-600' : 'text-red-600'}`}>
-          {availabilityResult.isPossible ? "Posible" : availabilityResult.buildDate ? "No es posible ahora" : "No figura ingreso de stock suficiente"}
-        </span>
-      </div>
-      {
-        !availabilityResult.isPossible && availabilityResult.buildDate &&
-      <div className="flex items-center">
-        <span className="text-gray-500 text-lg">Fecha de Refill de stock: </span>
-        <span className="ml-2 text-lg font-medium text-gray-700">
-          {availabilityResult.buildDate ? dayjs(new Date((availabilityResult.buildDate + 172800000))).format("MM/YYYY") : ""}
-        </span>
-      </div>
-      }
-    </div>
-  </div>
-)}
-
+        {availabilityResult && !isLoading && (
+          <div className="mt-6 rounded-md bg-white p-4 shadow-md">
+            <h2 className="mb-4 text-2xl font-bold">Resultado de Disponibilidad</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <span className={`inline-block text-lg font-semibold ${availabilityResult.isPossible ? "text-green-600" : "text-red-600"}`}>
+                  {availabilityResult.isPossible
+                    ? "Posible"
+                    : availabilityResult.buildDate
+                      ? "No es posible ahora"
+                      : "No figura ingreso de stock suficiente"}
+                </span>
+              </div>
+              {!availabilityResult.isPossible && availabilityResult.buildDate && (
+                <div className="flex items-center">
+                  <span className="text-lg text-gray-500">Fecha de Refill de stock: </span>
+                  <span className="ml-2 text-lg font-medium text-gray-700">
+                    {availabilityResult.buildDate ? dayjs(new Date(availabilityResult.buildDate + 172800000)).format("MM/YYYY") : ""}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
