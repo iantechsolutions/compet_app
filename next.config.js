@@ -6,9 +6,6 @@ await import("./src/env.js");
 
 /** @type {import("next").NextConfig} */
 const config = {
-  experimental: {
-    instrumentationHook: true,
-  },
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.
