@@ -88,7 +88,7 @@ export const consultRouter = createTRPCRouter({
                 const productSupply = productConsumo.find((v) => supply.product_code === v[0])?.[1] ?? 0;
                 productConsumo.push([
                   supply.supply_product_code,
-                  productSupply + supply.quantity * pcValue
+                  productSupply + supply.quantity * pcValue,
                   // - (product.stock - commited o consumedTotal)  //?????????????? revisar
                 ]);
               });
@@ -137,14 +137,14 @@ export const consultRouter = createTRPCRouter({
       if (unDateable) {
         // intacto
       } else if (arrivalDates.size > 0) {
-        objRes.buildDate = Math.max(...[...arrivalDates.values()].map((date) => date ? date?.getTime() : 0));
+        objRes.buildDate = Math.max(...[...arrivalDates.values()].map((date) => (date ? date?.getTime() : 0)));
       } else {
         objRes.isPossible = true;
       }
 
       return objRes;
     }),
-    mailNotificacion: protectedProcedure
+  mailNotificacion: protectedProcedure
     .input(
       z.object({
         listado: z.array(
@@ -156,10 +156,10 @@ export const consultRouter = createTRPCRouter({
           }),
         ),
       }),
-    ).
-    mutation(async ({ input }) => {
+    )
+    .mutation(async ({ input }) => {
       const resend = new Resend(env.RESEND_API_KEY);
-      let mails = await getUserSetting<string[]>("mrp.mails", "");
+      const mails = await getUserSetting<string[]>("mrp.mails", "");
 
       const { data: emailData, error } = await resend.emails.send({
         from: "desarrollo <desarrollo@iantech.com.ar>",
@@ -169,7 +169,5 @@ export const consultRouter = createTRPCRouter({
           productList: input.listado,
         }),
       });
-
-
-    })
+    }),
 });
