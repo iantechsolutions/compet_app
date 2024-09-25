@@ -10,6 +10,9 @@ import { db } from "~/server/db";
 import { forecastProfiles } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { nullProfile } from "~/lib/nullForecastProfile";
+import { Resend } from "resend";
+import { NotificacionMailTemplate } from "~/components/email-notification-template";
+import { env } from "process";
 
 // import { excludeProducts } from 'constants';
 
@@ -140,4 +143,32 @@ export const consultRouter = createTRPCRouter({
 
       return objRes;
     }),
+    mailNotificacion: protectedProcedure
+    .input(
+      z.object({
+        listado: z.array(
+          z.object({
+            productCode: z.string(),
+            quantity: z.number(),
+            date: z.string(),
+            regularizationDate: z.string(),
+          }),
+        ),
+      }),
+    ).
+    mutation(async ({ input }) => {
+      const resend = new Resend(env.RESEND_API_KEY);
+      let mails = await getUserSetting<string[]>("mrp.mails", "");
+
+      const { data: emailData, error } = await resend.emails.send({
+        from: "desarrollo <desarrollo@iantech.com.ar>",
+        to: mails ?? "",
+        subject: "Productos faltantes",
+        react: NotificacionMailTemplate({
+          productList: input.listado,
+        }),
+      });
+
+
+    })
 });
