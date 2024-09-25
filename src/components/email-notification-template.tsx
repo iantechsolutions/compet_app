@@ -1,9 +1,6 @@
 interface NotificacionMailTemplateProps {
   productList: {
     productCode: string;
-    quantity: number;
-    date: string;
-    regularizationDate: string;
   }[];
 }
 

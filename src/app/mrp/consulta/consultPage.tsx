@@ -6,7 +6,7 @@ import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import { ComboboxDemo } from "~/components/combobox";
 import { useMRPData } from "~/components/mrp-data-provider";
-import { NavUserData } from "~/components/nav-user-section";
+import type { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { excludeProducts } from "~/server/api/constants";
@@ -14,6 +14,7 @@ import { api } from "~/trpc/react";
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
   const { mutateAsync: checkAvailability, isLoading } = api.consults.isConstructionPossible.useMutation();
+  const { mutateAsync: notifyEmail, isLoading: isLoadingEmail } = api.consults.mailNotificacion.useMutation();
 
   interface Product {
     commited: number;
@@ -34,6 +35,8 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   const [availabilityResult, setAvailabilityResult] = useState<{
     isPossible: boolean;
     buildDate?: number | null;
+    arrivalDatesSorted: [string, Date][];
+    arrivalDatesNull: string[];
   } | null>(null);
 
   useEffect(() => {
@@ -62,6 +65,14 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
 
   const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
 
+  async function handleImportEmail() {
+    if (availabilityResult?.arrivalDatesNull) {
+      const res = await notifyEmail({
+        listado: availabilityResult.arrivalDatesNull,
+      });
+    }
+  }
+
   async function handleAvailabilityCheck() {
     if (productList) {
       const res = await checkAvailability({
@@ -69,10 +80,25 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
       });
 
       // Response is a single object { isPossible: boolean, buildDate?: Date }
-      console.log("date", res.buildDate);
+      console.log("res", res);
+
+      function notNull<T, C>(value: [C, T | null]): value is [C, T] {
+        return value[1] !== null;
+      }
+
+      const arrivalDatesSorted: [string, Date][] = [...res.arrivalDates.entries()].filter(notNull);
+      arrivalDatesSorted.sort((a, b) => a[1].getTime() - b[1].getTime());
+
+      function isNull<T, C>(value: [C, T | null]): value is [C, null] {
+        return value[1] === null;
+      }
+
+      const arrivalDatesNull: string[] = [...res.arrivalDates.entries()].filter(isNull).map((v) => v[0]);
       setAvailabilityResult({
         isPossible: res.isPossible,
-        buildDate: res.buildDate || null,
+        buildDate: res.buildDate ?? null,
+        arrivalDatesSorted,
+        arrivalDatesNull,
       });
     }
   }
@@ -126,65 +152,64 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
               </tr>
             </thead>
             <tbody>
-              {productList &&
-                productList.map((product, index) => (
-                  <tr key={index}>
-                    {/* Product Code Combobox */}
-                    <td className="border border-gray-300 px-4 py-2">
-                      <ComboboxDemo
-                        title="Código de producto"
-                        placeholder="Seleccione un producto"
-                        value={productList[index]?.productCode || ""}
-                        onSelectionChange={(value) => {
-                          if (value) {
-                            handleProductCodeChange(value, index);
-                          }
-                        }}
-                        options={products.map((product) => ({
-                          value: product.code,
-                          label: product.code,
-                        }))}
-                      />
-                    </td>
+              {productList?.map((product, index) => (
+                <tr key={index}>
+                  {/* Product Code Combobox */}
+                  <td className="border border-gray-300 px-4 py-2">
+                    <ComboboxDemo
+                      title="Código de producto"
+                      placeholder="Seleccione un producto"
+                      value={productList[index]?.productCode ?? ""}
+                      onSelectionChange={(value) => {
+                        if (value) {
+                          handleProductCodeChange(value, index);
+                        }
+                      }}
+                      options={products.map((product) => ({
+                        value: product.code,
+                        label: product.code,
+                      }))}
+                    />
+                  </td>
 
-                    {/* Quantity Input */}
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Input
-                        id="quantity"
-                        name="quantity"
-                        type="number"
-                        className="w-full"
-                        value={productList[index]?.quantity}
-                        onChange={(e) => handleProductQuantityChange(Number(e.target.value), index)}
-                        placeholder="0"
-                        required
-                      />
-                    </td>
+                  {/* Quantity Input */}
+                  <td className="border border-gray-300 px-4 py-2">
+                    <Input
+                      id="quantity"
+                      name="quantity"
+                      type="number"
+                      className="w-full"
+                      value={productList[index]?.quantity}
+                      onChange={(e) => handleProductQuantityChange(Number(e.target.value), index)}
+                      placeholder="0"
+                      required
+                    />
+                  </td>
 
-                    {/* Add Button */}
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Button disabled={isLoading} className="w-full" onClick={() => insertProductAfterIndex(index)}>
-                        Agregar
-                      </Button>
-                    </td>
+                  {/* Add Button */}
+                  <td className="border border-gray-300 px-4 py-2">
+                    <Button disabled={isLoading} className="w-full" onClick={() => insertProductAfterIndex(index)}>
+                      Agregar
+                    </Button>
+                  </td>
 
-                    {/* Delete Button */}
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Button
-                        disabled={productList.length === 1 || isLoading}
-                        className="w-full"
-                        onClick={() => {
-                          const newList = [...productList];
-                          newList.splice(index, 1);
-                          setProductList(newList);
-                        }}
-                        variant="destructive"
-                      >
-                        Eliminar
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                  {/* Delete Button */}
+                  <td className="border border-gray-300 px-4 py-2">
+                    <Button
+                      disabled={productList.length === 1 || isLoading}
+                      className="w-full"
+                      onClick={() => {
+                        const newList = [...productList];
+                        newList.splice(index, 1);
+                        setProductList(newList);
+                      }}
+                      variant="destructive"
+                    >
+                      Eliminar
+                    </Button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -208,7 +233,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                 <span className={`inline-block text-lg font-semibold ${availabilityResult.isPossible ? "text-green-600" : "text-red-600"}`}>
                   {availabilityResult.isPossible
                     ? "Posible"
-                    : availabilityResult.buildDate
+                    : typeof availabilityResult.buildDate === "number"
                       ? "No es posible ahora"
                       : "No figura ingreso de stock suficiente"}
                 </span>
@@ -222,6 +247,30 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                 </div>
               )}
             </div>
+            {availabilityResult.arrivalDatesSorted.map((date) => (
+              <div key={`p-arrival-${date[0]}`}>
+                <span className={`inline-block text-lg`}>
+                  {`\nEl producto ${date[0]} ingresará en la fecha ${dayjs(date[1]).format("DD/MM/YYYY")}`}
+                </span>
+              </div>
+            ))}
+            {availabilityResult.arrivalDatesNull.map((date) => (
+              <div key={`p-arrivaln-${date}`}>
+                <span className={`inline-block text-lg text-red-600`}>
+                  {`\nEl producto ${date} no tiene stock suficiente ni orden de compra planificada`}
+                </span>
+              </div>
+            ))}
+            {availabilityResult.arrivalDatesNull.length > 0 ? (
+              <Button className="w-full py-3 text-lg" onClick={async () => handleImportEmail()} disabled={isLoading}>
+                <div className="flex flex-row">
+                  {isLoadingEmail && <Loader2Icon className="mr-2 w-full animate-spin" />}
+                  Enviar email para notificar falta de orden de compra
+                </div>
+              </Button>
+            ) : (
+              <></>
+            )}
           </div>
         )}
       </div>

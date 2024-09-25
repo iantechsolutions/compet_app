@@ -147,14 +147,7 @@ export const consultRouter = createTRPCRouter({
   mailNotificacion: protectedProcedure
     .input(
       z.object({
-        listado: z.array(
-          z.object({
-            productCode: z.string(),
-            quantity: z.number(),
-            date: z.string(),
-            regularizationDate: z.string(),
-          }),
-        ),
+        listado: z.array(z.string().min(1).max(1023)),
       }),
     )
     .mutation(async ({ input }) => {
@@ -166,7 +159,9 @@ export const consultRouter = createTRPCRouter({
         to: mails ?? "",
         subject: "Productos faltantes",
         react: NotificacionMailTemplate({
-          productList: input.listado,
+          productList: input.listado.map((v) => {
+            return { productCode: v };
+          }),
         }),
       });
     }),
