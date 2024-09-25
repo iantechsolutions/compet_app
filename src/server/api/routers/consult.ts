@@ -58,7 +58,7 @@ export const consultRouter = createTRPCRouter({
       });
 
       let unDateable = false;
-      const arrivalDates = new Map<string, Date>();
+      const arrivalDates = new Map<string, Date | null>();
 
       let i = 0;
       while (i < productConsumo.length) {
@@ -110,6 +110,7 @@ export const consultRouter = createTRPCRouter({
 
               if (!validAmount) {
                 unDateable = true;
+                arrivalDates.set(product.code, null);
               } else {
                 // se consume incluyendo el import
                 yaConsumidoLoop.set(pcKey, (yaConsumidoLoop.get(pcKey) ?? 0) + pcValue);
@@ -126,7 +127,7 @@ export const consultRouter = createTRPCRouter({
       const objRes: {
         isPossible: boolean;
         buildDate: null | number;
-        arrivalDates: Map<string, Date>;
+        arrivalDates: Map<string, Date | null>;
       } = {
         isPossible: false,
         buildDate: null, // debería llamarse arrivalDate pero por cuestiones de frontend por las dudas no lo toco
@@ -136,7 +137,7 @@ export const consultRouter = createTRPCRouter({
       if (unDateable) {
         // intacto
       } else if (arrivalDates.size > 0) {
-        objRes.buildDate = Math.max(...[...arrivalDates.values()].map((date) => date.getTime()));
+        objRes.buildDate = Math.max(...[...arrivalDates.values()].map((date) => date ? date?.getTime() : 0));
       } else {
         objRes.isPossible = true;
       }
