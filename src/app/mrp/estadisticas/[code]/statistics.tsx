@@ -291,7 +291,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           totalSales += order_product?.ordered_quantity ?? 0;
         }
       });
-      salesList.push({ date: day, totalSales });
+      if(totalSales > 0){
+        salesList.push({ date: day, totalSales });
+      }
       let totalBudgets = 0;
       budgetsOnDay?.forEach((budget) => {
         const product = budget.products.find((product) => product.product_code === productCode);
@@ -299,7 +301,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           totalBudgets += product.quantity;
         }
       });
-      budgetsList.push({ date: day, totalBudgets });
+      if(totalBudgets > 0){
+        budgetsList.push({ date: day, totalBudgets });
+      }
+      
 
       fromDateCopy.setDate(fromDateCopy.getDate() + 1);
     }

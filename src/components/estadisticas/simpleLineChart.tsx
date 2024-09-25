@@ -15,15 +15,13 @@ export default function StackedAreaChart({ data }: GraphicProps) {
   const dataMap = new Map<string, { sales: number; budget: number }>();
   for (const budget of data?.budgetsList ?? []) {
     if (!dataMap.has(budget.date)) {
-      if(budget.totalBudgets!=0){
-        dataMap.set(budget.date, { sales: 0, budget: budget.totalBudgets });
-      }
+      dataMap.set(budget.date, { sales: 0, budget: budget.totalBudgets });
     }
   }
   for (const sales of data?.salesList ?? []) {
     if (dataMap.has(sales.date)) {
       const value = dataMap.get(sales.date);
-      if (value && value.sales!=0) {
+      if (value) {
         value.sales = sales.totalSales;
         dataMap.set(sales.date, value);
       }
