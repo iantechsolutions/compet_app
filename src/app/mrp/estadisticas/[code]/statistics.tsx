@@ -31,6 +31,7 @@ import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
 import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
 import SimpleBartChart from "~/components/estadisticas/simpleBartChart";
 import { DatePicker } from "~/components/day-picker";
+import dayjs from "dayjs";
 export default function StatisticsPage(props: { user?: NavUserData }) {
   const temporaryDate = new Date();
   temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
@@ -374,11 +375,42 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         }
       }
     });
+
+
+
+    let events = data?.eventsByProductCode.get(productCode) ?? [];
+    events = events.filter(
+      (event) => new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+    );
+    events.forEach((event) => {
+      // event.quantity
+      if (event.assemblyId) {
+        const assembliesQuantities =
+          event.parentEvent && event.parentEvent.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+        const assembly = data?.assemblyById.get(event.assemblyId);
+        let totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
+        let day = "";
+        if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
+          day = new Date(String(event.date)).toISOString().slice(0, 10);
+        }
+        validOrderProducts.push({
+          id: 0,
+          order_number: "",
+          product_code: productCode,
+          ordered_quantity: totalConsumptionOnEvent,
+        });
+      }
+    })
+
+    //utility
+    const difference = dayjs(fromDate).diff(dayjs(toDate), 'month');
+
+    //passed values
     const orderedQuantities = validOrderProducts.map((order_product) => order_product.ordered_quantity);
     const sortedQuantities = orderedQuantities.slice().sort((a, b) => a - b);
     const mid = Math.floor(sortedQuantities.length / 2);
     const median = sortedQuantities.length % 2 !== 0 ? sortedQuantities[mid] : sortedQuantities[mid - 1];
-
+    const averageSalesPerMonth = validOrderProducts.reduce((acc, order_product) => acc + order_product.ordered_quantity, 0) / difference ;
     return {
       MaximumSales: orderedQuantities.length > 0 ? Math.max(...orderedQuantities) : 0,
       MinimumSales: orderedQuantities.length > 0 ? Math.min(...orderedQuantities) : 0,
