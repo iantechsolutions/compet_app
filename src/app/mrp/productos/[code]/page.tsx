@@ -1,9 +1,8 @@
 "use client";
 import dayjs from "dayjs";
 import { useParams } from "next/navigation";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { useMRPData } from "~/components/mrp-data-provider";
-import type { NavUserData } from "~/components/nav-user-section";
 import { Badge } from "~/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { formatStock } from "~/lib/utils";
@@ -15,17 +14,27 @@ import { useCurrentProduct } from "./product_provider";
 import { useProductPageData } from "./use_product_page_data";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
+import { Loader2Icon } from "lucide-react";
 
 export default function ProductPage() {
   const data: MRPData = useMRPData();
 
   const params = useParams<{ code: string }>();
+  const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
 
   const productCode = decodeURIComponent(params?.code ?? "");
 
   const product = useCurrentProduct();
 
   const productData = useProductPageData(product);
+
+  if (isLoadingStats) {
+    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+      <Button variant="secondary" disabled>
+        <Loader2Icon className="mr-2 animate-spin" /> Cargando estadísticas
+      </Button>
+    </div>;
+  }
 
   return (
     <>
@@ -48,7 +57,7 @@ export default function ProductPage() {
             })}
           </div>
         </div>
-        <Link href={"/mrp/estadisticas/" + productCode}>
+        <Link href={"/mrp/estadisticas/" + productCode} onClick={() => setIsLoadingStats(true)}>
           <Button variant="outline">Ver estadisticas</Button>
         </Link>
       </div>

@@ -299,32 +299,25 @@ export const consultRouter = createTRPCRouter({
       );
       return coso;
     }),
-    mailNotificacion: protectedProcedure
+  mailNotificacion: protectedProcedure
     .input(
       z.object({
-        listado: z.array(
-          z.object({
-            productCode: z.string(),
-            quantity: z.number(),
-            date: z.string(),
-            regularizationDate: z.string(),
-          }),
-        ),
+        listado: z.array(z.string().min(1).max(1023)),
       }),
-    ).
-    mutation(async ({ input }) => {
+    )
+    .mutation(async ({ input }) => {
       const resend = new Resend(env.RESEND_API_KEY);
-      let mails = await getUserSetting<string[]>("mrp.mails", "");
+      const mails = await getUserSetting<string[]>("mrp.mails", "");
 
       const { data: emailData, error } = await resend.emails.send({
         from: "desarrollo <desarrollo@iantech.com.ar>",
         to: mails ?? "",
         subject: "Productos faltantes",
         react: NotificacionMailTemplate({
-          productList: input.listado,
+          productList: input.listado.map((v) => {
+            return { productCode: v };
+          }),
         }),
       });
-
-
-    })
+    }),
 });

@@ -9,7 +9,7 @@ import { ComboboxDemo } from "~/components/combobox";
 // import { List } from "~/components/list";
 import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 import { useMRPData } from "~/components/mrp-data-provider";
-import { NavUserData } from "~/components/nav-user-section";
+import type { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
@@ -21,6 +21,7 @@ const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white"
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
   const { mutateAsync: checkAvailability, isLoading } = api.consults.isConstructionPossible.useMutation();
+  const { mutateAsync: notifyEmail, isLoading: isLoadingEmail } = api.consults.mailNotificacion.useMutation();
 
   interface Product {
     commited: number;
@@ -38,14 +39,14 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
 
 
 
-  
+
 
   const data = useMRPData();
   const [products, setProducts] = useState<Product[]>([]);
   const [availabilityResult, setAvailabilityResult] = useState<{
     isPossible: boolean;
     buildDate?: number | null;
-    productData: Map<string, { productDescription:string, stock:string, consumed:string, arrivalDate:Date | null}>;
+    productData: Map<string, { productDescription: string, stock: string, consumed: string, arrivalDate: Date | null }>;
   } | null>(null);
   const [finalList, setFinalList] = useState<ProductWithDependencies[]>([]);
   useEffect(() => {
@@ -73,6 +74,14 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   }, [data]);
 
   const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
+
+  async function handleImportEmail() {
+    if (availabilityResult?.arrivalDatesNull) {
+      const res = await notifyEmail({
+        listado: availabilityResult.arrivalDatesNull,
+      });
+    }
+  }
 
   async function handleAvailabilityCheck() {
     if (productList) {
@@ -109,7 +118,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     setProductList(newProductList);
   }
   const headerCellClassName = "flex items-center justify-center font-semibold bg-stone-100 h-10 px-2";
-  
+
   const size = useWindowSize();
   return (
     <AppLayout
@@ -136,65 +145,64 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
               </tr>
             </thead>
             <tbody>
-              {productList &&
-                productList.map((product, index) => (
-                  <tr key={index}>
-                    {/* Product Code Combobox */}
-                    <td className="border border-gray-300 px-4 py-2">
-                      <ComboboxDemo
-                        title="Código de producto"
-                        placeholder="Seleccione un producto"
-                        value={productList[index]?.productCode || ""}
-                        onSelectionChange={(value) => {
-                          if (value) {
-                            handleProductCodeChange(value, index);
-                          }
-                        }}
-                        options={products.map((product) => ({
-                          value: product.code,
-                          label: product.code,
-                        }))}
-                      />
-                    </td>
+              {productList?.map((product, index) => (
+                <tr key={index}>
+                  {/* Product Code Combobox */}
+                  <td className="border border-gray-300 px-4 py-2">
+                    <ComboboxDemo
+                      title="Código de producto"
+                      placeholder="Seleccione un producto"
+                      value={productList[index]?.productCode ?? ""}
+                      onSelectionChange={(value) => {
+                        if (value) {
+                          handleProductCodeChange(value, index);
+                        }
+                      }}
+                      options={products.map((product) => ({
+                        value: product.code,
+                        label: product.code,
+                      }))}
+                    />
+                  </td>
 
-                    {/* Quantity Input */}
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Input
-                        id="quantity"
-                        name="quantity"
-                        type="number"
-                        className="w-full"
-                        value={productList[index]?.quantity}
-                        onChange={(e) => handleProductQuantityChange(Number(e.target.value), index)}
-                        placeholder="0"
-                        required
-                      />
-                    </td>
+                  {/* Quantity Input */}
+                  <td className="border border-gray-300 px-4 py-2">
+                    <Input
+                      id="quantity"
+                      name="quantity"
+                      type="number"
+                      className="w-full"
+                      value={productList[index]?.quantity}
+                      onChange={(e) => handleProductQuantityChange(Number(e.target.value), index)}
+                      placeholder="0"
+                      required
+                    />
+                  </td>
 
-                    {/* Add Button */}
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Button disabled={isLoading} className="w-full" onClick={() => insertProductAfterIndex(index)}>
-                        Agregar
-                      </Button>
-                    </td>
+                  {/* Add Button */}
+                  <td className="border border-gray-300 px-4 py-2">
+                    <Button disabled={isLoading} className="w-full" onClick={() => insertProductAfterIndex(index)}>
+                      Agregar
+                    </Button>
+                  </td>
 
-                    {/* Delete Button */}
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Button
-                        disabled={productList.length === 1 || isLoading}
-                        className="w-full"
-                        onClick={() => {
-                          const newList = [...productList];
-                          newList.splice(index, 1);
-                          setProductList(newList);
-                        }}
-                        variant="destructive"
-                      >
-                        Eliminar
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                  {/* Delete Button */}
+                  <td className="border border-gray-300 px-4 py-2">
+                    <Button
+                      disabled={productList.length === 1 || isLoading}
+                      className="w-full"
+                      onClick={() => {
+                        const newList = [...productList];
+                        newList.splice(index, 1);
+                        setProductList(newList);
+                      }}
+                      variant="destructive"
+                    >
+                      Eliminar
+                    </Button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -218,7 +226,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                 <span className={`inline-block text-lg font-semibold ${availabilityResult.isPossible ? "text-green-600" : "text-red-600"}`}>
                   {availabilityResult.isPossible
                     ? "Posible"
-                    : availabilityResult.buildDate
+                    : typeof availabilityResult.buildDate === "number"
                       ? "No es posible ahora"
                       : "No figura ingreso de stock suficiente"}
                 </span>
@@ -232,35 +240,59 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                 </div>
               )}
             </div>
+            {availabilityResult.arrivalDatesSorted.map((date) => (
+              <div key={`p-arrival-${date[0]}`}>
+                <span className={`inline-block text-lg`}>
+                  {`\nEl producto ${date[0]} ingresará en la fecha ${dayjs(date[1]).format("DD/MM/YYYY")}`}
+                </span>
+              </div>
+            ))}
+            {availabilityResult.arrivalDatesNull.map((date) => (
+              <div key={`p-arrivaln-${date}`}>
+                <span className={`inline-block text-lg text-red-600`}>
+                  {`\nEl producto ${date} no tiene stock suficiente ni orden de compra planificada`}
+                </span>
+              </div>
+            ))}
+            {availabilityResult.arrivalDatesNull.length > 0 ? (
+              <Button className="w-full py-3 text-lg" onClick={async () => handleImportEmail()} disabled={isLoading}>
+                <div className="flex flex-row">
+                  {isLoadingEmail && <Loader2Icon className="mr-2 w-full animate-spin" />}
+                  Enviar email para notificar falta de orden de compra
+                </div>
+              </Button>
+            ) : (
+              <></>
+            )}
           </div>
         )}
 
 
 
-{finalList && finalList.length > 0 && !isLoading && (
-        <>
-          <ListRowContainer style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-5">
-            <div className={cn(headerCellClassName, "flex md:left-0")}>
-              <p>Producto</p>
-            </div>
-            <div className={cn(headerCellClassName, "flex md:left-0")}>
-              <p>Stock Actual</p>
-            </div>
-            <div className={cn(headerCellClassName, "flex md:left-0")}>
-              <p>Stock Necesario</p>
-            </div>
-            <div className={cn(headerCellClassName, "flex md:left-0")}>
-              <p>Fecha de entrada</p>
-            </div>
-            <div className={cn(headerCellClassName, "flex md:left-0 justify-center")}>
-              <p></p>
-            </div>
-          </ListRowContainer>
-          {finalList.map((product, index) => (
-            <ProductRow key={index} product={product} />
-          ))}
-        </>
-      )}
+        {finalList && finalList.length > 0 && !isLoading && (
+          <>
+            <ListRowContainer style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-5">
+              <div className={cn(headerCellClassName, "flex md:left-0")}>
+                <p>Producto</p>
+              </div>
+              <div className={cn(headerCellClassName, "flex md:left-0")}>
+                <p>Stock Actual</p>
+              </div>
+              <div className={cn(headerCellClassName, "flex md:left-0")}>
+                <p>Stock Necesario</p>
+              </div>
+              <div className={cn(headerCellClassName, "flex md:left-0")}>
+                <p>Fecha de entrada</p>
+              </div>
+              <div className={cn(headerCellClassName, "flex md:left-0 justify-center")}>
+                <p></p>
+              </div>
+            </ListRowContainer>
+            {finalList.map((product, index) => (
+              <ProductRow key={index} product={product} />
+            ))}
+          </>
+        )}
       </div>
     </AppLayout>
   );
@@ -313,16 +345,16 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           <p>{Math.round(product.consumed)}</p>
         </div>
         <div className={cn(tableCellClassName, "flex md:left-0")}>
-          <p>{product.arrivalDate ? dayjs(product.arrivalDate.toString()).format("YYYY-MM") :  product.stock > product.consumed ? 'Hay suficiente stock' : "No hay suficiente stock ni pedido registrado" }</p>
+          <p>{product.arrivalDate ? dayjs(product.arrivalDate.toString()).format("YYYY-MM") : product.stock > product.consumed ? 'Hay suficiente stock' : "No hay suficiente stock ni pedido registrado"}</p>
         </div>
         <div className={cn(tableCellClassName, "flex md:left-0 justify-center")}>
           {product.dependencies && product.dependencies.length > 0 && (
             <Button variant="outline" onClick={toggleDependencies} className=" px-2 my-2">
-              {showDependencies ? 
-              <ChevronUp/>
-               : 
-               <ChevronDown/>
-               }
+              {showDependencies ?
+                <ChevronUp />
+                :
+                <ChevronDown />
+              }
             </Button>
           )}
         </div>
@@ -330,7 +362,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
 
       {showDependencies && product.dependencies && product.dependencies.map((dependency, index) => (
         <div>
-        <ProductRow key={dependency.productCode} product={dependency}  depth={depth + 1} />
+          <ProductRow key={dependency.productCode} product={dependency} depth={depth + 1} />
         </div>
       ))}
     </div>
