@@ -76,9 +76,14 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
 
   async function handleImportEmail() {
-    if (availabilityResult?.arrivalDatesNull) {
+    // if (availabilityResult?.arrivalDatesNull) {
+    //   const res = await notifyEmail({
+    //     listado: availabilityResult.arrivalDatesNull,
+    //   });
+    // }
+    if(finalList) {
       const res = await notifyEmail({
-        listado: availabilityResult.arrivalDatesNull,
+        listado: finalList.filter(x=> !x.arrivalDate && x.stock < x.consumed && !x.dependencies).map((product) => product.productCode),
       });
     }
   }
@@ -218,7 +223,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
         </div>
 
         {/* Display Availability Results */}
-        {availabilityResult && !isLoading && (
+        {/* {availabilityResult && !isLoading && (
           <div className="mt-6 rounded-md bg-white p-4 shadow-md">
             <h2 className="mb-4 text-2xl font-bold">Resultado de Disponibilidad</h2>
             <div className="flex items-center justify-between">
@@ -265,7 +270,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
               <></>
             )}
           </div>
-        )}
+        )} */}
 
 
 
