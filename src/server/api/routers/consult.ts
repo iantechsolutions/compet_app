@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { queryBaseMRPData } from "~/serverfunctions";
 import { excludeProducts } from "../constants";
-import { type ForecastProfile, listAllEventsWithSupplyEvents, listProductsEvents, mapData } from "~/mrp_data/transform_mrp_data";
+import { type ForecastProfile, listAllEventsWithSupplyEvents, listProductsEvents, mapData, ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { getUserSetting } from "~/lib/settings";
 import { getServerAuthSession } from "~/server/auth";
@@ -13,6 +13,7 @@ import { nullProfile } from "~/lib/nullForecastProfile";
 import { Resend } from "resend";
 import { NotificacionMailTemplate } from "~/components/email-notification-template";
 import { env } from "process";
+import { Product } from "~/lib/types";
 
 // import { excludeProducts } from 'constants';
 
@@ -23,30 +24,13 @@ export interface ProductWithDependencies{
     arrivalDate: Date | null;
     consumed: number;
 }
-const data = await queryBaseMRPData();
-  const session = await getServerAuthSession();
-  const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", session?.user.id ?? "");
+async function getConsumoForProductList(
+  listado: ProductWithDependencies[], 
+  yaConsumidoLoop: Map<string,number>, 
+  curatedProducts: { code: string; stock: number; supplies: { supply_product_code: string; quantity: number }[]; imports: { arrival_date: Date; ordered_quantity: number }[] }[], 
+  eventsByProductCode: Map<string, ProductEvent[]>,
 
-  let forecastProfile: ForecastProfile | null =
-    forecastProfileId != null
-      ? ((await db.query.forecastProfiles.findFirst({
-          where: eq(forecastProfiles.id, forecastProfileId),
-        })) ?? null)
-      : null;
-
-  if (!forecastProfile) {
-    forecastProfile = nullProfile;
-  }
-
-  const forecastData = await queryForecastData(forecastProfile, data);
-  const evolvedData = mapData(data, forecastData);
-  const events = listAllEventsWithSupplyEvents(evolvedData);
-  const curatedProducts = data.products.filter(
-    (product) => !excludeProducts.some((excludedProduct) => product.code.toLowerCase().startsWith(excludedProduct)),
-  );
-  const eventsByProductCode = listProductsEvents(evolvedData, events);
-
-async function getConsumoForProductList(listado: ProductWithDependencies[], yaConsumidoLoop: Map<string,number>){
+) {
   let listadoCopy = listado;
   // const productConsumo: [string, number][] = [];
   // const yaConsumidoLoop = new Map<string, number>();
@@ -72,7 +56,10 @@ async function getConsumoForProductList(listado: ProductWithDependencies[], yaCo
                 dependencies: null,
                 productCode: supply.supply_product_code,
                 stock: 0
-              })), yaConsumidoLoop);
+              })), yaConsumidoLoop,
+              curatedProducts,
+              eventsByProductCode
+            );
               console.log("entra aca");
               
               listadoCopy[index] = {
@@ -294,8 +281,40 @@ export const consultRouter = createTRPCRouter({
         productCode: prod.productCode,
         stock: 0,
         }));
+
+
+
+
+        const data = await queryBaseMRPData();
+  const session = await getServerAuthSession();
+  const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", session?.user.id ?? "");
+
+  let forecastProfile: ForecastProfile | null =
+    forecastProfileId != null
+      ? ((await db.query.forecastProfiles.findFirst({
+          where: eq(forecastProfiles.id, forecastProfileId),
+        })) ?? null)
+      : null;
+
+  if (!forecastProfile) {
+    forecastProfile = nullProfile;
+  }
+
+  const forecastData = await queryForecastData(forecastProfile, data);
+  const evolvedData = mapData(data, forecastData);
+  const events = listAllEventsWithSupplyEvents(evolvedData);
+  const curatedProducts = data.products.filter(
+    (product) => !excludeProducts.some((excludedProduct) => product.code.toLowerCase().startsWith(excludedProduct)),
+  );
+  const eventsByProductCode = listProductsEvents(evolvedData, events);
+
+
+
       const coso = getConsumoForProductList(
-        array, new Map<string,number>()
+        array,
+        new Map<string,number>(),
+        curatedProducts,
+        eventsByProductCode
       );
       return coso;
     }),
