@@ -1,20 +1,9 @@
-import { CheckCheckIcon, CheckIcon, XSquareIcon } from "lucide-react";
-import { createContext, useCallback, useContext, useId, useMemo, useRef, useState } from "react";
+import { CheckCheckIcon, CheckIcon, ChevronDownIcon, XSquareIcon } from "lucide-react";
+import { createContext, useMemo, useState, useContext } from "react";
 import { FixedSizeList as List } from "react-window";
-import { useMRPData } from "~/components/mrp-data-provider";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
-import { CrmBudget } from "~/lib/types";
 import { Input } from "./ui/input";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 export type ListSelectionDialogProps = {
   children: React.ReactNode;
@@ -35,17 +24,11 @@ const rowsContext = createContext<{
   options: ListSelectionDialogProps["options"];
   selected: Set<string>;
   onClickOption: (option: string) => void;
-}>({
-  options: [],
-  selected: new Set(),
-  onClickOption: () => void 0,
-});
+}>(null!);
 
 export default function ListSelectionDialog(props: ListSelectionDialogProps) {
   const [selected, setSelected] = useState(new Set(props.defaultValues ?? []));
-
   const allValuesList = useMemo(() => props.options.map((o) => o.value), [props.options]);
-
   const [filter, setFilter] = useState("");
 
   const filteredOptions = useMemo(() => {
@@ -59,59 +42,72 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
   }, [props.options, filter]);
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>{props.children}</AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{props.title}</AlertDialogTitle>
-          <Input name="search" placeholder="Buscar" value={filter} onChange={(e) => setFilter(e.target.value)} />
-        </AlertDialogHeader>
+    <Accordion type="single" collapsible>
+      {/* Accordion para Proveedores */}
+      <AccordionItem value="providers">
+        <AccordionTrigger>
+          <div className="flex items-center p-2 border rounded-md w-full">
+            <span>Proveedores</span>
+            <ChevronDownIcon className="ml-2" />
+          </div>
+        </AccordionTrigger>
 
-        <rowsContext.Provider
-          value={{
-            options: filteredOptions,
-            selected,
-            onClickOption: (option) => {
-              if (props.readOnly) return;
+        {/* Aquí se abre directamente dentro del acordeón */}
+        <AccordionContent>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold">{props.title}</h3>
 
-              if (selected.has(option)) {
-                selected.delete(option);
-              } else {
-                selected.add(option);
-              }
-              setSelected(new Set(selected));
-            },
-          }}
-        >
-          <ListRender />
-        </rowsContext.Provider>
-        {!props.readOnly && (
-          <AlertDialogFooter>
-            <div className="flex w-full items-center gap-2">
-              <Button variant="ghost" onClick={() => setSelected(new Set(allValuesList))}>
-                <CheckCheckIcon />
-              </Button>
-              <Button variant="ghost" onClick={() => setSelected(new Set())}>
-                <XSquareIcon />
-              </Button>
-              <AlertDialogCancel className="ml-auto">Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  props.onApply(Array.from(selected) as unknown as string[]);
-                }}
-              >
-                Aceptar
-              </AlertDialogAction>
-            </div>
-          </AlertDialogFooter>
-        )}
-        {props.readOnly && (
-          <AlertDialogFooter>
-            <AlertDialogCancel className="w-full">Cerrar</AlertDialogCancel>
-          </AlertDialogFooter>
-        )}
-      </AlertDialogContent>
-    </AlertDialog>
+            {/* Campo de búsqueda */}
+            <Input
+              name="search"
+              placeholder="Buscar"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="my-2"
+            />
+
+            {/* Lista de selección */}
+            <rowsContext.Provider
+              value={{
+                options: filteredOptions,
+                selected,
+                onClickOption: (option) => {
+                  if (props.readOnly) return;
+                  if (selected.has(option)) {
+                    selected.delete(option);
+                  } else {
+                    selected.add(option);
+                  }
+                  setSelected(new Set(selected));
+                },
+              }}
+            >
+              <ListRender />
+            </rowsContext.Provider>
+
+            {/* Botones de acción */}
+            {!props.readOnly && (
+              <div className="flex w-full items-center gap-2 mt-4">
+                <Button variant="ghost" onClick={() => setSelected(new Set(allValuesList))}>
+                  <CheckCheckIcon />
+                </Button>
+                <Button variant="ghost" onClick={() => setSelected(new Set())}>
+                  <XSquareIcon />
+                </Button>
+                <Button className="ml-auto" onClick={() => props.onApply(Array.from(selected))}>
+                  Aceptar
+                </Button>
+              </div>
+            )}
+            {props.readOnly && (
+              <div className="flex w-full justify-center mt-4">
+                <Button onClick={props.onCanceled}>Cerrar</Button>
+              </div>
+            )}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
 
@@ -120,7 +116,7 @@ function ListRender() {
   const options = ctx.options;
 
   return (
-    <List height={window.innerHeight - 220} itemCount={options.length} itemSize={70} width={"100%"}>
+    <List height={300} itemCount={options.length} itemSize={70} width={"100%"}>
       {Row}
     </List>
   );
@@ -129,17 +125,15 @@ function ListRender() {
 function Row({ index, style }: { index: number; style: React.CSSProperties }) {
   const ctx = useContext(rowsContext);
   const options = ctx.options;
-
   const option = options[index];
+
   if (!option) return null;
 
   return (
     <button
       style={style}
-      className="flex h-[150px] items-center px-2 text-left outline-none focus:bg-stone-200"
-      onClick={(e) => {
-        ctx.onClickOption(option.value);
-      }}
+      className="flex h-[70px] items-center px-2 text-left outline-none focus:bg-stone-200"
+      onClick={() => ctx.onClickOption(option.value)}
       onKeyDown={(e) => {
         if (e.key === "ArrowDown") {
           e.preventDefault();
