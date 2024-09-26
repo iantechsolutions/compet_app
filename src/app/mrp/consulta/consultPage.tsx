@@ -81,9 +81,9 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     //     listado: availabilityResult.arrivalDatesNull,
     //   });
     // }
-    if(finalList) {
+    if (finalList) {
       const res = await notifyEmail({
-        listado: finalList.filter(x=> !x.arrivalDate && x.stock < x.consumed && !x.dependencies).map((product) => product.productCode),
+        listado: finalList.filter(x => !x.arrivalDate && x.stock < x.consumed && !x.dependencies).map((product) => product.productCode),
       });
     }
   }
@@ -350,7 +350,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           <p>{Math.round(product.consumed)}</p>
         </div>
         <div className={cn(tableCellClassName, "flex md:left-0")}>
-          <p>{product.arrivalDate ? dayjs(product.arrivalDate.toString()).format("YYYY-MM") : product.stock > product.consumed ? 'Hay suficiente stock' : "No hay suficiente stock ni pedido registrado"}</p>
+          <p>{product.arrivalDate ? dayjs(product.arrivalDate.toString()).format("YYYY-MM") : product.dependencies ? "-" : product.stock > product.consumed ? 'Hay suficiente stock' : "No hay pedido registrado"}</p>
         </div>
         <div className={cn(tableCellClassName, "flex md:left-0 justify-center")}>
           {product.dependencies && product.dependencies.length > 0 && (
