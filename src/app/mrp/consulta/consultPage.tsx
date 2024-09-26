@@ -1,16 +1,23 @@
 "use client";
+import { useWindowSize } from "@uidotdev/usehooks";
 import dayjs from "dayjs";
-import { Loader2Icon } from "lucide-react";
+import { ChevronDown, ChevronUp, CornerDownRight, Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import { ComboboxDemo } from "~/components/combobox";
+// import { List } from "~/components/list";
+import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 import { useMRPData } from "~/components/mrp-data-provider";
 import { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
 import { excludeProducts } from "~/server/api/constants";
 import { api } from "~/trpc/react";
+import { ProductWithDependencies } from "~/server/api/routers/consult";
+
+const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white";
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
   const { mutateAsync: checkAvailability, isLoading } = api.consults.isConstructionPossible.useMutation();
@@ -29,13 +36,18 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     imports: { arrival_date: Date; ordered_quantity: number }[];
   }
 
+
+
+  
+
   const data = useMRPData();
   const [products, setProducts] = useState<Product[]>([]);
   const [availabilityResult, setAvailabilityResult] = useState<{
     isPossible: boolean;
     buildDate?: number | null;
+    productData: Map<string, { productDescription:string, stock:string, consumed:string, arrivalDate:Date | null}>;
   } | null>(null);
-
+  const [finalList, setFinalList] = useState<ProductWithDependencies[]>([]);
   useEffect(() => {
     if (data) {
       // const months = data.months;
@@ -67,13 +79,9 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
       const res = await checkAvailability({
         listado: productList,
       });
-
-      // Response is a single object { isPossible: boolean, buildDate?: Date }
-      console.log("date", res.buildDate);
-      setAvailabilityResult({
-        isPossible: res.isPossible,
-        buildDate: res.buildDate || null,
-      });
+      // const array: { productCode: string; productDescription: string; stock: string; consumed: string; arrivalDate: Date | null; }[] = []
+      console.log("res", res);
+      setFinalList(res);
     }
   }
 
@@ -100,7 +108,9 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     newProductList.splice(index + 1, 0, { productCode: "", quantity: 0 });
     setProductList(newProductList);
   }
-
+  const headerCellClassName = "flex items-center justify-center font-semibold bg-stone-100 h-10 px-2";
+  
+  const size = useWindowSize();
   return (
     <AppLayout
       title={
@@ -224,7 +234,106 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
             </div>
           </div>
         )}
+
+
+
+{finalList && finalList.length > 0 && !isLoading && (
+        <>
+          <ListRowContainer style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-5">
+            <div className={cn(headerCellClassName, "flex md:left-0")}>
+              <p>Producto</p>
+            </div>
+            <div className={cn(headerCellClassName, "flex md:left-0")}>
+              <p>Stock Actual</p>
+            </div>
+            <div className={cn(headerCellClassName, "flex md:left-0")}>
+              <p>Stock Necesario</p>
+            </div>
+            <div className={cn(headerCellClassName, "flex md:left-0")}>
+              <p>Fecha de entrada</p>
+            </div>
+            <div className={cn(headerCellClassName, "flex md:left-0 justify-center")}>
+              <p></p>
+            </div>
+          </ListRowContainer>
+          {finalList.map((product, index) => (
+            <ProductRow key={index} product={product} />
+          ))}
+        </>
+      )}
       </div>
     </AppLayout>
   );
 }
+function ListRowContainer({
+  children,
+  style,
+  id,
+  className,
+  columnLength
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  className?: string;
+  id?: string;
+  columnLength?: number;
+}) {
+  return (
+    <div
+      className={className}
+      id={id}
+      style={{
+        ...style,
+        display: "grid",
+        // gridTemplateColumns: `371px repeat(${columnLength ?? 1}, minmax(130px, 1fr))`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+
+const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }> = ({ product, depth = 0 }) => {
+  const [showDependencies, setShowDependencies] = useState(false);
+
+  // Toggle visibility of dependencies
+  const toggleDependencies = () => setShowDependencies(!showDependencies);
+
+  return (
+    <div className="bg-gray-500">
+      <ListRowContainer className={`z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
+        <div className={cn(tableCellClassName, "flex md:left-0")}>
+          <p>{product.productCode}</p>
+        </div>
+        <div className={cn(tableCellClassName, "flex md:left-0")}>
+          <p>{Math.round(product.stock)}</p>
+        </div>
+        <div className={cn(tableCellClassName, "flex md:left-0")}>
+          <p>{Math.round(product.consumed)}</p>
+        </div>
+        <div className={cn(tableCellClassName, "flex md:left-0")}>
+          <p>{product.arrivalDate ? dayjs(product.arrivalDate.toString()).format("YYYY-MM") :  product.stock > product.consumed ? 'Hay suficiente stock' : "No hay suficiente stock ni pedido registrado" }</p>
+        </div>
+        <div className={cn(tableCellClassName, "flex md:left-0 justify-center")}>
+          {product.dependencies && product.dependencies.length > 0 && (
+            <Button variant="outline" onClick={toggleDependencies} className=" px-2 my-2">
+              {showDependencies ? 
+              <ChevronUp/>
+               : 
+               <ChevronDown/>
+               }
+            </Button>
+          )}
+        </div>
+      </ListRowContainer>
+
+      {showDependencies && product.dependencies && product.dependencies.map((dependency, index) => (
+        <div>
+        <ProductRow key={dependency.productCode} product={dependency}  depth={depth + 1} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
