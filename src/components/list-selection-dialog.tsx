@@ -1,5 +1,5 @@
-import { CheckCheckIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, XSquareIcon } from "lucide-react";
-import { createContext, useMemo, useState, useContext } from "react";
+import { CheckCheckIcon, CheckIcon, XSquareIcon } from "lucide-react";
+import { createContext, useCallback, useContext, useId, useMemo, useRef, useState } from "react";
 import { FixedSizeList as List } from "react-window";
 import { useMRPData } from "~/components/mrp-data-provider";
 import {
@@ -31,9 +31,6 @@ export type ListSelectionDialogProps = {
   readOnly?: boolean;
 };
 
-const MyComponent = (props: any) => {
-  const [isAccordionOpen, setIsAccordionOpen] = useState(false);}
-
 const rowsContext = createContext<{
   options: ListSelectionDialogProps["options"];
   selected: Set<string>;
@@ -50,7 +47,6 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
   const allValuesList = useMemo(() => props.options.map((o) => o.value), [props.options]);
 
   const [filter, setFilter] = useState("");
-  
 
   const filteredOptions = useMemo(() => {
     if (!filter.trim()) return props.options;
@@ -62,84 +58,63 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
     });
   }, [props.options, filter]);
 
-  const MyComponent = (props: any) => {
-    const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>{props.children}</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{props.title}</AlertDialogTitle>
+          <Input name="search" placeholder="Buscar" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        </AlertDialogHeader>
 
-    return (
-      <Accordion type="single" collapsible>
-      <AccordionItem
-        value="providers"
-        onClick={() => setIsAccordionOpen(!isAccordionOpen)} // Actualizar el estado al hacer clic
-      >
-        <AccordionTrigger>
-          <div className="flex items-center p-2 border border-purple-500 rounded-md w-full">
-            <span className="text-purple-700 font-semibold">Proveedores</span>
-            {isAccordionOpen ? (
-              <ChevronUpIcon className="ml-2 text-purple-500" />
-            ) : (
-              <ChevronDownIcon className="ml-2 text-purple-500" />
-            )}
-          </div>
-        </AccordionTrigger>
-    
-        <AccordionContent>
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-purple-700">{props.title}</h3>
-    
-            {/* Campo de búsqueda */}
-            <Input
-              name="search"
-              placeholder="Buscar"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="my-2 border border-gray-300"
-            />
-    
-            {/* Lista de selección */}
-            <rowsContext.Provider
-              value={{
-                options: filteredOptions,
-                selected,
-                onClickOption: (option) => {
-                  if (props.readOnly) return;
-                  if (selected.has(option)) {
-                    selected.delete(option);
-                  } else {
-                    selected.add(option);
-                  }
-                  setSelected(new Set(selected));
-                },
-              }}
-            >
-              <ListRender />
-            </rowsContext.Provider>
-    
-            {/* Botones de acción */}
-            {!props.readOnly && (
-              <div className="flex w-full items-center gap-2 mt-4">
-                <Button variant="ghost" onClick={() => setSelected(new Set(allValuesList))}>
-                  <CheckCheckIcon />
-                </Button>
-                <Button variant="ghost" onClick={() => setSelected(new Set())}>
-                  <XSquareIcon />
-                </Button>
-                <Button className="ml-auto bg-purple-500 text-white hover:bg-purple-600" onClick={() => props.onApply(Array.from(selected))}>
-                  Aceptar
-                </Button>
-              </div>
-            )}
-            {props.readOnly && (
-              <div className="flex w-full justify-center mt-4">
-                <Button onClick={props.onCanceled}>Cerrar</Button>
-              </div>
-            )}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-    
-    );
-  };
+        <rowsContext.Provider
+          value={{
+            options: filteredOptions,
+            selected,
+            onClickOption: (option) => {
+              if (props.readOnly) return;
+
+              if (selected.has(option)) {
+                selected.delete(option);
+              } else {
+                selected.add(option);
+              }
+              setSelected(new Set(selected));
+            },
+          }}
+        >
+          <ListRender />
+        </rowsContext.Provider>
+        {!props.readOnly && (
+          <AlertDialogFooter>
+            <div className="flex w-full items-center gap-2">
+              <Button variant="ghost" onClick={() => setSelected(new Set(allValuesList))}>
+                <CheckCheckIcon />
+              </Button>
+              <Button variant="ghost" onClick={() => setSelected(new Set())}>
+                <XSquareIcon />
+              </Button>
+              <AlertDialogCancel className="ml-auto">Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  props.onApply(Array.from(selected) as unknown as string[]);
+                }}
+              >
+                Aceptar
+              </AlertDialogAction>
+            </div>
+          </AlertDialogFooter>
+        )}
+        {props.readOnly && (
+          <AlertDialogFooter>
+            <AlertDialogCancel className="w-full">Cerrar</AlertDialogCancel>
+          </AlertDialogFooter>
+        )}
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function ListRender() {
   const ctx = useContext(rowsContext);
   const options = ctx.options;
@@ -183,5 +158,4 @@ function Row({ index, style }: { index: number; style: React.CSSProperties }) {
       {ctx.selected.has(option.value) && <CheckIcon className="ml-auto mr-2" />}
     </button>
   );
-};
 }
