@@ -24,12 +24,13 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/shared";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { CustomHover } from "~/components/custom-hover";
 import DataCard, { DataCardSection } from "../../../components/ui/dataCard";
 import { ChartNoAxesCombined } from "~/components/icons/chart-combined";
 import Database02Icon from "~/components/icons/database-02-stroke-rounded";
 import MailAtSign01Icon from "~/components/icons/mail-at-sign-01-stroke-rounded";
+import CancelCircleIcon from "~/components/icons/cancel-circle-stroke-rounded";
+import AddCircleIcon from "~/components/icons/add-circle-stroke-rounded";
 
 export default function DataSettingsPage(props: {
   user?: NavUserData & { id: string };
@@ -87,7 +88,7 @@ export default function DataSettingsPage(props: {
           <p className="font-semibold text-green-500 opacity-60">Datos sincronizados correctamente.</p>
         </div>)}
         <Button
-        className=" mx-auto px-8 font-semibold my-6"
+        className=" mx-auto px-8 font-semibold mt-6"
         onClick={() => invalidateAndReloadData()}
         variant={dataMismatch ? "default" : "secondary"}>
         Recargar datos
@@ -227,7 +228,7 @@ function RemoteUpdateComponent() {
   }
 
   return (
-    <section className="flex justify-center mx-auto mb-6">
+    <section className="flex justify-center mx-auto">
       {(!remoteUpdateProgress || remoteUpdateProgress.error) && (
         <Button
           className="px-8"
@@ -340,16 +341,17 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
   }
 
   return (
-    <section className="w-full max-w-[600px]">
+    <section className="relative w-full pb-14 mb-0">
+      <div className="flex flex-col flex-auto max-w-[600px]">
+
       <>
         <div className="mb-3">
-          <div className="flex justify-between">
+          <div className="flex justify-start">
             <p className="py-2">Cantidad de meses primera revision</p>
             {/* <CustomHover hoverText="?" hoverContent='' /> */}
             <CustomHover
-              hoverText="?"
-              hoverContent={<p className="text-sm">Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)</p>}
-            />
+               hoverContent={"Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)"}
+               />
           </div>
           <Input
             disabled={isLoading || isMailConfigLoading}
@@ -360,18 +362,13 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             onChange={(e) => setFirstCheck(Number(e.target.value))}
             placeholder="2"
             required
-          />
+            />
         </div>
         <div className="mb-3">
-          <div className="flex justify-between">
+          <div className="flex justify-start">
             <p className="py-2">Cantidad de meses segunda revision</p>
             <CustomHover
-              hoverText="?"
-              hoverContent={
-                <p className="text-sm">
-                  Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)
-                </p>
-              }
+               hoverContent={"Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)"}
             />
           </div>
           <Input
@@ -383,19 +380,15 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             onChange={(e) => setSecondCheck(Number(e.target.value))}
             placeholder="12"
             required
-          />
+            />
         </div>
         <div className="mb-3">
-          <div className="flex justify-between">
+          <div className="flex justify-start">
             <p className="py-2">Cantidad de meses para regularización del stock</p>
             <CustomHover
-              hoverText="?"
-              hoverContent={
-                <p className="text-sm">
-                  No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses <br /> Ej: Si un
-                  insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1
-                </p>
-              }
+              hoverContent={<p>No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses.
+                <br/>
+                Ej: Si un insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1.</p>}
             />
           </div>
           <Input
@@ -407,21 +400,21 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             onChange={(e) => setBelowNMonths(Number(e.target.value))}
             placeholder="0"
             required
-          />
+            />
         </div>
       </>
-      <Title className="flex text-base font-semibold tracking-tight uppercase mt-5 text-black gap-3">
+      <Title className="flex text-base font-semibold tracking-tight uppercase mt-12 text-black gap-3">
       <MailAtSign01Icon/>
         Mails a los que notificar en caso de stock critico</Title>
       {/* <Button 
             className='mb-5'
             onClick={() => {
-                setMails([...mailsList, '']);
-            }
-            
-            }>
-                Agregar mail
-            </Button> */}
+              setMails([...mailsList, '']);
+              }
+              
+              }>
+              Agregar mail
+              </Button> */}
       <br />
       {mailsList &&
         mailsList.map((mail, index) => (
@@ -434,48 +427,52 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                 onChange={(e) => handleEmailChange(e.target.value, index)}
                 placeholder="xxx@xxx.com"
                 required
-              />
+                />
             </div>
             <Button
               disabled={isLoading || isMailConfigLoading || sendingMails}
               onClick={() => {
                 insertMailAtIndex(index);
               }}
-            >
-              Agregar
+              variant="question"
+              >
+              <AddCircleIcon className="h-7 w-7" />
             </Button>
-            <Button
-              disabled={mailsList.length === 1 || isLoading || isMailConfigLoading || sendingMails}
+            {!(mailsList.length === 1 || isLoading || isMailConfigLoading || sendingMails) && (
+              <Button
               onClick={() => {
                 const newMails = [...mailsList];
                 newMails.splice(index, 1);
                 setMails(newMails);
               }}
-              variant="destructive"
-            >
-              Eliminar
-            </Button>
+              variant="question"
+              >
+                <CancelCircleIcon className="h-7 w-7" />
+              </Button>
+            )}
           </div>
         ))}
-      <div className="mb-4 flex items-center gap-3 p-4">
+      <div className="mb-2 absolute bottom-0 w-full flex justify-center gap-3 p-4 ">
         <Button
-          onClick={() => {
-            handleMailListSave(mailsList);
-          }}
+        className="flex px-6"
+        onClick={() => {
+          handleMailListSave(mailsList);
+        }}
           disabled={isLoading || isMailConfigLoading || sendingMails}
         >
           {isLoading && <Loader2Icon className="mr-2 animate-spin" />}
           Guardar configuracion
         </Button>
-        <Button
+        {/* <Button
           onClick={() => {
             handleMailTest(mailsList);
-          }}
-          disabled={isLoading || isMailConfigLoading || sendingMails}
-        >
-          {sendingMails && <Loader2Icon className="mr-2 animate-spin" />}
-          Enviar mails
-        </Button>
+            }}
+            disabled={isLoading || isMailConfigLoading || sendingMails}
+            >
+            {sendingMails && <Loader2Icon className="mr-2 animate-spin" />}
+            Enviar mails
+            </Button> */}
+      </div>
       </div>
     </section>
   );
