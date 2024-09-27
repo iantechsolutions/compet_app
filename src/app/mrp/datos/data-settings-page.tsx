@@ -436,7 +436,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
               }}
               variant="question"
               >
-              <AddCircleIcon className="h-7 w-7" />
+              <AddCircleIcon className="h-6 w-6" />
             </Button>
             {!(mailsList.length === 1 || isLoading || isMailConfigLoading || sendingMails) && (
               <Button
@@ -447,7 +447,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
               }}
               variant="question"
               >
-                <CancelCircleIcon className="h-7 w-7" />
+                <CancelCircleIcon className="h-6 w-6" />
               </Button>
             )}
           </div>
