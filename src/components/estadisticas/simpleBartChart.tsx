@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 "use client";
-import {type TooltipProps } from 'recharts';
+import { type TooltipProps } from 'recharts';
 import {
   type ValueType,
   type NameType,
@@ -59,7 +59,10 @@ export default function SimpleBartChart({ data }: graphicProps) {
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis />
-          <Tooltip accessibilityLayer={true} content={<CustomTooltip />} />
+          {
+            data.length === 0 ? null : (<Tooltip accessibilityLayer={false} content={<CustomTooltip />} />)
+          }
+
           <Legend content={<CustomLegend textContent="Cantidad de unidades vendidas a clientes" />} />
           <Bar dataKey="totalSales" fill="#8884d8" activeBar={<Rectangle fill="pink" stroke="blue" />} />
 

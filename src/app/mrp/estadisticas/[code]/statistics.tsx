@@ -682,11 +682,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       </>
       }
       <DataCard title="GRAFICOS" icon={<AreaChart />}>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-6 mb-10 w-max-[1077px]">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-6 w-max-[1077px]">
           <StackedAreaChart data={consumption ?? []} />
           <SimpleBartChart data={soldProportions ?? []} />
         </div>
-        <div className="w-full">
+        <div className="w-full mt-20">
           <SimpleLineChart data={salesAndBudgets} />
         </div>
       </DataCard>
