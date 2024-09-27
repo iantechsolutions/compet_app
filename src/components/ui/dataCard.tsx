@@ -26,7 +26,7 @@ interface DataCardProps {
         <CardHeader className="">
           <CardTitle className="uppercase flex place-items-end gap-3">{props.icon}{props.title}</CardTitle>
           </CardHeader>
-        <CardContent className="flex flex-auto ">
+        <CardContent className="flex flex-auto mb-6">
           <CardDescription className="flex flex-col flex-auto justify-center">{props.children}</CardDescription>       
         </CardContent>
       </Card>

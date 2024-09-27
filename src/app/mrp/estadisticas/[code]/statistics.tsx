@@ -2,7 +2,7 @@
 import { ring2 } from "ldrs";
 
 import { useParams } from "next/navigation";
-import { CheckCheckIcon, CheckIcon, Filter, Loader2Icon, XSquareIcon } from "lucide-react";
+import { CheckCheckIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, Filter, Loader2Icon, XSquareIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
@@ -32,6 +32,9 @@ import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
 import SimpleBartChart from "~/components/estadisticas/simpleBartChart";
 import { DatePicker } from "~/components/day-picker";
 import dayjs from "dayjs";
+import DataCard from "~/components/ui/dataCard";
+import { ChartNoAxesCombined } from "~/components/icons/chart-combined";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 export default function StatisticsPage(props: { user?: NavUserData }) {
   const temporaryDate = new Date();
   temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
@@ -53,6 +56,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       amount: number;
     }[]
   >();
+  
+
   const [salesAndBudgets, setSalesAndBudgets] = useState<{
     salesList: { date: string; totalSales: number }[];
     budgetsList: { date: string; totalBudgets: number }[];
@@ -354,6 +359,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
+      
+
     const sales = data?.orders.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
@@ -420,6 +427,18 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       MedianSales: orderedQuantities.length > 0 ? median : 0,
     };
   }
+  const [showMore, setShowMore] = useState(false); 
+
+  const toggleShowMore = () => {
+    setShowMore((showMore) => !showMore);
+
+  };
+  
+  const [showMore2, setShowMore2] = useState(false); 
+
+  const toggleShowMore2 = () => {
+    setShowMore2((showMore2) => !showMore2);
+  };
 
   if (isLoading) {
     return (
@@ -452,8 +471,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                   }
                 }
                 setProvidersSelected(value);
-              }}
-            >
+              } } >
               <Button
                 variant="outline"
                 className="rounded-2xl border-[#8B83EC] bg--50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
@@ -464,8 +482,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
           </div>
           <div className="flex gap-3">
-            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" />
-            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
+            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" label={""} />
+            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" label={""} />
             <Button
               onClick={handleUpdateFilters}
               className="rounded-2xl border-[#8B83EC] bg-black px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
@@ -524,8 +542,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
           </div>
           <div className="flex gap-3">
-            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" />
-            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
+            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Desde" label={"Desde"} />
+            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Hasta" label={"Hasta"} />
             <Button
               onClick={handleUpdateFilters}
               className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
@@ -534,27 +552,87 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             </Button>
           </div>
         </div>
-        <div className="mt-6 rounded-lg bg-white p-6 shadow-md">
-          <h1 className="mb-4 text-2xl font-bold text-gray-800">Estadísticas generales</h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <p className="text-lg font-medium text-gray-700">
-              Ventas totales: <span className="font-normal text-gray-600">{generalStatistics?.TotalSales ?? 0}</span>
-            </p>
-            <p className="text-lg font-medium text-gray-700">
-              Máximo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MaximumSales ?? 0}</span>
-            </p>
-            <p className="text-lg font-medium text-gray-700">
-              Mínimo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MinimumSales ?? 0}</span>
-            </p>
-            <p className="text-lg font-medium text-gray-700">
-              Unid. promedio por venta: <span className="font-normal text-gray-600">{generalStatistics?.AverageSales ?? 0}</span>
-            </p>
-            <p className="text-lg font-medium text-gray-700">
-              Mediana de unid. por venta: <span className="font-normal text-gray-600">{generalStatistics?.MedianSales ?? 0}</span>
-            </p>
-          </div>
-          <br />
-          <h1 className="mb-4 text-2xl font-bold text-gray-800">Estadísticas de consumo</h1>
+
+        <DataCard icon={<ChartNoAxesCombined />} title={"Estadísticas generales"}>
+      <TooltipProvider>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Tooltip>
+            <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+              <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+              <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Ventas Totales: todas las veces que se vendió ese producto.</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+              <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+              <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Cantidad de pedidos que incluye este elemento.</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+              <p className="text-5xl font-bold text-black">{generalStatistics?.MaximumSales ?? 0}</p>
+              <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Máximas unidades vendidas por pedido.</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {showMore && (
+            <>
+              <Tooltip>
+                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Mínimas unidades vendidas por pedido.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">UPP</p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Unidades promedio por pedido.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Mediana de unidades por venta.</p>
+                </TooltipContent>
+              </Tooltip>
+            </>
+          )}
+        </div>
+
+        <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore}>
+  <p className="text-xs text-grey-700">{showMore ? "Mostrar menos" : "Mostrar más"}</p>
+  {showMore ? (
+    <ChevronUpIcon className="h-4 w-3 text-gray-500" /> 
+  ) : (
+    <ChevronDownIcon className="h-4 w-3 text-gray-500" />
+  )}
+</div>
+
+      </TooltipProvider>
+    </DataCard>
+    <DataCard icon={<ChartNoAxesCombined />} title={"DISTRIBUCIÓN DE CONSUMO"}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {totalMotiveConsumption
               ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
@@ -567,8 +645,17 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                 ))
               : null}
           </div>
-        </div>
-        <div className="mt-6 rounded-lg bg-white p-6 shadow-md">
+          <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore2}>
+          <p className="text-xs text-grey-700">{showMore2 ? "Mostrar menos" : "Mostrar más"}</p>
+            {showMore2 ? (
+        <ChevronUpIcon className="h-4 w-3 text-gray-500" /> 
+        ) : (
+        <ChevronDownIcon className="h-4 w-3 text-gray-500" />
+          )}
+         </div>
+          </DataCard>
+
+        <div className=" rounded-lg bg-white p-6 shadow-md">
           <h1 className="mb-6 text-2xl font-bold text-gray-800">Graficos</h1>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-6">
             <StackedAreaChart data={consumption ?? []} />
@@ -580,3 +667,5 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     );
   }
 }
+
+
