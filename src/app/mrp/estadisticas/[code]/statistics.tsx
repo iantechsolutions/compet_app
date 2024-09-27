@@ -2,7 +2,7 @@
 import { ring2 } from "ldrs";
 
 import { useParams } from "next/navigation";
-import { AreaChart, CheckCheckIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, Filter, Loader2Icon, XSquareIcon } from "lucide-react";
+import { AreaChart, ChevronDownIcon, ChevronUpIcon, Filter, Loader2Icon, XSquareIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
@@ -40,6 +40,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
   const [fromDate, setFromDate] = useState<Date | undefined>(temporaryDate);
   const [isLoading, setIsLoading] = useState(true);
+  const [handleFiltersStage, setHandleFiltersStage] = useState(0);
   const data = useMRPData();
   const params = useParams<{ code: string }>();
   const productCode = decodeURIComponent(params?.code ?? "");
@@ -141,10 +142,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const defaultValues = useMemo(() => {
     return Array.from(allProviersCodes).filter((code) => !providersSelected.has(code));
   }, [allProviersCodes, providersSelected]);
+
   function handleUpdateFilters() {
     if (fromDate && toDate) {
       try {
-        setIsLoading(true);
         const {
           list: consumptionStats,
           totalConsumedAmount,
@@ -178,6 +179,21 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
   }
 
+  useEffect(() => {
+    if (handleFiltersStage === 1) {
+      // le doy tiempo a react para renderizar el loader antes de que se congele todo
+      setTimeout(() => setHandleFiltersStage(2), 150);
+    } else if (handleFiltersStage === 2) {
+      handleUpdateFilters();
+      setHandleFiltersStage(0);
+    }
+  }, [handleFiltersStage]);
+
+  function handleUpdateFiltersLoad() {
+    setHandleFiltersStage(1);
+    setIsLoading(true);
+  }
+
   function handletoDateChange(date: Date | undefined) {
     if (date) {
       setToDate(date);
@@ -199,14 +215,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     );
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
-
-      let assembliesQuantities = null
-      if (event?.parentEvent?.quantity && event.parentEvent.originalQuantity) {
-        assembliesQuantities = event.parentEvent.originalQuantity - event.parentEvent.quantity
-      }
+      const assembliesQuantities =
+        event.parentEvent && event.parentEvent.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
       if (event.assemblyId) {
         const assembly = data?.assemblyById.get(event.assemblyId);
-        const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
+        let totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
         if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
@@ -221,7 +234,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       }
     });
 
-    const salesList: {
+    let salesList: {
       date: string;
       motive: string;
       amount: number;
@@ -276,8 +289,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         budget.products.filter((product) => product.product_code === productCode).length > 0,
     );
     const sales = data?.orders.filter((order) => !clientExemptionList?.includes(order.client_code));
-    const salesList = [];
-    const budgetsList = [];
+    let salesList = [];
+    let budgetsList = [];
     while (fromDateCopy.getTime() <= toDate.getTime()) {
       const day = fromDateCopy.toISOString().slice(0, 10);
       const salesOnDay = sales?.filter(
@@ -370,7 +383,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         new Date(String(order.order_date)) >= fromDate &&
         new Date(String(order.order_date)) <= new Date(String(toDate)),
     );
-    const validOrderProducts: {
+    let validOrderProducts: {
       id: number;
       order_number: string;
       product_code: string;
@@ -434,7 +447,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
   const toggleShowMore = () => {
     setShowMore((showMore) => !showMore);
-
   };
 
   const [showMore2, setShowMore2] = useState(false);
@@ -443,6 +455,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     setShowMore2((showMore2) => !showMore2);
   };
 
+  /*
   if (isLoading) {
     return (
       <AppLayout
@@ -474,7 +487,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                   }
                 }
                 setProvidersSelected(value);
-              }} >
+              } } >
               <Button
                 variant="outline"
                 className="rounded-2xl border-[#8B83EC] bg--50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
@@ -502,60 +515,69 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       </AppLayout>
     );
   } else {
-    return (
-      <AppLayout
-        title={
-          <div>
-            <h1>{product?.description ?? "Producto no encontrado"}</h1>
-            <p className="text-sm">{product?.code ?? "Producto no encontrado"}</p>
-          </div>
-        }
-        user={props?.user}
-        sidenav={<AppSidenav />}
-      >
-        <div className="flex justify-between">
-          <div className="flex gap-1">
-            <ListSelectionDialog
-              title="Proveedores"
-              options={filteredProviders.map((p) => ({
-                title: p.name,
-                subtitle: p.code + " - " + (p.address || "") + " " + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
-                value: p.code,
-              }))}
-              defaultValues={defaultValues}
-              onApply={(selectedList) => {
-                const selected = new Set(selectedList);
-                const value = new Set<string>();
-                for (const provider of filteredProviders) {
-                  if (!selected.has(provider.code)) {
-                    value.add(provider.code);
-                  }
-                }
-                setProvidersSelected(value);
-                // re ejecute funciones estadistica
-              }}
-            >
-              <Button
-                variant="outline"
-                className="rounded-2xl border-gray-300 bg-gray-50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
-              >
-                Proveedores
-              </Button>
-            </ListSelectionDialog>
-            <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
-          </div>
-          <div className="flex gap-3">
-            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Desde" label={"Desde"} />
-            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Hasta" label={"Hasta"} />
-            <Button
-              onClick={handleUpdateFilters}
-              className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
-            >
-              <Filter className="mr-2" size={20} />Filtrar
-            </Button>
-          </div>
-        </div>
+  */
 
+  return (
+    <AppLayout
+      title={
+        <div>
+          <h1>{product?.description ?? "Producto no encontrado"}</h1>
+          <p className="text-sm">{product?.code ?? "Producto no encontrado"}</p>
+        </div>
+      }
+      user={props?.user}
+      sidenav={<AppSidenav />}
+    >
+      <div className="flex justify-between">
+        <div className="flex gap-1">
+          <ListSelectionDialog
+            title="Proveedores"
+            options={filteredProviders.map((p) => ({
+              title: p.name,
+              subtitle: p.code + " - " + (p.address || "") + " " + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
+              value: p.code,
+            }))}
+            defaultValues={defaultValues}
+            onApply={(selectedList) => {
+              const selected = new Set(selectedList);
+              const value = new Set<string>();
+              for (const provider of filteredProviders) {
+                if (!selected.has(provider.code)) {
+                  value.add(provider.code);
+                }
+              }
+              setProvidersSelected(value);
+              // re ejecute funciones estadistica
+            }}
+          >
+            <Button
+              variant="outline"
+              className="rounded-2xl border-gray-300 bg-gray-50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
+            >
+              Proveedores
+            </Button>
+          </ListSelectionDialog>
+          <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
+        </div>
+        <div className="flex gap-3">
+          <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Desde" label={"Desde"} />
+          <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Hasta" label={"Hasta"} />
+          <Button
+            onClick={handleUpdateFiltersLoad}
+            className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
+          >
+            <Filter className="mr-2" size={20} />Filtrar
+          </Button>
+        </div>
+      </div>
+
+      {isLoading || handleFiltersStage > 0 ? <>
+        <div className="flex items-center justify-center" style={{ minHeight: '70vh' }}>
+          <Button variant="secondary" disabled>
+            <Loader2Icon className="mr-2 animate-spin" /> Cargando...
+          </Button>
+        </div>
+      </> : <>
         <DataCard icon={<ChartNoAxesCombined />} title={"Estadísticas generales"}>
           <TooltipProvider>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -657,19 +679,18 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             )}
           </div>
         </DataCard>
-
-        <DataCard title="GRAFICOS" icon={<AreaChart/>}>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-6 mb-10 w-max-[1077px]">
-            <StackedAreaChart data={consumption ?? []} />
-            <SimpleBartChart data={soldProportions ?? []} />
-          </div>
-          <div className="w-full">
-            <SimpleLineChart data={salesAndBudgets} />
-          </div>
-        </DataCard>
-      </AppLayout>
-    );
-  }
+      </>
+      }
+      <DataCard title="GRAFICOS" icon={<AreaChart />}>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-6 mb-10 w-max-[1077px]">
+          <StackedAreaChart data={consumption ?? []} />
+          <SimpleBartChart data={soldProportions ?? []} />
+        </div>
+        <div className="w-full">
+          <SimpleLineChart data={salesAndBudgets} />
+        </div>
+      </DataCard>
+    </AppLayout >
+  );
 }
-
 
