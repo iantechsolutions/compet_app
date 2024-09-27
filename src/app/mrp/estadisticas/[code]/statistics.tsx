@@ -2,7 +2,7 @@
 import { ring2 } from "ldrs";
 
 import { useParams } from "next/navigation";
-import { CheckCheckIcon, CheckIcon, Loader2Icon, XSquareIcon } from "lucide-react";
+import { CheckCheckIcon, CheckIcon, Filter, Loader2Icon, XSquareIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
@@ -452,12 +452,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                   }
                 }
                 setProvidersSelected(value);
-                // re ejecute funciones estadistica
               }}
             >
               <Button
                 variant="outline"
-                className="rounded-2xl border-gray-300 bg-gray-50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
+                className="rounded-2xl border-[#8B83EC] bg--50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
               >
                 Proveedores
               </Button>
@@ -469,7 +468,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
             <Button
               onClick={handleUpdateFilters}
-              className="rounded-2xl border-gray-700 bg-black px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
+              className="rounded-2xl border-[#8B83EC] bg-black px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
             >
               Filtrar
             </Button>
@@ -529,9 +528,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
             <Button
               onClick={handleUpdateFilters}
-              className="rounded-2xl border-gray-700 bg-black px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
+              className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
             >
-              Filtrar
+              <Filter className="mr-2" size={20}/>Filtrar
             </Button>
           </div>
         </div>
