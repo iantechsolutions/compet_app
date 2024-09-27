@@ -1,21 +1,19 @@
 import { CalendarDays } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { Button } from "./ui/button";
+import HelpCircleIcon from "./icons/help-circle-stroke-rounded";
 
-export function CustomHover(props: { hoverText: string; hoverContent: React.ReactNode }) {
+export function CustomHover(props: { hoverContent: React.ReactNode }) {
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <Button variant="link" className="underline hover:no-underline">
-          {props.hoverText}
+        <Button variant="question" className="">
+        <HelpCircleIcon />
         </Button>
       </HoverCardTrigger>
-      <HoverCardContent className="w-80">
-        <div className="flex justify-between space-x-4">
-          <div className="space-y-1">
-            {/* <h4 className="text-sm font-semibold">{props.hoverText}</h4> */}
-            <p className="text-sm">{props.hoverContent}</p>
-          </div>
+      <HoverCardContent className="w-80 bg-[#eeeeee] border-0">
+        <div className="flex">
+          <p className="text-sm text-[#aaaaaa] text-justify">{props.hoverContent}</p>
         </div>
       </HoverCardContent>
     </HoverCard>

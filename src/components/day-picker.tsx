@@ -12,31 +12,56 @@ import { Calendar } from "~/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
 interface DatePickerProps {
+  label: string;
   message?: string;
   value?: Date;
   onChange: React.Dispatch<Date | undefined>;
 }
 export function DatePicker(props: DatePickerProps) {
+  const currentMonth = props.value ?? new Date();
+
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
+    <PopoverTrigger
+      asChild
+      className="rounded-lg border border-gray-200 hover:border-[#8B83EC]"
+    >
+          <Button
           variant={"outline"}
-          className={cn("w-[280px] justify-start text-left font-normal", !props.value && "text-muted-foreground")}
+          className={cn(
+            "w-[280px] justify-between text-left font-normal rounded-lg border border-gray-200 hover:border-[#8B83EC]",
+            !props.value && "text-muted-foreground"
+          )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {props.value ? format(props.value, "PPP", { locale: es }) : <span>{props.message ?? "Elija una fecha"}</span>}
+          <span className="text-left">
+            {props.value
+              ? format(props.value, "PPP", { locale: es })
+              : props.label}
+          </span>
+
+          <CalendarIcon className="h-4 w-4 ml-auto" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+    </PopoverTrigger>
+
+    <PopoverContent className="w-auto p-0 rounded-lg shadow-lg">
+      <div className="p-4 text-center">
+        <div className="relative">
+          <span className="block text-lg font-normal">
+            {format(currentMonth, "yyyy")}
+          </span>
+          
+        </div>
+
+
         <Calendar
           mode="single"
           selected={props.value}
-          // onSelect={(date)=>props.onChange(date)}
+          onSelect={(date) => props.onChange(date)}
           defaultMonth={props.value ?? new Date()}
-          onDayClick={(date) => props.onChange(date)}
+          //onDayClick={(date) => props.onChange(date)}
         />
-      </PopoverContent>
-    </Popover>
+      </div>
+    </PopoverContent>
+  </Popover>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 import { getUserSetting, setUserSetting } from "~/lib/settings";
 import dayjs from "dayjs";
-import { Loader2Icon, LucideAlignHorizontalSpaceBetween } from "lucide-react";
+import { Loader2Icon} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -12,15 +12,25 @@ import { useMRPData, useMRPInvalidateAndReloadData } from "~/components/mrp-data
 import type { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
+import { Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle } from "~/components/ui/card";
 import { useGlobalState, useOnMounted } from "~/lib/hooks";
 import { nullProfile } from "~/lib/nullForecastProfile";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/shared";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { CustomHover } from "~/components/custom-hover";
+import DataCard, { DataCardSection } from "../../../components/ui/dataCard";
+import { ChartNoAxesCombined } from "~/components/icons/chart-combined";
+import Database02Icon from "~/components/icons/database-02-stroke-rounded";
+import MailAtSign01Icon from "~/components/icons/mail-at-sign-01-stroke-rounded";
+import CancelCircleIcon from "~/components/icons/cancel-circle-stroke-rounded";
+import AddCircleIcon from "~/components/icons/add-circle-stroke-rounded";
 
 export default function DataSettingsPage(props: {
   user?: NavUserData & { id: string };
@@ -38,68 +48,60 @@ export default function DataSettingsPage(props: {
   return (
     <AppLayout title={<h1>Config. de datos</h1>} user={props.user} sidenav={<AppSidenav />}>
       <DataUploadingCard />
+      <DataCard icon={<ChartNoAxesCombined />} title={"Origen de datos"}>
+        <section className="flex flex-row flex-auto gap-8 justify-between mx-8">
+          <DataCardSection title={"Última exportación de datos"} className="w-60">
+            <p><b>{date.format("DD/MM/YYYY")}</b>{` `}a las{` `}<b>{date.format("HH:mm:ss")}</b></p>
+          </DataCardSection>
+          <DataCardSection title={"Archivo de datos"} className="w-40">
+            <Link href={props.dataInfo.exportURL} className="font-semibold text-[#5da4f5] underline-none" target="_blank">
+              Link aquí
+            </Link>
+          </DataCardSection>
+          <DataCardSection title={"Perfil de forecast"} className="w-52">
+            <p><b>{forecastProfile.name} (id: {forecastProfile.id ?? 0})</b></p>
+          </DataCardSection>
+        </section>
 
-      <Title>Origen de datos</Title>
-
-      <p>
-        Último export de datos{` `}
-        <b>{date.format("DD/MM/YYYY")}</b>
-        {` `}a las{` `}
-        <b>{date.format("HH:mm:ss")}</b>
-      </p>
-      <p>
-        Archivo de datos:{" "}
-        <Link href={props.dataInfo.exportURL} className="font-medium text-blue-500 underline" target="_blank">
-          {props.dataInfo.exportURL}
-        </Link>
-      </p>
-      <p>
-        Perfil de forecast:{" "}
-        <b>
-          {forecastProfile.name} (id: {forecastProfile.id ?? 0})
-        </b>
-      </p>
-      <Title className="mt-5">Mostrando actualmente</Title>
-      <Link href={data.dataExportUrl} className="text-sm font-medium text-blue-500 underline" target="_blank">
-        {data.dataExportUrl}
-      </Link>
-      <p>
-        Perfil de forecast:{" "}
-        <b>
-          {data.forecastData!.forecastProfile.name} (id: {data.forecastData!.forecastProfile.id ?? 0})
-        </b>
-      </p>
-      <p>
-        Fecha del export:{` `}
-        <b>{dayjs(data.dataExportDate).format("DD/MM/YYYY")}</b>
-        {` `}a las{` `}
-        <b>{dayjs(data.dataExportDate).format("HH:mm:ss")}</b>
-      </p>
-      {dataMismatch && (
-        <div className="mt-5">
-          <p className="font-semibold text-red-500">Los datos mostrados no coinciden con los datos exportados. Recargue los datos.</p>
-        </div>
-      )}
+        <Title className="text-base font-semibold tracking-tight uppercase mt-5 text-black">Mostrando actualmente</Title>
+        <section className="flex flex-row flex-auto  gap-8 justify-between mx-8">
+          <DataCardSection title={"Archivo de datos"} className="w-60">
+            <Link href={data.dataExportUrl} className="font-semibold text-[#5da4f5] underline-none" target="_blank">
+              Link aquí
+            </Link>
+          </DataCardSection>
+          <DataCardSection title={"Perfil de forecast"} className="w-40">
+            <p><b>{data.forecastData!.forecastProfile.name} (id: {data.forecastData!.forecastProfile.id ?? 0})</b></p>
+          </DataCardSection>
+          <DataCardSection title={"Última exportación de datos"} className="w-52">
+            <p><b>{dayjs(data.dataExportDate).format("DD/MM/YYYY")}</b>
+            {` `}a las{` `}
+            <b>{dayjs(data.dataExportDate).format("HH:mm:ss")}</b></p>
+          </DataCardSection>
+        </section>
+        {dataMismatch && (
+          <div className="flex mt-8 justify-center">
+          <p className="font-semibold text-red-500 opacity-60">Los datos mostrados no coinciden con los datos exportados. Recargue los datos.</p>
+        </div>)}
       {!dataMismatch && (
-        <div className="mt-5">
-          <p className="font-semibold text-green-500">Datos sincronizados correctamente.</p>
-        </div>
-      )}
-      <Button
-        className="mt-3 w-full max-w-[600px]"
+        <div className="flex mt-8 justify-center">
+          <p className="font-semibold text-green-500 opacity-60">Datos sincronizados correctamente.</p>
+        </div>)}
+        <Button
+        className=" mx-auto px-8 font-semibold mt-6"
         onClick={() => invalidateAndReloadData()}
-        variant={dataMismatch ? "default" : "secondary"}
-      >
+        variant={dataMismatch ? "default" : "secondary"}>
         Recargar datos
       </Button>
+      </DataCard>
+            
+      <DataCard icon={<Database02Icon/>} title={"Base de datos de tango"}>
+        <RemoteUpdateComponent />
+      </DataCard>
 
-      <hr className="my-5 block" />
-
-      <RemoteUpdateComponent />
-
-      <hr className="my-5 block" />
-
-      <MailSendingConfiguration id={props.user?.id ?? ""} />
+      <DataCard icon={<Database02Icon/>} title={"Configuración de stock crítico"}>
+        <MailSendingConfiguration id={props.user?.id ?? ""} />
+      </DataCard>
     </AppLayout>
   );
 }
@@ -226,11 +228,10 @@ function RemoteUpdateComponent() {
   }
 
   return (
-    <section className="w-full max-w-[600px]">
-      <Title>Base de datos de tango</Title>
+    <section className="flex justify-center mx-auto">
       {(!remoteUpdateProgress || remoteUpdateProgress.error) && (
         <Button
-          className="mb-5"
+          className="px-8"
           onClick={() => {
             requestRemoteUpdate?.();
           }}
@@ -241,7 +242,7 @@ function RemoteUpdateComponent() {
       )}
 
       {remoteUpdateProgress && (
-        <Card className="flex items-center gap-5 break-words p-5">
+        <Card className="flex items-center gap-5 break-words p-5 mx-auto">
           {!remoteUpdateProgress.error && <Loader2Icon className="mr-2 animate-spin" />}
           <p
             className={cn("font-medium", {
@@ -340,17 +341,17 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
   }
 
   return (
-    <section className="w-full max-w-[600px]">
+    <section className="relative w-full pb-14 mb-0">
+      <div className="flex flex-col flex-auto max-w-[600px]">
+
       <>
-        <Title>Configuracion de stock critico</Title>
         <div className="mb-3">
-          <div className="flex justify-between">
+          <div className="flex justify-start">
             <p className="py-2">Cantidad de meses primera revision</p>
             {/* <CustomHover hoverText="?" hoverContent='' /> */}
             <CustomHover
-              hoverText="?"
-              hoverContent={<p className="text-sm">Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)</p>}
-            />
+               hoverContent={"Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)"}
+               />
           </div>
           <Input
             disabled={isLoading || isMailConfigLoading}
@@ -361,18 +362,13 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             onChange={(e) => setFirstCheck(Number(e.target.value))}
             placeholder="2"
             required
-          />
+            />
         </div>
         <div className="mb-3">
-          <div className="flex justify-between">
+          <div className="flex justify-start">
             <p className="py-2">Cantidad de meses segunda revision</p>
             <CustomHover
-              hoverText="?"
-              hoverContent={
-                <p className="text-sm">
-                  Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)
-                </p>
-              }
+               hoverContent={"Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)"}
             />
           </div>
           <Input
@@ -384,19 +380,15 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             onChange={(e) => setSecondCheck(Number(e.target.value))}
             placeholder="12"
             required
-          />
+            />
         </div>
         <div className="mb-3">
-          <div className="flex justify-between">
+          <div className="flex justify-start">
             <p className="py-2">Cantidad de meses para regularización del stock</p>
             <CustomHover
-              hoverText="?"
-              hoverContent={
-                <p className="text-sm">
-                  No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses <br /> Ej: Si un
-                  insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1
-                </p>
-              }
+              hoverContent={<p>No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses.
+                <br/>
+                Ej: Si un insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1.</p>}
             />
           </div>
           <Input
@@ -408,19 +400,21 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             onChange={(e) => setBelowNMonths(Number(e.target.value))}
             placeholder="0"
             required
-          />
+            />
         </div>
       </>
-      <Title>Mails a los que notificar en caso de stock critico</Title>
+      <Title className="flex text-base font-semibold tracking-tight uppercase mt-12 text-black gap-3">
+      <MailAtSign01Icon/>
+        Mails a los que notificar en caso de stock critico</Title>
       {/* <Button 
             className='mb-5'
             onClick={() => {
-                setMails([...mailsList, '']);
-            }
-            
-            }>
-                Agregar mail
-            </Button> */}
+              setMails([...mailsList, '']);
+              }
+              
+              }>
+              Agregar mail
+              </Button> */}
       <br />
       {mailsList &&
         mailsList.map((mail, index) => (
@@ -433,48 +427,52 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
                 onChange={(e) => handleEmailChange(e.target.value, index)}
                 placeholder="xxx@xxx.com"
                 required
-              />
+                />
             </div>
             <Button
               disabled={isLoading || isMailConfigLoading || sendingMails}
               onClick={() => {
                 insertMailAtIndex(index);
               }}
-            >
-              Agregar
+              variant="question"
+              >
+              <AddCircleIcon className="h-6 w-6" />
             </Button>
-            <Button
-              disabled={mailsList.length === 1 || isLoading || isMailConfigLoading || sendingMails}
+            {!(mailsList.length === 1 || isLoading || isMailConfigLoading || sendingMails) && (
+              <Button
               onClick={() => {
                 const newMails = [...mailsList];
                 newMails.splice(index, 1);
                 setMails(newMails);
               }}
-              variant="destructive"
-            >
-              Eliminar
-            </Button>
+              variant="question"
+              >
+                <CancelCircleIcon className="h-6 w-6" />
+              </Button>
+            )}
           </div>
         ))}
-      <div className="mb-4 flex items-center gap-3 p-4">
+      <div className="mb-2 absolute bottom-0 w-full flex justify-center gap-3 p-4 ">
         <Button
-          onClick={() => {
-            handleMailListSave(mailsList);
-          }}
+        className="flex px-6"
+        onClick={() => {
+          handleMailListSave(mailsList);
+        }}
           disabled={isLoading || isMailConfigLoading || sendingMails}
         >
           {isLoading && <Loader2Icon className="mr-2 animate-spin" />}
           Guardar configuracion
         </Button>
-        <Button
+        {/* <Button
           onClick={() => {
             handleMailTest(mailsList);
-          }}
-          disabled={isLoading || isMailConfigLoading || sendingMails}
-        >
-          {sendingMails && <Loader2Icon className="mr-2 animate-spin" />}
-          Enviar mails
-        </Button>
+            }}
+            disabled={isLoading || isMailConfigLoading || sendingMails}
+            >
+            {sendingMails && <Loader2Icon className="mr-2 animate-spin" />}
+            Enviar mails
+            </Button> */}
+      </div>
       </div>
     </section>
   );

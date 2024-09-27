@@ -2,11 +2,10 @@
 import { ring2 } from "ldrs";
 
 import { useParams } from "next/navigation";
-import { AreaChart } from "lucide-react";
+import { AreaChart, CheckCheckIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, Filter, Loader2Icon, XSquareIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
-import ListSelectionDialog from "~/components/list-selection-dialog";
 import { useMRPData } from "~/components/mrp-data-provider";
 import { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
@@ -31,6 +30,11 @@ import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
 import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
 import SimpleBartChart from "~/components/estadisticas/simpleBartChart";
 import { DatePicker } from "~/components/day-picker";
+import dayjs from "dayjs";
+import DataCard from "~/components/ui/dataCard";
+import { ChartNoAxesCombined } from "~/components/icons/chart-combined";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import ListSelectionDialog from "~/components/list-selection-dialog";
 export default function StatisticsPage(props: { user?: NavUserData }) {
   const temporaryDate = new Date();
   temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
@@ -52,6 +56,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       amount: number;
     }[]
   >();
+
+
   const [salesAndBudgets, setSalesAndBudgets] = useState<{
     salesList: { date: string; totalSales: number }[];
     budgetsList: { date: string; totalBudgets: number }[];
@@ -193,9 +199,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     );
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
-     
-      let assembliesQuantities= null
-      if(event?.parentEvent?.quantity && event.parentEvent.originalQuantity){
+
+      let assembliesQuantities = null
+      if (event?.parentEvent?.quantity && event.parentEvent.originalQuantity) {
         assembliesQuantities = event.parentEvent.originalQuantity - event.parentEvent.quantity
       }
       if (event.assemblyId) {
@@ -356,6 +362,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
+
+
     const sales = data?.orders.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
@@ -377,11 +385,42 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         }
       }
     });
+
+
+
+    let events = data?.eventsByProductCode.get(productCode) ?? [];
+    events = events.filter(
+      (event) => new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+    );
+    events.forEach((event) => {
+      // event.quantity
+      if (event.assemblyId) {
+        const assembliesQuantities =
+          event.parentEvent && event.parentEvent.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+        const assembly = data?.assemblyById.get(event.assemblyId);
+        let totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
+        let day = "";
+        if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
+          day = new Date(String(event.date)).toISOString().slice(0, 10);
+        }
+        validOrderProducts.push({
+          id: 0,
+          order_number: "",
+          product_code: productCode,
+          ordered_quantity: totalConsumptionOnEvent,
+        });
+      }
+    })
+
+    //utility
+    const difference = dayjs(fromDate).diff(dayjs(toDate), 'month');
+
+    //passed values
     const orderedQuantities = validOrderProducts.map((order_product) => order_product.ordered_quantity);
     const sortedQuantities = orderedQuantities.slice().sort((a, b) => a - b);
     const mid = Math.floor(sortedQuantities.length / 2);
     const median = sortedQuantities.length % 2 !== 0 ? sortedQuantities[mid] : sortedQuantities[mid - 1];
-
+    const averageSalesPerMonth = validOrderProducts.reduce((acc, order_product) => acc + order_product.ordered_quantity, 0) / difference;
     return {
       MaximumSales: orderedQuantities.length > 0 ? Math.max(...orderedQuantities) : 0,
       MinimumSales: orderedQuantities.length > 0 ? Math.min(...orderedQuantities) : 0,
@@ -391,6 +430,18 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       MedianSales: orderedQuantities.length > 0 ? median : 0,
     };
   }
+  const [showMore, setShowMore] = useState(false);
+
+  const toggleShowMore = () => {
+    setShowMore((showMore) => !showMore);
+
+  };
+
+  const [showMore2, setShowMore2] = useState(false);
+
+  const toggleShowMore2 = () => {
+    setShowMore2((showMore2) => !showMore2);
+  };
 
   if (isLoading) {
     return (
@@ -423,12 +474,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                   }
                 }
                 setProvidersSelected(value);
-                // re ejecute funciones estadistica
-              }}
-            >
+              }} >
               <Button
                 variant="outline"
-                className="rounded-2xl border-gray-300 bg-gray-50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
+                className="rounded-2xl border-[#8B83EC] bg--50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
               >
                 Proveedores
               </Button>
@@ -436,11 +485,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
           </div>
           <div className="flex gap-3">
-            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" />
-            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
+            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" label={""} />
+            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" label={""} />
             <Button
               onClick={handleUpdateFilters}
-              className="rounded-2xl border-gray-700 bg-black px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
+              className="rounded-2xl border-[#8B83EC] bg-black px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
             >
               Filtrar
             </Button>
@@ -496,37 +545,97 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
           </div>
           <div className="flex gap-3">
-            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" />
-            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" />
+            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Desde" label={"Desde"} />
+            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Hasta" label={"Hasta"} />
             <Button
               onClick={handleUpdateFilters}
-              className="rounded-2xl border-gray-700 bg-black px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
+              className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
             >
-              Filtrar
+              <Filter className="mr-2" size={20} />Filtrar
             </Button>
           </div>
         </div>
-        <div className="mt-6 rounded-lg bg-white p-6 shadow-md">
-          <h1 className="mb-4 text-2xl font-bold text-gray-800">Estadísticas generales</h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <p className="text-lg font-medium text-gray-700">
-            Cantidad de pedidos: <span className="font-normal text-gray-600">{generalStatistics?.TotalSales ?? 0}</span>
-            </p>
-            <p className="text-lg font-medium text-gray-700">
-              Máximo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MaximumSales ?? 0}</span>
-            </p>
-            <p className="text-lg font-medium text-gray-700">
-              Mínimo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MinimumSales ?? 0}</span>
-            </p>
-            <p className="text-lg font-medium text-gray-700">
-              Unid. promedio por venta: <span className="font-normal text-gray-600">{generalStatistics?.AverageSales ?? 0}</span>
-            </p>
-            <p className="text-lg font-medium text-gray-700">
-              Mediana de unid. por venta: <span className="font-normal text-gray-600">{generalStatistics?.MedianSales ?? 0}</span>
-            </p>
-          </div>
-          <br />
-          <h1 className="mb-4 text-2xl font-bold text-gray-800">Estadísticas de consumo</h1>
+
+        <DataCard icon={<ChartNoAxesCombined />} title={"Estadísticas generales"}>
+          <TooltipProvider>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Tooltip>
+                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Ventas Totales: todas las veces que se vendió ese producto.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Cantidad de pedidos que incluye este elemento.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.MaximumSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Máximas unidades vendidas por pedido.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {showMore && (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                      <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                      <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Mínimas unidades vendidas por pedido.</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                      <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                      <p className="text-sm font-medium text-black mt-2">UPP</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Unidades promedio por pedido.</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                      <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                      <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Mediana de unidades por venta.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore}>
+              <p className="text-xs text-grey-700">{showMore ? "Mostrar menos" : "Mostrar más"}</p>
+              {showMore ? (
+                <ChevronUpIcon className="h-4 w-3 text-gray-500" />
+              ) : (
+                <ChevronDownIcon className="h-4 w-3 text-gray-500" />
+              )}
+            </div>
+
+          </TooltipProvider>
+        </DataCard>
+        <DataCard icon={<ChartNoAxesCombined />} title={"DISTRIBUCIÓN DE CONSUMO"}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {totalMotiveConsumption
               ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
@@ -539,9 +648,17 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
               ))
               : null}
           </div>
-        </div>
-        <div className="mt-6 rounded-lg bg-white p-6 shadow-m d">
-          <h1 className="mb-6 text-lg font-bold text-gray-800 flex"> <AreaChart className="mr-2 h-6" />GRÁFICOS</h1>
+          <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore2}>
+            <p className="text-xs text-grey-700">{showMore2 ? "Mostrar menos" : "Mostrar más"}</p>
+            {showMore2 ? (
+              <ChevronUpIcon className="h-4 w-3 text-gray-500" />
+            ) : (
+              <ChevronDownIcon className="h-4 w-3 text-gray-500" />
+            )}
+          </div>
+        </DataCard>
+
+        <DataCard title="GRAFICOS" icon={<AreaChart/>}>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-6 mb-10 w-max-[1077px]">
             <StackedAreaChart data={consumption ?? []} />
             <SimpleBartChart data={soldProportions ?? []} />
@@ -549,8 +666,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           <div className="w-full">
             <SimpleLineChart data={salesAndBudgets} />
           </div>
-        </div>
+        </DataCard>
       </AppLayout>
     );
   }
 }
+
+
