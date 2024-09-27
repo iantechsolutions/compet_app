@@ -33,7 +33,7 @@ export default function SimpleBartChart({ data }: graphicProps) {
       return (
         <div className="bg-white opacity-70 p-3">
           <p className="font-bold">{`${label}`}</p>
-          <p className="">{`Cantidad de Unidades vendidas: ${payload[0]!.value as number}`} </p>
+          <p className="">{`Cantidad de Unidades vendidas: ${(payload[0]?.value ?? 0) as number}`} </p>
           <p className="">{`Cantidad de Ventas: ${getAmountOfSales(data, label as string)}`} </p>
         </div>
       );
