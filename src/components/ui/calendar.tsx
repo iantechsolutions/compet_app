@@ -8,29 +8,37 @@ import { cn } from "~/lib/utils";
 import { buttonVariants } from "~/components/ui/button";
 import { format } from "date-fns";
 
+const customLocale = {
+  ...es,
+  localize: {
+    ...es.localize,
+    day: (n: number) => ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sáb"][n] || "", // Empezando por Lunes
+  },
+};
+
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   return (
     <DayPicker
-      locale={es}
+      locale={customLocale} // Usando el locale personalizado
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 pt-0", className)}
       classNames={{
         months: "flex flex-col space-y-4",
         month: "space-y-4",
-        caption: " flex flex-row place-content-center items-center ",
+        caption: "flex flex-row h-full place-content-center items-end",
         caption_label: "flex text-lg justify-center", 
-        nav: "space-x-1 flex items-center",
+        nav: "flex items-center pb-3",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
           "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-y-1",
+        table: "w-full border-collapse space-y-1  ",
         head_row: "flex justify-between",
-        head_cell: "text-muted-foreground rounded-md w-8 font-medium text-[0.85rem]",
-        row: "flex w-full mt-2",
+        head_cell: "text-muted-foreground rounded-md w-8 font-medium text-[0.85rem] px-1", 
+        row: "flex w-full mt-2 space-x-1 border-0",
         cell: cn(
           "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected].day-range-end)]:rounded-r-md",
           props.mode === "range"
@@ -53,14 +61,19 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       components ={{
         IconLeft: ({ ...props }) => <ChevronLeftIcon className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRightIcon className="h-4 w-4" />,
-        CaptionLabel: ({ ...props }) => <div className="capitalize font-semibold">
-        {format(props.displayMonth, "MMMM", { locale: es })}
-      </div>,
+        CaptionLabel: ({ ...props }) => <div className="flex h-full flex-col justify-between">
+        <div className="flex text-lg place-content-center font-medium">
+          {format(props.displayMonth, "yyyy", { locale: customLocale })}
+        </div>
+        <div className="flex capitalize pt-2 font-semibold">
+          {format(props.displayMonth, "MMMM", { locale: customLocale })}
+        </div></div>,
       }}
       {...props}
     />
   );
 }
+
 Calendar.displayName = "Calendar";
 
 export { Calendar };

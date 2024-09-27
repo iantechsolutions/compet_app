@@ -453,7 +453,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         sidenav={<AppSidenav />}
       >
         <div className="flex justify-between">
-          <div className="flex gap-1">
+          <div className="flex gap-3">
             <ListSelectionDialog
               title="Proveedores"
               options={filteredProviders.map((p) => ({
@@ -481,7 +481,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             </ListSelectionDialog>
             <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
           </div>
-          <div className="flex gap-3">
+          <div className="flex ml-3 gap-3">
             <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" label={""} />
             <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Fecha hasta" label={""} />
             <Button
@@ -542,8 +542,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
           </div>
           <div className="flex gap-3">
-            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Desde" label={"Desde"} />
-            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Hasta" label={"Hasta"} />
+          <DatePicker  onChange={(e) => setFromDate(e)}   value={fromDate ?? undefined}   label="Desde"  message="Desde"/>
+          <DatePicker  onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} label="Hasta"/>       
             <Button
               onClick={handleUpdateFilters}
               className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
@@ -629,6 +629,30 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     <ChevronDownIcon className="h-4 w-3 text-gray-500" />
   )}
 </div>
+
+  <TooltipProvider>
+    <h1 className="text-lg font-bold text-black mt-4">Estadísticas de Consumo</h1>
+  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+       {totalMotiveConsumption
+        ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
+          <Tooltip key={motive}>
+            <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+              <p className="text-5xl font-bold text-black">
+                {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}%
+              </p>
+              <p className="text-sm font-medium text-black mt-2">{motive}</p>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {motive}: {amount} unidades consumidas, lo que representa{" "}
+                {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}% del consumo total.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        ))
+        : null}
+    </div>
+  </TooltipProvider>
 
       </TooltipProvider>
     </DataCard>

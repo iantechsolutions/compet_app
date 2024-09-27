@@ -44,15 +44,7 @@ export function DatePicker(props: DatePickerProps) {
     </PopoverTrigger>
 
     <PopoverContent className="w-auto p-0 rounded-lg shadow-lg">
-      <div className="p-4 text-center">
-        <div className="relative">
-          <span className="block text-lg font-normal">
-            {format(currentMonth, "yyyy")}
-          </span>
-          
-        </div>
-
-
+      <div className="p-3 text-center">
         <Calendar
           mode="single"
           selected={props.value}
