@@ -486,7 +486,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                   }
                 }
                 setProvidersSelected(value);
-              } } >
+              }} >
               <Button
                 variant="outline"
                 className="rounded-2xl border-[#8B83EC] bg--50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
@@ -557,161 +557,150 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
           </div>
           <div className="flex gap-3">
-          <DatePicker  onChange={(e) => setFromDate(e)}   value={fromDate ?? undefined}   label="Desde"  message="Desde"/>
-          <DatePicker  onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} label="Hasta"/>       
+            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} label="Desde" message="Desde" />
+            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} label="Hasta" />
             <Button
               onClick={handleUpdateFilters}
               className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
             >
-              <Filter className="mr-2" size={20}/>Filtrar
+              <Filter className="mr-2" size={20} />Filtrar
             </Button>
           </div>
         </div>
 
-      {isLoading || handleFiltersStage > 0 ? <>
-        <div className="flex items-center justify-center" style={{ minHeight: '70vh' }}>
-          <Button variant="secondary" disabled>
-            <Loader2Icon className="mr-2 animate-spin" /> Cargando...
-          </Button>
-        </div>
-      </> : <>
-        <DataCard icon={<ChartNoAxesCombined />} title={"Estadísticas generales"}>
-          <TooltipProvider>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Tooltip>
-                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                  <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
-                  <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Ventas Totales: todas las veces que se vendió ese producto.</p>
-                </TooltipContent>
-              </Tooltip>
+        {isLoading || handleFiltersStage > 0 ? <>
+          <div className="flex items-center justify-center" style={{ minHeight: '70vh' }}>
+            <Button variant="secondary" disabled>
+              <Loader2Icon className="mr-2 animate-spin" /> Cargando...
+            </Button>
+          </div>
+        </> : <>
+          <DataCard icon={<ChartNoAxesCombined />} title={"Estadísticas generales"}>
+            <TooltipProvider>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ventas Totales: todas las veces que se vendió ese producto.</p>
+                  </TooltipContent>
+                </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                  <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
-                  <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Cantidad de pedidos que incluye este elemento.</p>
-                </TooltipContent>
-              </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Cantidad de pedidos que incluye este elemento.</p>
+                  </TooltipContent>
+                </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                  <p className="text-5xl font-bold text-black">{generalStatistics?.MaximumSales ?? 0}</p>
-                  <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Máximas unidades vendidas por pedido.</p>
-                </TooltipContent>
-              </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.MaximumSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Máximas unidades vendidas por pedido.</p>
+                  </TooltipContent>
+                </Tooltip>
 
-              {showMore && (
-                <>
-                  <Tooltip>
-                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                      <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
-                      <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Mínimas unidades vendidas por pedido.</p>
-                    </TooltipContent>
-                  </Tooltip>
+                {showMore && (
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                        <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                        <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Mínimas unidades vendidas por pedido.</p>
+                      </TooltipContent>
+                    </Tooltip>
 
-                  <Tooltip>
-                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                      <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
-                      <p className="text-sm font-medium text-black mt-2">UPP</p>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Unidades promedio por pedido.</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                        <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                        <p className="text-sm font-medium text-black mt-2">UPP</p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Unidades promedio por pedido.</p>
+                      </TooltipContent>
+                    </Tooltip>
 
-                  <Tooltip>
-                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                      <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
-                      <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Mediana de unidades por venta.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </>
+                    <Tooltip>
+                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                        <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                        <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Mediana de unidades por venta.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
+              </div>
+
+              <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore}>
+                <p className="text-xs text-grey-700">{showMore ? "Mostrar menos" : "Mostrar más"}</p>
+                {showMore ? (
+                  <ChevronUpIcon className="h-4 w-3 text-gray-500" />
+                ) : (
+                  <ChevronDownIcon className="h-4 w-3 text-gray-500" />
+                )}
+              </div>
+
+
+
+            </TooltipProvider>
+          </DataCard>
+          <DataCard icon={<ChartNoAxesCombined />} title={"DISTRIBUCIÓN DE CONSUMO"}>
+            {!totalConsumedAmount && <p>No hay información de consumo disponible</p>}
+            <TooltipProvider>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {totalMotiveConsumption
+                  ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
+                    <Tooltip key={motive}>
+                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                        <p className="text-5xl font-bold text-black">
+                          {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}%
+                        </p>
+                        <p className="text-sm font-medium text-black mt-2">{motive}</p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          {motive}: {amount} unidades consumidas, lo que representa{" "}
+                          {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}% del consumo total.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))
+                  : "no hay información de consumo disponible"}
+              </div>
+            </TooltipProvider>
+            <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore2}>
+              <p className="text-xs text-grey-700">{showMore2 ? "Mostrar menos" : "Mostrar más"}</p>
+              {showMore2 ? (
+                <ChevronUpIcon className="h-4 w-3 text-gray-500" />
+              ) : (
+                <ChevronDownIcon className="h-4 w-3 text-gray-500" />
               )}
             </div>
-
-        <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore}>
-  <p className="text-xs text-grey-700">{showMore ? "Mostrar menos" : "Mostrar más"}</p>
-  {showMore ? (
-    <ChevronUpIcon className="h-4 w-3 text-gray-500" /> 
-  ) : (
-    <ChevronDownIcon className="h-4 w-3 text-gray-500" />
-  )}
-</div>
-
-  <TooltipProvider>
-    <h1 className="text-lg font-bold text-black mt-4">Estadísticas de Consumo</h1>
-  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-       {totalMotiveConsumption
-        ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
-          <Tooltip key={motive}>
-            <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-              <p className="text-5xl font-bold text-black">
-                {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}%
-              </p>
-              <p className="text-sm font-medium text-black mt-2">{motive}</p>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {motive}: {amount} unidades consumidas, lo que representa{" "}
-                {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}% del consumo total.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        ))
-        : null}
-    </div>
-  </TooltipProvider>
-
-          </TooltipProvider>
-        </DataCard>
-        <DataCard icon={<ChartNoAxesCombined />} title={"DISTRIBUCIÓN DE CONSUMO"}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {totalMotiveConsumption
-              ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
-                <p className="text-lg font-medium text-gray-700">
-                  {motive}:{" "}
-                  <span className="font-normal text-gray-600">
-                    {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}% del consumo
-                  </span>
-                </p>
-              ))
-              : null}
+          </DataCard>
+        </>
+        }
+        <DataCard title="GRAFICOS" icon={<AreaChart />}>
+          <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
+            <StackedAreaChart data={consumption ?? []} />
+            <SimpleBartChart data={soldProportions ?? []} />
           </div>
-          <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore2}>
-            <p className="text-xs text-grey-700">{showMore2 ? "Mostrar menos" : "Mostrar más"}</p>
-            {showMore2 ? (
-              <ChevronUpIcon className="h-4 w-3 text-gray-500" />
-            ) : (
-              <ChevronDownIcon className="h-4 w-3 text-gray-500" />
-            )}
+          <div className="w-full mt-20">
+            <SimpleLineChart data={salesAndBudgets} />
           </div>
         </DataCard>
-      </>
-      }
-      <DataCard title="GRAFICOS" icon={<AreaChart />}>
-        <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
-          <StackedAreaChart data={consumption ?? []} />
-          <SimpleBartChart data={soldProportions ?? []} />
-        </div>
-        <div className="w-full mt-20">
-          <SimpleLineChart data={salesAndBudgets} />
-        </div>
-      </DataCard>
-    </AppLayout >
-  );
-}
+      </AppLayout >
+    );
+  }
 }
