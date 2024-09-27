@@ -51,12 +51,10 @@ export default function StackedAreaChart({ data }: GraphicProps) {
   }));
 
   return (
-    <ResponsiveContainer width="48%" height="48%" aspect={2}>
+    <ResponsiveContainer width="100%" height="100%" aspect={2}>
       <>
-        <p className=" py-2 pl-6">● Cantidad de ventas y presupuestos en el periodo</p>
-
         <LineChart
-          width={500}
+          width={1077}
           height={400}
           data={transformedData}
           margin={{

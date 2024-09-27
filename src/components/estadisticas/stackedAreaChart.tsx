@@ -1,5 +1,8 @@
 "use client";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from "recharts";
+import CustomLegend from "./custom-legend";
+import { format, parse } from "date-fns";
+import LegendContent from "./custom-legend";
 interface GraphicProps {
   data: { date: string; motive: string; amount: number }[];
 }
@@ -15,12 +18,12 @@ export default function StackedAreaChart({ data }: GraphicProps) {
   }
 
   // const allFields = new Set<string>();
-  const result: {}[] = [];
+  const result: Record<string, unknown>[] = [];
 
   // // Recolectar todos los campos generados
   for (const [date, value] of dateMap) {
-    const transformedValue: { [key: string]: any } = {};
-    transformedValue["name"] = date;
+    const transformedValue: Record<string, unknown> = {};
+    transformedValue.name = date;
     for (const field of value) {
       transformedValue[field.motive] = field.amount;
     }
@@ -42,7 +45,6 @@ export default function StackedAreaChart({ data }: GraphicProps) {
   return (
     <ResponsiveContainer width="48%" height="48%" aspect={2}>
       <>
-        <p className=" py-2 pl-6">● Consumo del insumo en el tiempo</p>
         <AreaChart
           width={500}
           height={400}
@@ -55,10 +57,17 @@ export default function StackedAreaChart({ data }: GraphicProps) {
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
+          <XAxis
+            dataKey="name"
+            tickFormatter={(tick: string) => {
+              const date = parse(tick, "yyyy-MM-dd", new Date());
+              return format(date, "MM/yyyy");
+            }}
+            interval={"preserveStartEnd"}
+          />
           <YAxis />
           <Tooltip />
-
+          <Legend  content={<LegendContent textContent="Consumo del insumo a traves del tiempo"/>}/>
           {Array.from(uniqueMotives).map((motive, index) => (
             <Area
               key={index}
@@ -74,3 +83,4 @@ export default function StackedAreaChart({ data }: GraphicProps) {
     </ResponsiveContainer>
   );
 }
+

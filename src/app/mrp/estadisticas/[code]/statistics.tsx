@@ -2,7 +2,7 @@
 import { ring2 } from "ldrs";
 
 import { useParams } from "next/navigation";
-import { CheckCheckIcon, CheckIcon, Loader2Icon, XSquareIcon } from "lucide-react";
+import { AreaChart } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
@@ -193,11 +193,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     );
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
-      const assembliesQuantities =
-        event.parentEvent && event.parentEvent.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+     
+      let assembliesQuantities= null
+      if(event?.parentEvent?.quantity && event.parentEvent.originalQuantity){
+        assembliesQuantities = event.parentEvent.originalQuantity - event.parentEvent.quantity
+      }
       if (event.assemblyId) {
         const assembly = data?.assemblyById.get(event.assemblyId);
-        let totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
+        const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
         if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
@@ -212,7 +215,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       }
     });
 
-    let salesList: {
+    const salesList: {
       date: string;
       motive: string;
       amount: number;
@@ -267,8 +270,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         budget.products.filter((product) => product.product_code === productCode).length > 0,
     );
     const sales = data?.orders.filter((order) => !clientExemptionList?.includes(order.client_code));
-    let salesList = [];
-    let budgetsList = [];
+    const salesList = [];
+    const budgetsList = [];
     while (fromDateCopy.getTime() <= toDate.getTime()) {
       const day = fromDateCopy.toISOString().slice(0, 10);
       const salesOnDay = sales?.filter(
@@ -291,7 +294,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           totalSales += order_product?.ordered_quantity ?? 0;
         }
       });
-      if(totalSales > 0){
+      if (totalSales > 0) {
         salesList.push({ date: day, totalSales });
       }
       let totalBudgets = 0;
@@ -301,10 +304,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           totalBudgets += product.quantity;
         }
       });
-      if(totalBudgets > 0){
+      if (totalBudgets > 0) {
         budgetsList.push({ date: day, totalBudgets });
       }
-      
+
 
       fromDateCopy.setDate(fromDateCopy.getDate() + 1);
     }
@@ -359,7 +362,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         new Date(String(order.order_date)) >= fromDate &&
         new Date(String(order.order_date)) <= new Date(String(toDate)),
     );
-    let validOrderProducts: {
+    const validOrderProducts: {
       id: number;
       order_number: string;
       product_code: string;
@@ -507,7 +510,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           <h1 className="mb-4 text-2xl font-bold text-gray-800">Estadísticas generales</h1>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <p className="text-lg font-medium text-gray-700">
-              Ventas totales: <span className="font-normal text-gray-600">{generalStatistics?.TotalSales ?? 0}</span>
+            Cantidad de pedidos: <span className="font-normal text-gray-600">{generalStatistics?.TotalSales ?? 0}</span>
             </p>
             <p className="text-lg font-medium text-gray-700">
               Máximo de unid. vendidas: <span className="font-normal text-gray-600">{generalStatistics?.MaximumSales ?? 0}</span>
@@ -527,21 +530,23 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {totalMotiveConsumption
               ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
-                  <p className="text-lg font-medium text-gray-700">
-                    {motive}:{" "}
-                    <span className="font-normal text-gray-600">
-                      {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}% del consumo
-                    </span>
-                  </p>
-                ))
+                <p className="text-lg font-medium text-gray-700">
+                  {motive}:{" "}
+                  <span className="font-normal text-gray-600">
+                    {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}% del consumo
+                  </span>
+                </p>
+              ))
               : null}
           </div>
         </div>
-        <div className="mt-6 rounded-lg bg-white p-6 shadow-md">
-          <h1 className="mb-6 text-2xl font-bold text-gray-800">Graficos</h1>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-6">
+        <div className="mt-6 rounded-lg bg-white p-6 shadow-m d">
+          <h1 className="mb-6 text-lg font-bold text-gray-800 flex"> <AreaChart className="mr-2 h-6" />GRÁFICOS</h1>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-6 mb-10 w-max-[1077px]">
             <StackedAreaChart data={consumption ?? []} />
             <SimpleBartChart data={soldProportions ?? []} />
+          </div>
+          <div className="w-full">
             <SimpleLineChart data={salesAndBudgets} />
           </div>
         </div>
