@@ -1,20 +1,9 @@
-import { CheckCheckIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, XSquareIcon } from "lucide-react";
+import { CheckCheckIcon, CheckIcon, ChevronDownIcon, XSquareIcon } from "lucide-react";
 import { createContext, useMemo, useState, useContext } from "react";
 import { FixedSizeList as List } from "react-window";
-import { useMRPData } from "~/components/mrp-data-provider";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
-import { CrmBudget } from "~/lib/types";
 import { Input } from "./ui/input";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 export type ListSelectionDialogProps = {
   children: React.ReactNode;
@@ -31,26 +20,16 @@ export type ListSelectionDialogProps = {
   readOnly?: boolean;
 };
 
-const MyComponent = (props: any) => {
-  const [isAccordionOpen, setIsAccordionOpen] = useState(false);}
-
 const rowsContext = createContext<{
   options: ListSelectionDialogProps["options"];
   selected: Set<string>;
   onClickOption: (option: string) => void;
-}>({
-  options: [],
-  selected: new Set(),
-  onClickOption: () => void 0,
-});
+}>(null!);
 
 export default function ListSelectionDialog(props: ListSelectionDialogProps) {
   const [selected, setSelected] = useState(new Set(props.defaultValues ?? []));
-
   const allValuesList = useMemo(() => props.options.map((o) => o.value), [props.options]);
-
   const [filter, setFilter] = useState("");
-  
 
   const filteredOptions = useMemo(() => {
     if (!filter.trim()) return props.options;
@@ -62,39 +41,31 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
     });
   }, [props.options, filter]);
 
-  const MyComponent = (props: any) => {
-    const [isAccordionOpen, setIsAccordionOpen] = useState(false);
-
-    return (
-      <Accordion type="single" collapsible>
-      <AccordionItem
-        value="providers"
-        onClick={() => setIsAccordionOpen(!isAccordionOpen)} // Actualizar el estado al hacer clic
-      >
+  return (
+    <Accordion type="single" collapsible>
+      {/* Accordion para Proveedores */}
+      <AccordionItem value="providers">
         <AccordionTrigger>
-          <div className="flex items-center p-2 border border-purple-500 rounded-md w-full">
-            <span className="text-purple-700 font-semibold">Proveedores</span>
-            {isAccordionOpen ? (
-              <ChevronUpIcon className="ml-2 text-purple-500" />
-            ) : (
-              <ChevronDownIcon className="ml-2 text-purple-500" />
-            )}
+          <div className="flex items-center p-2 border rounded-md w-full">
+            <span>Proveedores</span>
+            <ChevronDownIcon className="ml-2" />
           </div>
         </AccordionTrigger>
-    
+
+        {/* Aquí se abre directamente dentro del acordeón */}
         <AccordionContent>
           <div className="p-4">
-            <h3 className="text-lg font-semibold text-purple-700">{props.title}</h3>
-    
+            <h3 className="text-lg font-semibold">{props.title}</h3>
+
             {/* Campo de búsqueda */}
             <Input
               name="search"
               placeholder="Buscar"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="my-2 border border-gray-300"
+              className="my-2"
             />
-    
+
             {/* Lista de selección */}
             <rowsContext.Provider
               value={{
@@ -113,7 +84,7 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
             >
               <ListRender />
             </rowsContext.Provider>
-    
+
             {/* Botones de acción */}
             {!props.readOnly && (
               <div className="flex w-full items-center gap-2 mt-4">
@@ -123,7 +94,7 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
                 <Button variant="ghost" onClick={() => setSelected(new Set())}>
                   <XSquareIcon />
                 </Button>
-                <Button className="ml-auto bg-purple-500 text-white hover:bg-purple-600" onClick={() => props.onApply(Array.from(selected))}>
+                <Button className="ml-auto" onClick={() => props.onApply(Array.from(selected))}>
                   Aceptar
                 </Button>
               </div>
@@ -137,15 +108,15 @@ export default function ListSelectionDialog(props: ListSelectionDialogProps) {
         </AccordionContent>
       </AccordionItem>
     </Accordion>
-    
-    );
-  };
+  );
+}
+
 function ListRender() {
   const ctx = useContext(rowsContext);
   const options = ctx.options;
 
   return (
-    <List height={window.innerHeight - 220} itemCount={options.length} itemSize={70} width={"100%"}>
+    <List height={300} itemCount={options.length} itemSize={70} width={"100%"}>
       {Row}
     </List>
   );
@@ -154,17 +125,15 @@ function ListRender() {
 function Row({ index, style }: { index: number; style: React.CSSProperties }) {
   const ctx = useContext(rowsContext);
   const options = ctx.options;
-
   const option = options[index];
+
   if (!option) return null;
 
   return (
     <button
       style={style}
-      className="flex h-[150px] items-center px-2 text-left outline-none focus:bg-stone-200"
-      onClick={(e) => {
-        ctx.onClickOption(option.value);
-      }}
+      className="flex h-[70px] items-center px-2 text-left outline-none focus:bg-stone-200"
+      onClick={() => ctx.onClickOption(option.value)}
       onKeyDown={(e) => {
         if (e.key === "ArrowDown") {
           e.preventDefault();
@@ -183,5 +152,4 @@ function Row({ index, style }: { index: number; style: React.CSSProperties }) {
       {ctx.selected.has(option.value) && <CheckIcon className="ml-auto mr-2" />}
     </button>
   );
-};
 }

@@ -129,14 +129,13 @@ export function SelectCRMClients(props: { setSelected: (selected: Set<string>) =
       <AlertDialogTrigger asChild>
         <Button
           variant="outline"
-          className="rounded-2xl border-gray-300 bg-gray-50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          className="rounded-2xl border-gray-300 bg-gray-50 px-4 py-2 text-gray-500 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
         >
           Clientes
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Clientes a filtrar</AlertDialogTitle>
           <AlertDialogDescription>Seleccione que clientes deben tomarse en cuenta para el calculo de estadisticas</AlertDialogDescription>
         </AlertDialogHeader>
         <List height={window.innerHeight - 200} itemCount={clientsWithBudgets.length} itemSize={70} width={"100%"}>
