@@ -40,6 +40,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
   const [fromDate, setFromDate] = useState<Date | undefined>(temporaryDate);
   const [isLoading, setIsLoading] = useState(true);
+  const [handleFiltersStage, setHandleFiltersStage] = useState(0);
   const data = useMRPData();
   const params = useParams<{ code: string }>();
   const productCode = decodeURIComponent(params?.code ?? "");
@@ -56,7 +57,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       amount: number;
     }[]
   >();
-  
+
 
   const [salesAndBudgets, setSalesAndBudgets] = useState<{
     salesList: { date: string; totalSales: number }[];
@@ -141,10 +142,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const defaultValues = useMemo(() => {
     return Array.from(allProviersCodes).filter((code) => !providersSelected.has(code));
   }, [allProviersCodes, providersSelected]);
+
   function handleUpdateFilters() {
     if (fromDate && toDate) {
       try {
-        setIsLoading(true);
         const {
           list: consumptionStats,
           totalConsumedAmount,
@@ -176,6 +177,21 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         setIsLoading(false);
       }
     }
+  }
+
+  useEffect(() => {
+    if (handleFiltersStage === 1) {
+      // le doy tiempo a react para renderizar el loader antes de que se congele todo
+      setTimeout(() => setHandleFiltersStage(2), 150);
+    } else if (handleFiltersStage === 2) {
+      handleUpdateFilters();
+      setHandleFiltersStage(0);
+    }
+  }, [handleFiltersStage]);
+
+  function handleUpdateFiltersLoad() {
+    setHandleFiltersStage(1);
+    setIsLoading(true);
   }
 
   function handletoDateChange(date: Date | undefined) {
@@ -297,7 +313,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           totalSales += order_product?.ordered_quantity ?? 0;
         }
       });
-      if(totalSales > 0){
+      if (totalSales > 0) {
         salesList.push({ date: day, totalSales });
       }
       let totalBudgets = 0;
@@ -307,10 +323,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           totalBudgets += product.quantity;
         }
       });
-      if(totalBudgets > 0){
+      if (totalBudgets > 0) {
         budgetsList.push({ date: day, totalBudgets });
       }
-      
+
 
       fromDateCopy.setDate(fromDateCopy.getDate() + 1);
     }
@@ -359,7 +375,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-      
+
 
     const sales = data?.orders.filter(
       (order) =>
@@ -417,7 +433,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const sortedQuantities = orderedQuantities.slice().sort((a, b) => a - b);
     const mid = Math.floor(sortedQuantities.length / 2);
     const median = sortedQuantities.length % 2 !== 0 ? sortedQuantities[mid] : sortedQuantities[mid - 1];
-    const averageSalesPerMonth = validOrderProducts.reduce((acc, order_product) => acc + order_product.ordered_quantity, 0) / difference ;
+    const averageSalesPerMonth = validOrderProducts.reduce((acc, order_product) => acc + order_product.ordered_quantity, 0) / difference;
     return {
       MaximumSales: orderedQuantities.length > 0 ? Math.max(...orderedQuantities) : 0,
       MinimumSales: orderedQuantities.length > 0 ? Math.min(...orderedQuantities) : 0,
@@ -427,19 +443,19 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       MedianSales: orderedQuantities.length > 0 ? median : 0,
     };
   }
-  const [showMore, setShowMore] = useState(false); 
+  const [showMore, setShowMore] = useState(false);
 
   const toggleShowMore = () => {
     setShowMore((showMore) => !showMore);
-
   };
-  
-  const [showMore2, setShowMore2] = useState(false); 
+
+  const [showMore2, setShowMore2] = useState(false);
 
   const toggleShowMore2 = () => {
     setShowMore2((showMore2) => !showMore2);
   };
 
+  /*
   if (isLoading) {
     return (
       <AppLayout
@@ -499,161 +515,170 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       </AppLayout>
     );
   } else {
-    return (
-      <AppLayout
-        title={
-          <div>
-            <h1>{product?.description ?? "Producto no encontrado"}</h1>
-            <p className="text-sm">{product?.code ?? "Producto no encontrado"}</p>
-          </div>
-        }
-        user={props?.user}
-        sidenav={<AppSidenav />}
-      >
-        <div className="flex justify-between">
-          <div className="flex gap-1">
-            <ListSelectionDialog
-              title="Proveedores"
-              options={filteredProviders.map((p) => ({
-                title: p.name,
-                subtitle: p.code + " - " + (p.address || "") + " " + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
-                value: p.code,
-              }))}
-              defaultValues={defaultValues}
-              onApply={(selectedList) => {
-                const selected = new Set(selectedList);
-                const value = new Set<string>();
-                for (const provider of filteredProviders) {
-                  if (!selected.has(provider.code)) {
-                    value.add(provider.code);
-                  }
+  */
+
+  return (
+    <AppLayout
+      title={
+        <div>
+          <h1>{product?.description ?? "Producto no encontrado"}</h1>
+          <p className="text-sm">{product?.code ?? "Producto no encontrado"}</p>
+        </div>
+      }
+      user={props?.user}
+      sidenav={<AppSidenav />}
+    >
+      <div className="flex justify-between">
+        <div className="flex gap-1">
+          <ListSelectionDialog
+            title="Proveedores"
+            options={filteredProviders.map((p) => ({
+              title: p.name,
+              subtitle: p.code + " - " + (p.address || "") + " " + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
+              value: p.code,
+            }))}
+            defaultValues={defaultValues}
+            onApply={(selectedList) => {
+              const selected = new Set(selectedList);
+              const value = new Set<string>();
+              for (const provider of filteredProviders) {
+                if (!selected.has(provider.code)) {
+                  value.add(provider.code);
                 }
-                setProvidersSelected(value);
-                // re ejecute funciones estadistica
-              }}
-            >
-              <Button
-                variant="outline"
-                className="rounded-2xl border-gray-300 bg-gray-50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
-              >
-                Proveedores
-              </Button>
-            </ListSelectionDialog>
-            <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
-          </div>
-          <div className="flex gap-3">
-            <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Desde" label={"Desde"} />
-            <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Hasta" label={"Hasta"} />
+              }
+              setProvidersSelected(value);
+              // re ejecute funciones estadistica
+            }}
+          >
             <Button
-              onClick={handleUpdateFilters}
-              className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
+              variant="outline"
+              className="rounded-2xl border-gray-300 bg-gray-50 px-4 py-2 text-gray-700 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-800"
             >
-              <Filter className="mr-2" size={20}/>Filtrar
+              Proveedores
             </Button>
-          </div>
+          </ListSelectionDialog>
+          <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
         </div>
+        <div className="flex gap-3">
+          <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Desde" label={"Desde"} />
+          <DatePicker onChange={(e) => handletoDateChange(e)} value={toDate ?? undefined} message="Hasta" label={"Hasta"} />
+          <Button
+            onClick={handleUpdateFiltersLoad}
+            className="rounded-lg border-purple-200 bg-[#8B83EC] px-4 py-2 text-gray-200 hover:border-gray-800 hover:bg-gray-900 hover:text-gray-100"
+          >
+            <Filter className="mr-2" size={20} />Filtrar
+          </Button>
+        </div>
+      </div>
 
+      {isLoading || handleFiltersStage > 0 ? <>
+        <div className="flex items-center justify-center" style={{ minHeight: '70vh' }}>
+          <Button variant="secondary" disabled>
+            <Loader2Icon className="mr-2 animate-spin" /> Cargando...
+          </Button>
+        </div>
+      </> : <>
         <DataCard icon={<ChartNoAxesCombined />} title={"Estadísticas generales"}>
-      <TooltipProvider>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Tooltip>
-            <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-              <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
-              <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Ventas Totales: todas las veces que se vendió ese producto.</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-              <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
-              <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Cantidad de pedidos que incluye este elemento.</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-              <p className="text-5xl font-bold text-black">{generalStatistics?.MaximumSales ?? 0}</p>
-              <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Máximas unidades vendidas por pedido.</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {showMore && (
-            <>
+          <TooltipProvider>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Tooltip>
                 <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                  <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
-                  <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Mínimas unidades vendidas por pedido.</p>
+                  <p>Ventas Totales: todas las veces que se vendió ese producto.</p>
                 </TooltipContent>
               </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                  <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
-                  <p className="text-sm font-medium text-black mt-2">UPP</p>
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Unidades promedio por pedido.</p>
+                  <p>Cantidad de pedidos que incluye este elemento.</p>
                 </TooltipContent>
               </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                  <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
-                  <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
+                  <p className="text-5xl font-bold text-black">{generalStatistics?.MaximumSales ?? 0}</p>
+                  <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Mediana de unidades por venta.</p>
+                  <p>Máximas unidades vendidas por pedido.</p>
                 </TooltipContent>
               </Tooltip>
-            </>
-          )}
-        </div>
 
-        <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore}>
-  <p className="text-xs text-grey-700">{showMore ? "Mostrar menos" : "Mostrar más"}</p>
-  {showMore ? (
-    <ChevronUpIcon className="h-4 w-3 text-gray-500" /> 
-  ) : (
-    <ChevronDownIcon className="h-4 w-3 text-gray-500" />
-  )}
-</div>
+              {showMore && (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                      <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                      <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Mínimas unidades vendidas por pedido.</p>
+                    </TooltipContent>
+                  </Tooltip>
 
-      </TooltipProvider>
-    </DataCard>
-    <DataCard icon={<ChartNoAxesCombined />} title={"DISTRIBUCIÓN DE CONSUMO"}>
+                  <Tooltip>
+                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                      <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                      <p className="text-sm font-medium text-black mt-2">UPP</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Unidades promedio por pedido.</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                      <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                      <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Mediana de unidades por venta.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore}>
+              <p className="text-xs text-grey-700">{showMore ? "Mostrar menos" : "Mostrar más"}</p>
+              {showMore ? (
+                <ChevronUpIcon className="h-4 w-3 text-gray-500" />
+              ) : (
+                <ChevronDownIcon className="h-4 w-3 text-gray-500" />
+              )}
+            </div>
+
+          </TooltipProvider>
+        </DataCard>
+        <DataCard icon={<ChartNoAxesCombined />} title={"DISTRIBUCIÓN DE CONSUMO"}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {totalMotiveConsumption
               ? Array.from(totalMotiveConsumption.entries()).map(([motive, amount]) => (
-                  <p className="text-lg font-medium text-gray-700">
-                    {motive}:{" "}
-                    <span className="font-normal text-gray-600">
-                      {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}% del consumo
-                    </span>
-                  </p>
-                ))
+                <p className="text-lg font-medium text-gray-700">
+                  {motive}:{" "}
+                  <span className="font-normal text-gray-600">
+                    {Math.round((100 * amount) / (totalConsumedAmount ?? 1))}% del consumo
+                  </span>
+                </p>
+              ))
               : null}
           </div>
           <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore2}>
-          <p className="text-xs text-grey-700">{showMore2 ? "Mostrar menos" : "Mostrar más"}</p>
+            <p className="text-xs text-grey-700">{showMore2 ? "Mostrar menos" : "Mostrar más"}</p>
             {showMore2 ? (
-        <ChevronUpIcon className="h-4 w-3 text-gray-500" /> 
-        ) : (
-        <ChevronDownIcon className="h-4 w-3 text-gray-500" />
-          )}
-         </div>
-          </DataCard>
+              <ChevronUpIcon className="h-4 w-3 text-gray-500" />
+            ) : (
+              <ChevronDownIcon className="h-4 w-3 text-gray-500" />
+            )}
+          </div>
+        </DataCard>
 
         <div className=" rounded-lg bg-white p-6 shadow-md">
           <h1 className="mb-6 text-2xl font-bold text-gray-800">Graficos</h1>
@@ -663,9 +688,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <SimpleLineChart data={salesAndBudgets} />
           </div>
         </div>
-      </AppLayout>
-    );
-  }
+      </>
+      }
+    </AppLayout >
+  );
 }
 
 
