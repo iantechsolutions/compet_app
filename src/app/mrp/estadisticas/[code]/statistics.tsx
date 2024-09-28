@@ -577,7 +577,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         </> : <>
           <DataCard icon={<ChartNoAxesCombined />} title={"Estadísticas generales"}>
             <TooltipProvider>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
                     <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
@@ -608,7 +608,37 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                   </TooltipContent>
                 </Tooltip>
 
-                {showMore && (
+                <Tooltip>
+                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                        <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                        <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Mínimas unidades vendidas por pedido.</p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                        <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                        <p className="text-sm font-medium text-black mt-2">UPP</p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Unidades promedio por pedido.</p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                        <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                        <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Mediana de unidades por venta.</p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                {/* {showMore && (
                   <>
                     <Tooltip>
                       <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
@@ -641,16 +671,17 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                     </Tooltip>
                   </>
                 )}
+                 */}
               </div>
 
-              <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore}>
+              {/* <div className="flex justify-end items-center mt-4 cursor-pointer space-x-2" onClick={toggleShowMore}>
                 <p className="text-xs text-grey-700">{showMore ? "Mostrar menos" : "Mostrar más"}</p>
                 {showMore ? (
                   <ChevronUpIcon className="h-4 w-3 text-gray-500" />
                 ) : (
                   <ChevronDownIcon className="h-4 w-3 text-gray-500" />
                 )}
-              </div>
+              </div> */}
 
 
 
