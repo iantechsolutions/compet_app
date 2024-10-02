@@ -13,9 +13,9 @@ import type {
   ProductStockCommited,
 } from "~/lib/types";
 import { decodeData, getMonths } from "~/lib/utils";
-import type { DataExport } from "~/scripts/lib/read-from-tango-db";
 import { api } from "~/trpc/server";
 import { utapi } from "./server/uploadthing";
+import { DataExport } from "./scripts/lib/database";
 
 export async function queryBaseMRPData() {
   const mrpExportFile = await getSetting<string>("mrp.export-file");

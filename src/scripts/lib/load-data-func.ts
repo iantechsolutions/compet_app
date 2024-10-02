@@ -2,13 +2,14 @@ import { File } from "@web-std/file";
 import "dotenv/config";
 import { getSetting, setSetting } from "../../lib/settings";
 import { encodeData } from "../../lib/utils";
-import { readDataFromDB } from "../../scripts/lib/read-from-tango-db";
 import { utapi } from "../../server/uploadthing";
+import { getDbInstance } from "./instance";
 
 export async function loadDataFromTangoToCloud(opts?: { log: (...args: unknown[]) => unknown }) {
   const log = opts?.log ?? console.log;
 
-  const rawData = await readDataFromDB({ log });
+  const db = await getDbInstance();
+  const rawData = await db.readAllData();
 
   log("Datos leidos de la base de datos");
 

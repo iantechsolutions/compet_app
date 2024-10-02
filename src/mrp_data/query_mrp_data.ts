@@ -1,4 +1,5 @@
 /* eslint-disable */
+import 'server-only';
 
 import dayjs from "dayjs";
 import { getSetting } from "~/lib/settings";
@@ -15,8 +16,9 @@ import type {
   ProductStockCommited,
 } from "~/lib/types";
 import { decodeData, getMonths } from "~/lib/utils";
-import type { DataExport } from "~/scripts/lib/read-from-tango-db";
+import { DataExport } from "~/scripts/lib/database";
 import { api } from "~/trpc/server";
+// import { getDbInstance } from "~/scripts/lib/instance";
 
 export async function queryBaseMRPData() {
   const mrpExportFile = await getSetting<string>("mrp.export-file");
@@ -33,6 +35,9 @@ export async function queryBaseMRPData() {
 
   const dataEncoded = await fetch(exportURL).then((res) => res.text());
   const data = decodeData(dataEncoded) as DataExport;
+  
+  // const db = await getDbInstance();
+  // const data = await db.readAllData();
 
   const {
     products,
