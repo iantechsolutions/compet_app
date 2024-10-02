@@ -12,7 +12,7 @@ import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
 import { forecastProfiles } from "~/server/db/schema";
 
-export const runtime = "edge";
+// export const runtime = "edge";
 export const maxDuration = 100;
 
 export async function GET(req: NextRequest) {
@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
   let forecastProfile: ForecastProfile | null =
     forecastProfileId != null
       ? ((await db.query.forecastProfiles.findFirst({
-          where: eq(forecastProfiles.id, forecastProfileId),
-        })) ?? null)
+        where: eq(forecastProfiles.id, forecastProfileId),
+      })) ?? null)
       : null;
 
   if (!forecastProfile) {

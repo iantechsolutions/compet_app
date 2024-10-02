@@ -18,10 +18,10 @@ import type {
 import { decodeData, getMonths } from "~/lib/utils";
 import { DataExport } from "~/scripts/lib/database";
 import { api } from "~/trpc/server";
-// import { getDbInstance } from "~/scripts/lib/instance";
+import { getDbInstance } from "~/scripts/lib/instance";
 
 export async function queryBaseMRPData() {
-  const mrpExportFile = await getSetting<string>("mrp.export-file");
+  /* const mrpExportFile = await getSetting<string>("mrp.export-file");
 
   if (!mrpExportFile) {
     throw new Error(
@@ -34,10 +34,10 @@ export async function queryBaseMRPData() {
   const exportURL = dataInfo.exportURL;
 
   const dataEncoded = await fetch(exportURL).then((res) => res.text());
-  const data = decodeData(dataEncoded) as DataExport;
+  const data = decodeData(dataEncoded) as DataExport; */
   
-  // const db = await getDbInstance();
-  // const data = await db.readAllData();
+  const db = await getDbInstance();
+  const data = await db.readAllData();
 
   const {
     products,

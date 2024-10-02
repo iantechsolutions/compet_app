@@ -11,7 +11,7 @@ const montserrat = Montserrat({
   weight: ["400", "500", "700"],
 });
 
-export const runtime = "edge";
+// export const runtime = "edge";
 
 export const metadata = {
   title: "Compet APP",
