@@ -5,6 +5,7 @@ import { statisticsRouter } from "./routers/statistics";
 import { mailRouter } from "./routers/mail";
 import ConsultsPage from "~/app/mrp/consulta/consultPage";
 import { consultRouter } from "./routers/consult";
+import { dbRouter } from "./routers/db";
 /**
  * This is the primary router for your server.
  *
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   statistics: statisticsRouter,
   mail: mailRouter,
   consults: consultRouter,
+  db: dbRouter
 });
 
 // export type definition of API
