@@ -182,3 +182,11 @@ export type OrderProductSold = z.infer<typeof orderProductSoldSchema>;
 export type CrmClient = z.infer<typeof crmClientSchema>;
 export type CrmBudget = z.infer<typeof crmBudgetSchema>;
 export type CrmBudgetProduct = z.infer<typeof crmBudgetProductSchema>;
+
+// Other enums
+export enum CutUnits {
+  Meters = "mts",
+  Quantity = "ctd"
+}
+
+export const CutUnitsZEnum = [CutUnits.Meters, CutUnits.Quantity] as const;

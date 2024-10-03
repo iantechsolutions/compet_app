@@ -125,3 +125,19 @@ export const userSettings = pgTable(
     compoundKey: primaryKey(us.userId, us.key),
   }),
 );
+
+export const cuts = pgTable(
+  "cuts",
+  {
+    id: serial("id").notNull().primaryKey(),
+    prodId: varchar("prodId", { length: 255 }).notNull(),
+    lote: varchar("lote", { length: 255 }).notNull(),
+    caja: varchar("caja", { length: 255 }).notNull(),
+    location: varchar("location", { length: 255 }).notNull(),
+    amount: integer("amount").notNull(),
+    measure: varchar("measure", { length: 255 }).notNull(),
+    units: varchar("units", { length: 255 }).notNull(),
+    stockPhys: integer("stockPhys").notNull(),
+    stockTango: integer("stockTango").notNull(),
+  }
+);
