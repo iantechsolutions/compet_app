@@ -16,9 +16,11 @@ import { decodeData, getMonths } from "~/lib/utils";
 import { api } from "~/trpc/server";
 import { utapi } from "./server/uploadthing";
 import { DataExport } from "./scripts/lib/database";
+import { getDbInstance } from "./scripts/lib/instance";
 
+// esto vs el otro?? queryBaseMRPData
 export async function queryBaseMRPData() {
-  const mrpExportFile = await getSetting<string>("mrp.export-file");
+  /* const mrpExportFile = await getSetting<string>("mrp.export-file");
 
   if (!mrpExportFile) {
     throw new Error(
@@ -31,7 +33,14 @@ export async function queryBaseMRPData() {
   const exportURL = dataInfo.exportURL;
 
   const dataEncoded = await fetch(exportURL).then((res) => res.text());
-  const data = decodeData(dataEncoded) as DataExport;
+  const data = decodeData(dataEncoded) as DataExport; */
+
+  const db = await getDbInstance();
+  const data = await db.readAllData();
+  const exportURL = "null";
+  const dataInfo = {
+    exportDate: Date.now(),
+  };
 
   const {
     products,
