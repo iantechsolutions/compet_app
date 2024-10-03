@@ -9,5 +9,5 @@ export const getDbInstance = async (): Promise<Database> => {
         dbInstance = db;
     }
 
-    return getDbInstance;
+    return dbInstance;
 }
