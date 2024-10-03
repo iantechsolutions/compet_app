@@ -49,6 +49,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@uploadthing/react": "^6.7.2",
     "@web-std/file": "^3.0.3",
+    "async-mutex": "^0.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
