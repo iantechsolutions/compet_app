@@ -1,4 +1,5 @@
 import { type FileRouter, createUploadthing } from "uploadthing/next";
+import { z } from "zod";
 
 const f = createUploadthing();
 
@@ -28,6 +29,34 @@ export const ourFileRouter = {
       // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
       return { uploadedBy: metadata.userId };
     }),
+
+    excelUpload: f({
+      "application/vnd.ms-excel": {
+        maxFileCount: 1,
+        maxFileSize: "128MB",
+      },
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+        maxFileCount: 1,
+        maxFileSize: "128MB",
+      },
+    })
+      // Set permissions and file types for this FileRoute
+      .middleware(async ({ req }) => {
+        const user = await auth(req);
+
+        // If you throw, the user will not be able to upload
+        if (!user) throw new Error("Unauthorized");
+  
+        // Whatever is returned here is accessible in onUploadComplete as `metadata`
+        return { userId: user.id };
+      })
+      .onUploadComplete(async ({ metadata, file }) => {
+        console.log("Upload complete for userId:", metadata.userId);
+        console.log("file url", file.url);
+        // aca se sube a la base de datos: 
+        // devolver 
+        return { uploadedBy: metadata.userId };
+      }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;
