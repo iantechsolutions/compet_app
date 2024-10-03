@@ -38,6 +38,10 @@ export async function queryBaseMRPData() {
   
   const db = await getDbInstance();
   const data = await db.readAllData();
+  const exportURL = "null";
+  const dataInfo = {
+    exportDate: Date.now(),
+  };
 
   const {
     products,
