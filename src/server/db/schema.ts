@@ -135,7 +135,7 @@ export const cuts = pgTable(
     caja: varchar("caja", { length: 255 }).notNull(),
     location: varchar("location", { length: 255 }).notNull(),
     amount: integer("amount").notNull(),
-    measure: varchar("measure", { length: 255 }).notNull(),
+    measure: real("measure").notNull(),
     units: varchar("units", { length: 255 }).notNull(),
     stockPhys: integer("stockPhys").notNull(),
     stockTango: integer("stockTango").notNull(),
