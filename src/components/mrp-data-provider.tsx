@@ -44,7 +44,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     const dataExportInfo = await obtainDataExportInfo();
 
     const forecastProfileMismatch = data?.forecastData?.forecastProfile?.id != currentProfile?.id;
-    const dataExportMismatch = data.dataExportDate != dataExportInfo.exportDate;
+    const dataExportMismatch = dayjs(data.dataExportDate) != dayjs(dataExportInfo.exportDate);
 
     return !forecastProfileMismatch && !dataExportMismatch;
   }
