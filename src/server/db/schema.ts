@@ -133,8 +133,11 @@ export const cuts = pgTable("cuts", {
   lote: varchar("lote", { length: 255 }).notNull(),
   caja: varchar("caja", { length: 255 }).notNull(),
   location: varchar("location", { length: 255 }).notNull(),
+  // n de cortes disponibles
   amount: integer("amount").notNull(),
+  // longitud o ctd
   measure: real("measure").notNull(),
+  // tipo de measure (ver en lib/types.ts)
   units: varchar("units", { length: 255 }).notNull(),
   stockPhys: integer("stockPhys").notNull(),
   stockTango: integer("stockTango").notNull(),
