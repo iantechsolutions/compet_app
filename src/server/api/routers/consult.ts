@@ -2,7 +2,13 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { queryBaseMRPData } from "~/serverfunctions";
 import { excludeProducts } from "../constants";
-import { type ForecastProfile, listAllEventsWithSupplyEvents, listProductsEvents, mapData, type ProductEvent } from "~/mrp_data/transform_mrp_data";
+import {
+  type ForecastProfile,
+  listAllEventsWithSupplyEvents,
+  listProductsEvents,
+  mapData,
+  type ProductEvent,
+} from "~/mrp_data/transform_mrp_data";
 import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { getUserSetting } from "~/lib/settings";
 import { getServerAuthSession } from "~/server/auth";
@@ -33,18 +39,22 @@ export interface ProductWithDependencies {
 
 async function prodUsesCuts(prodCode: string): Promise<boolean> {
   const cuts = await db.query.cuts.findMany({
-    where: eq(schema.cuts.prodId, prodCode)
+    where: eq(schema.cuts.prodId, prodCode),
   });
 
-  return true;
-  // return cuts.length > 0;
+  return cuts.length > 0;
 }
 
 async function getConsumoForProductList(
-  listado: ProductWithDependencies[], 
-  yaConsumidoLoop: Map<string, number>, 
-  yaConsumidoCuts: Map<number, number>, 
-  curatedProducts: { code: string; stock: number; supplies: { supply_product_code: string; quantity: number }[]; imports: { arrival_date: Date; ordered_quantity: number }[] }[], 
+  listado: ProductWithDependencies[],
+  yaConsumidoLoop: Map<string, number>,
+  yaConsumidoCuts: Map<number, number>,
+  curatedProducts: {
+    code: string;
+    stock: number;
+    supplies: { supply_product_code: string; quantity: number }[];
+    imports: { arrival_date: Date; ordered_quantity: number }[];
+  }[],
   eventsByProductCode: Map<string, ProductEvent[]>,
   // ya están ordenados de menor a mayor measure
   productCuts: Map<string, InferSelectModel<typeof schema.cuts>[]>,
@@ -53,11 +63,14 @@ async function getConsumoForProductList(
   // const productConsumo: [string, number][] = [];
   // const yaConsumidoLoop = new Map<string, number>();
 
-  const promises = listado.map(async (prod,index) => {
-    
+  const promises = listado.map(async (prod, index) => {
     const pcKey = prod.productCode;
     const pcValue = prod.consumed;
     const product = curatedProducts.find((product) => product.code === prod.productCode);
+
+    // TODO: des-hardcodear
+    // const pcValue = 4;
+    const pcMeasure = 0.25;
 
     if (product !== undefined) {
       const usesCuts = await prodUsesCuts(product.code);
@@ -72,6 +85,7 @@ async function getConsumoForProductList(
       if (usesCuts) {
         const selectedProdCuts = productCuts.get(product.code) ?? [];
         const cutsUsed: ProductWithDependenciesCut[] = [];
+
         let falta = false;
         let pcValueFaltante = pcValue;
 
@@ -81,57 +95,33 @@ async function getConsumoForProductList(
           falta = true;
         }
 
-        // esta complejidad cuadrática/cúbica(restoUso) no es muy grave
-        // porque en cada iteración recorre menos elementos del for (o podría encontrar todo de golpe)
+        console.dir(selectedProdCuts);
+
         do {
-          pcValueFaltante = pcValue - cutsUsed.map(v => v.cut.measure * v.amount).reduce((x, y) => x + y, 0);
           let recorrido = 0;
 
-          // esto prioriza los más cercanos a 0 (se ordena en el router)
-          for (let i = 0; i < selectedProdCuts.length && pcValueFaltante !== 0; i++) {
+          for (let i = 0; i < selectedProdCuts.length && pcValueFaltante > 0; i++) {
             const cut = selectedProdCuts[i]!;
-
             const maxConsumibleCut = cut.amount - (yaConsumidoCuts.get(cut.id) ?? 0);
-            let valeModulo = pcValueFaltante % cut.measure === 0;
-            const restoUso = Math.max(0, pcValueFaltante - (cut.amount * cut.measure));
 
-            // esto hace que si no se puede usar todo de una (falta sumar con otros recortes)
-            // se fija si el resto después de usar estos recortes después alcanzaría
-            // para cubrir el faltante con otro recorte con distinto measure
-            // ejemplo: pido 1m y tengo 3x0.25m y 2x0.5m
-            // sin esto pediría 3x0.25m y no puede llenar los 0.25m que falten
-            // con esto se da cuenta que no le da el modulo y prueba con 0.5m primero
-            if (restoUso > 0) {
-              let valeRestoModulo = false;
-              for (let j = 0; j < selectedProdCuts.length; j++) {
-                if (i === j) {
-                  continue;
-                }
-
-                if (restoUso % selectedProdCuts[j]!.measure === 0) {
-                  valeRestoModulo = true;
-                  break;
-                }
-              }
-
-              valeModulo = valeModulo && valeRestoModulo;
-            }
-
-            if (valeModulo && maxConsumibleCut > 0) {
-              const consumidoCutAmount = Math.min(pcValueFaltante / cut.measure, maxConsumibleCut);
+            if (cut.measure >= pcMeasure && cut.measure % pcMeasure === 0 && maxConsumibleCut > 0) {
+              const cutAmountNeeded = Math.ceil((pcValueFaltante * pcMeasure) / cut.measure);
+              const cutAmountUsed = Math.min(cutAmountNeeded, maxConsumibleCut);
               cutsUsed.push({
                 cut,
-                amount: consumidoCutAmount
+                amount: cutAmountUsed,
               });
 
-              yaConsumidoCuts.set(cut.id, (yaConsumidoCuts.get(cut.id) ?? 0) + consumidoCutAmount);
+              yaConsumidoCuts.set(cut.id, (yaConsumidoCuts.get(cut.id) ?? 0) + cutAmountUsed);
+              /* console.log(
+                `[${cutAmountNeeded}] ${pcMeasure} ${cutAmountUsed} ${maxConsumibleCut} ${pcValueFaltante} ${cut.measure} ${cut.amount}`,
+              ); */
+              pcValueFaltante -= (cutAmountUsed * cut.measure) / pcMeasure;
+              // console.log(`${pcValueFaltante}`);
               recorrido += 1;
             }
-
-            pcValueFaltante = pcValue - cutsUsed.map(v => v.cut.measure * v.amount).reduce((x, y) => x + y, 0);
           }
 
-          // si no hubo ningun recorte disponible para armar el producto, falta
           if (recorrido === 0) {
             // falta = true;
             break;
@@ -145,11 +135,11 @@ async function getConsumoForProductList(
             const cons = await getConsumoForProductList(
               product.supplies.map((supply) => ({
                 arrivalDate: null,
-                consumed: supply.quantity * (pcValue - (Math.max(0, product.stock - consumedTotal))),
+                consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
                 dependencies: null,
                 productCode: supply.supply_product_code,
                 stock: 0,
-                cuts: null
+                cuts: null,
               })),
               yaConsumidoLoop,
               yaConsumidoCuts,
@@ -164,25 +154,24 @@ async function getConsumoForProductList(
               dependencies: cons,
               productCode: product.code,
               stock: inventory,
-              cuts: cutsUsed
-            }
+              cuts: cutsUsed,
+            };
 
-          // no hay supplies, se fija si va a importar
+            // no hay supplies, se fija si va a importar
           } else {
             let validAmount = false;
             product.imports
               .filter((impor) => new Date(String(impor.arrival_date)).getTime() > new Date().getTime())
               .forEach((impor) => {
                 if (pcValueFaltante < impor.ordered_quantity && !validAmount) {
-
                   listadoCopy[index] = {
                     arrivalDate: new Date(String(impor.arrival_date)),
                     consumed: pcValue,
                     dependencies: null,
                     productCode: product.code,
                     stock: inventory,
-                    cuts: cutsUsed
-                  }
+                    cuts: cutsUsed,
+                  };
 
                   // productData.set(product.code, {
                   //   arrivalDate: new Date(String(impor.arrival_date)),
@@ -204,8 +193,8 @@ async function getConsumoForProductList(
                 dependencies: null,
                 productCode: product.code,
                 stock: inventory,
-                cuts: []
-              }
+                cuts: [],
+              };
             }
           }
         } else {
@@ -217,9 +206,10 @@ async function getConsumoForProductList(
             productCode: product.code,
             stock: inventory,
             cuts: cutsUsed,
-          }
+          };
         }
-      } else { // sin recortes
+      } else {
+        // sin recortes
         // falta
         if (pcValue > product.stock - consumedTotal) {
           // hay supplies
@@ -227,11 +217,11 @@ async function getConsumoForProductList(
             const cons = await getConsumoForProductList(
               product.supplies.map((supply) => ({
                 arrivalDate: null,
-                consumed: supply.quantity * (pcValue - (Math.max(0, product.stock - consumedTotal))),
+                consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
                 dependencies: null,
                 productCode: supply.supply_product_code,
                 stock: 0,
-                cuts: null
+                cuts: null,
               })),
               yaConsumidoLoop,
               yaConsumidoCuts,
@@ -241,25 +231,24 @@ async function getConsumoForProductList(
             );
 
             console.log("entra aca");
-            
+
             listadoCopy[index] = {
               arrivalDate: null,
               consumed: pcValue,
               dependencies: cons,
               productCode: product.code,
               stock: inventory,
-              cuts: null
-            }
+              cuts: null,
+            };
             console.log(listadoCopy);
 
-          // no hay supplies, se fija si va a importar
+            // no hay supplies, se fija si va a importar
           } else {
             let validAmount = false;
             product.imports
               .filter((impor) => new Date(String(impor.arrival_date)).getTime() > new Date().getTime())
               .forEach((impor) => {
                 if (pcValue < product.stock - consumedTotal + impor.ordered_quantity && !validAmount) {
-
                   console.log("entra aca 2");
                   listadoCopy[index] = {
                     arrivalDate: new Date(String(impor.arrival_date)),
@@ -267,8 +256,8 @@ async function getConsumoForProductList(
                     dependencies: null,
                     productCode: product.code,
                     stock: inventory,
-                    cuts: null
-                  }
+                    cuts: null,
+                  };
 
                   // productData.set(product.code, {
                   //   arrivalDate: new Date(String(impor.arrival_date)),
@@ -291,9 +280,8 @@ async function getConsumoForProductList(
                 dependencies: null,
                 productCode: product.code,
                 stock: inventory,
-                cuts: null
-              }
-
+                cuts: null,
+              };
             }
           }
         } else {
@@ -307,7 +295,7 @@ async function getConsumoForProductList(
             productCode: product.code,
             stock: inventory,
             cuts: null,
-          }
+          };
         }
       }
     }
@@ -513,7 +501,7 @@ export const consultRouter = createTRPCRouter({
         new Map<number, number>(),
         curatedProducts,
         eventsByProductCode,
-        productCuts
+        productCuts,
       );
 
       console.dir(coso, { depth: 4 });
