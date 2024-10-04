@@ -81,17 +81,44 @@ async function getConsumoForProductList(
           falta = true;
         }
 
-        // esta complejidad cuadrática no es muy grave
+        // esta complejidad cuadrática/cúbica(restoUso) no es muy grave
         // porque en cada iteración recorre menos elementos del for (o podría encontrar todo de golpe)
         do {
           pcValueFaltante = pcValue - cutsUsed.map(v => v.cut.measure * v.amount).reduce((x, y) => x + y, 0);
           let recorrido = 0;
 
           // esto prioriza los más cercanos a 0 (se ordena en el router)
-          for (const cut of selectedProdCuts) {
+          for (let i = 0; i < selectedProdCuts.length && pcValueFaltante !== 0; i++) {
+            const cut = selectedProdCuts[i]!;
+
             const maxConsumibleCut = cut.amount - (yaConsumidoCuts.get(cut.id) ?? 0);
-            if (pcValueFaltante % cut.measure === 0 && maxConsumibleCut > 0) {
-              const consumidoCutAmount = Math.max(pcValueFaltante / cut.measure, maxConsumibleCut);
+            let valeModulo = pcValueFaltante % cut.measure === 0;
+            const restoUso = Math.max(0, pcValueFaltante - (cut.amount * cut.measure));
+
+            // esto hace que si no se puede usar todo de una (falta sumar con otros recortes)
+            // se fija si el resto después de usar estos recortes después alcanzaría
+            // para cubrir el faltante con otro recorte con distinto measure
+            // ejemplo: pido 1m y tengo 3x0.25m y 2x0.5m
+            // sin esto pediría 3x0.25m y no puede llenar los 0.25m que falten
+            // con esto se da cuenta que no le da el modulo y prueba con 0.5m primero
+            if (restoUso > 0) {
+              let valeRestoModulo = false;
+              for (let j = 0; j < selectedProdCuts.length; j++) {
+                if (i === j) {
+                  continue;
+                }
+
+                if (restoUso % selectedProdCuts[j]!.measure === 0) {
+                  valeRestoModulo = true;
+                  break;
+                }
+              }
+
+              valeModulo = valeModulo && valeRestoModulo;
+            }
+
+            if (valeModulo && maxConsumibleCut > 0) {
+              const consumidoCutAmount = Math.min(pcValueFaltante / cut.measure, maxConsumibleCut);
               cutsUsed.push({
                 cut,
                 amount: consumidoCutAmount
@@ -102,10 +129,6 @@ async function getConsumoForProductList(
             }
 
             pcValueFaltante = pcValue - cutsUsed.map(v => v.cut.measure * v.amount).reduce((x, y) => x + y, 0);
-
-            if (pcValueFaltante === 0) {
-              break;
-            }
           }
 
           // si no hubo ningun recorte disponible para armar el producto, falta
@@ -150,7 +173,7 @@ async function getConsumoForProductList(
             product.imports
               .filter((impor) => new Date(String(impor.arrival_date)).getTime() > new Date().getTime())
               .forEach((impor) => {
-                if (pcValue < product.stock - consumedTotal + impor.ordered_quantity && !validAmount) {
+                if (pcValueFaltante < impor.ordered_quantity && !validAmount) {
 
                   listadoCopy[index] = {
                     arrivalDate: new Date(String(impor.arrival_date)),
@@ -181,7 +204,7 @@ async function getConsumoForProductList(
                 dependencies: null,
                 productCode: product.code,
                 stock: inventory,
-                cuts: cutsUsed
+                cuts: []
               }
             }
           }
@@ -493,7 +516,7 @@ export const consultRouter = createTRPCRouter({
         productCuts
       );
 
-      console.log(coso);
+      console.dir(coso, { depth: 4 });
       return coso;
     }),
   mailNotificacion: protectedProcedure
