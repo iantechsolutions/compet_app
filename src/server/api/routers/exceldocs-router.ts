@@ -12,16 +12,6 @@ export const excelCutsDocRouter = createTRPCRouter({
       where: eq(schema.excelCutsDocs.id, input.uploadId),
     });
   }),
-  create: protectedProcedure.input(z.object({uploadId:z.string(), url: z.string(), fileName: z.string() })).mutation(async ({ input }) => {
-    return await db
-      .insert(schema.excelCutsDocs)
-      .values({
-        uploadAt: new Date(),
-        url: input.url,
-        fileName: input.fileName,
-      })
-      .returning();
-  }),
   deserialization: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
     const recRows = await readExcelFile(input.id);
     return recRows;
