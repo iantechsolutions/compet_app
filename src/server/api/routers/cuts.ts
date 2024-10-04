@@ -94,5 +94,5 @@ export const cutsRouter = createTRPCRouter({
         .returning();
 
       return res;
-    })
+    }),
 });

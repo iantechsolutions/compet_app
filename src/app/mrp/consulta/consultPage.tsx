@@ -302,7 +302,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     </AppLayout>
   );
 }
-function ListRowContainer({
+export function ListRowContainer({
   children,
   style,
   id,

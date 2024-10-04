@@ -6,6 +6,7 @@ import { mailRouter } from "./routers/mail";
 import { consultRouter } from "./routers/consult";
 import { dbRouter } from "./routers/db";
 import { cutsRouter } from "./routers/cuts";
+import {excelCutsDocRouter} from "./routers/exceldocs-router";
 /**
  * This is the primary router for your server.
  *
@@ -18,7 +19,8 @@ export const appRouter = createTRPCRouter({
   mail: mailRouter,
   consults: consultRouter,
   db: dbRouter,
-  cuts: cutsRouter
+  cuts: cutsRouter,
+  excelCutsDoc: excelCutsDocRouter,
 });
 
 // export type definition of API

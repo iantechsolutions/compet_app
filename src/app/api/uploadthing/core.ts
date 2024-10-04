@@ -1,6 +1,7 @@
 import { type FileRouter, createUploadthing } from "uploadthing/next";
 import { z } from "zod";
-
+import { createId } from "~/lib/utils";
+import {api} from "~/trpc/server";
 const f = createUploadthing();
 
 const auth = async (req: Request) => ({ id: "fakeId" }); // Fake auth function
@@ -54,8 +55,10 @@ export const ourFileRouter = {
         console.log("Upload complete for userId:", metadata.userId);
         console.log("file url", file.url);
         // aca se sube a la base de datos: 
+        const uploadId= createId();
+        await api.excelCutsDoc.create.mutate({uploadId:uploadId,url:file.url, fileName:file.name});
         // devolver 
-        return { uploadedBy: metadata.userId };
+        return { uploadedBy: metadata.userId, id:uploadId };
       }),
 } satisfies FileRouter;
 

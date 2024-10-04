@@ -1,7 +1,9 @@
 "use client"
 import { UploadDropzone } from "~/components/uploadthing"
+import { useRouter } from "next/navigation";
 
 export default function UploadDropZone() {
+    const router = useRouter();
     return (
         
         <UploadDropzone
@@ -16,6 +18,14 @@ export default function UploadDropZone() {
             label: "Arrastra y suelta el archivo aquí",
             
           }}
+        onClientUploadComplete={(res)=>{
+          const [file] = res;
+          if (file){
+            router.push(`/mrp/excel-upload/${file.serverData.id}`);
+          }
+        }
+          
+        }
       />
 
     )
