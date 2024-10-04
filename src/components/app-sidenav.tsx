@@ -17,6 +17,7 @@ import {
   ShoppingBagIcon,
   Table2Icon,
   UsersIcon,
+  Table
 } from "lucide-react";
 import { BackSidenavItem } from "./back-sidenav-item";
 import Sidenav, { SidenavItem, SidenavSeparator } from "./sidenav";
@@ -33,6 +34,9 @@ export default function AppSidenav() {
       <SidenavItem icon={<Table2Icon />} href="/mrp/tabla">
         Tabla
       </SidenavItem>
+      <SidenavItem icon={<Table />} href="/mrp/cuts">
+        Tablas recortes
+      </SidenavItem>
       {/* <SidenavItem icon={<BarcodeIcon />} href="/mrp/productos">Productos</SidenavItem>
         <SidenavItem icon={<ShoppingBagIcon />} href="/mrp/pedidos">Pedidos</SidenavItem> */}
       <SidenavItem icon={<BarChartBigIcon />} href="/mrp/forecast">
@@ -44,6 +48,7 @@ export default function AppSidenav() {
       <SidenavItem icon={<CogIcon />} href="/mrp/consulta">
         Consulta prod.
       </SidenavItem>
+      
     </Sidenav>
   );
 }
