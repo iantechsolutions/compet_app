@@ -2,8 +2,7 @@
 import { cn } from "~/lib/utils";
 import { RouterOutputs } from "~/trpc/shared";
 import { ListRowContainer } from "../consulta/consultPage";
-import { Popover, PopoverTrigger } from "~/components/ui/popover";
-import { PopoverContent } from "@radix-ui/react-popover";
+import { Popover, PopoverTrigger,PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
@@ -11,7 +10,7 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { useMRPData } from "~/components/mrp-data-provider";
 import { ComboboxDemo } from "~/components/combobox";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type CutUnits } from "~/lib/types";
 interface Props {
     cuts: RouterOutputs["cuts"]["list"];
@@ -31,11 +30,19 @@ export default function CutsPage({ cuts }: Props) {
     const [units, setUnits] = useState<string>("")
     const [selectedProd, setSelectedProd] = useState<string>("")
     const [selectedCut, setSelectedCut] = useState<RouterOutputs["cuts"]["get"] | null>(null)
+    const [cutsOptions, setCutsOptions] = useState<JSX.Element[]>([])
     async function getCutsOptions(prodId: string) {
         const cutsProd = await getCutByProd({ prodId })
         return cutsProd.map((cut) => <SelectItem value={cut.id.toString()}>{cut.id}</SelectItem>)
     }
-    const cutsOptions = getCutsOptions(selectedProd)
+    
+    useEffect(() => {
+        async function getCut() {
+            const cutsOptions = await getCutsOptions(selectedProd)
+            setCutsOptions(cutsOptions)
+        }
+        getCut();
+    }, [selectedProd])
     async function handleEditCut() {
         if (selectedCut) {
             try {
@@ -106,6 +113,7 @@ export default function CutsPage({ cuts }: Props) {
     }
 
     const headerCellClassName = "flex items-center justify-center font-semibold bg-stone-100 h-10 px-2";
+    const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white";
 
 
     return (
@@ -124,7 +132,7 @@ export default function CutsPage({ cuts }: Props) {
                                             title="Código de producto"
                                             classNameButton="block"
                                             placeholder="Seleccione un producto"
-                                            value={"agregar recorte"}
+                                            value={selectedProd}
                                             onSelectionChange={(value) => {
                                                 setSelectedProd(value)
                                             }}
@@ -191,7 +199,7 @@ export default function CutsPage({ cuts }: Props) {
                                 </PopoverContent>
                             </Popover>
                         </div>
-                        <ListRowContainer style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-5">
+                        <ListRowContainer style={{ overflowX: "hidden", gridTemplateColumns: `repeat(${Array.from(cutsLengthSet).length +1}, minmax(0, 1fr))` }} className="z-10 grid">
                             <div className={cn(headerCellClassName, "flex md:left-0")}>
                                 <p>Codigo Producto</p>
                             </div>
@@ -202,12 +210,12 @@ export default function CutsPage({ cuts }: Props) {
                             ))}
                         </ListRowContainer>
                         {Array.from(cutsMap).map(([prodId, prodMap]) => (
-                            <ListRowContainer key={prodId} style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-5">
-                                <div className={cn(headerCellClassName, "flex md:left-0")}>
+                            <ListRowContainer key={prodId} style={{ overflowX: "hidden",gridTemplateColumns: `repeat(${Array.from(cutsLengthSet).length +1}, minmax(0, 1fr))`  }} className="z-10 grid">
+                                <div className={cn(tableCellClassName, "flex md:left-0")}>
                                     <p>{prodId}</p>
                                 </div>
                                 {Array.from(cutsLengthSet).map((cutLength) => (
-                                    <div key={cutLength} className={cn(headerCellClassName, "flex md:left-0")}>
+                                    <div key={cutLength} className={cn(tableCellClassName, "flex md:left-0")}>
                                         <p>{prodMap.get(cutLength) ?? "-"}</p>
                                     </div>
                                 ))}

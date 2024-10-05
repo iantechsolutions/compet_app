@@ -16,7 +16,7 @@ export default async function Home() {
           <Button className="w-full py-6">Tabla del MRP</Button>
         </Link>
         <Link href="/mrp/cuts" prefetch>
-          <Button className="w-full" variant="outline">
+          <Button className="w-full">
             Tabla Recortes
           </Button>
         </Link>
