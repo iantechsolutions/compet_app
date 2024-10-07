@@ -35,7 +35,7 @@ export default function AppSidenav() {
         Tabla
       </SidenavItem>
       <SidenavItem icon={<Table />} href="/mrp/cuts">
-        Tablas recortes
+        Tabla recortes
       </SidenavItem>
       {/* <SidenavItem icon={<BarcodeIcon />} href="/mrp/productos">Productos</SidenavItem>
         <SidenavItem icon={<ShoppingBagIcon />} href="/mrp/pedidos">Pedidos</SidenavItem> */}

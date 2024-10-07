@@ -12,6 +12,7 @@ import { useMRPData } from "~/components/mrp-data-provider";
 import { ComboboxDemo } from "~/components/combobox";
 import { useEffect, useState } from "react";
 import { type CutUnits } from "~/lib/types";
+import Link from "next/link";
 interface Props {
     cuts: RouterOutputs["cuts"]["list"];
 }
@@ -42,6 +43,7 @@ export default function CutsPage({ cuts }: Props) {
             setCutsOptions(cutsOptions)
         }
         getCut();
+        console.log("ejecutado");
     }, [selectedProd])
     async function handleEditCut() {
         if (selectedCut) {
@@ -122,82 +124,98 @@ export default function CutsPage({ cuts }: Props) {
             {cuts.length != 0 &&
                 (
                     <>
-                        <div className="mb-7">
-                            <Popover>
-                                <PopoverTrigger asChild><Button>Agregar Recorte</Button></PopoverTrigger>
-                                <PopoverContent className="bg-[#f7f7f7]">
-                                    <div>
-                                        <Label>Id producto</Label>
-                                        <ComboboxDemo
-                                            title="Código de producto"
-                                            classNameButton="block"
-                                            placeholder="Seleccione un producto"
-                                            value={selectedProd}
-                                            onSelectionChange={(value) => {
-                                                setSelectedProd(value)
-                                            }}
-                                            options={products.map((product) => ({
-                                                value: product.code,
-                                                label: product.code,
-                                            }))}
-                                        />
-                                        <Label>Lote</Label>
-                                        <Input defaultValue={lote} onChange={(e) => setLote(e.target.value)} />
-                                        <Label>Caja</Label>
-                                        <Input defaultValue={caja} onChange={(e) => setCaja(e.target.value)} />
-                                        <Label>Ubicacion</Label>
-                                        <Input defaultValue={location} onChange={(e) => setLocation(e.target.value)} />
-                                        <Label>Cantidad</Label>
-                                        <Input type="number" defaultValue={amount} onChange={(e) => setAmount(Number(e.target.value) ?? 0)} />
-                                        <Label>Medida</Label>
-                                        <Input type="number" defaultValue={measure} onChange={(e) => setMeasure(Number(e.target.value) ?? 0)} />
-                                        <Label>Unidad</Label>
-                                        <Select defaultValue={units} onValueChange={(e: string) => setUnits(e)}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccionar unidad" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="mt">Metros</SelectItem>
-                                                <SelectItem value="ctd">Ctd</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Button onClick={handleAddCut}>Agregar</Button>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                            <Popover>
-                                <PopoverTrigger asChild><Button>Editar Recorte</Button></PopoverTrigger>
-                                <PopoverContent>
-                                    <div>
-                                        <Label>IdProducto</Label>
-                                        <ComboboxDemo
-                                            title="Código de producto"
-                                            placeholder="Seleccione un producto"
-                                            value={"agregar recorte"}
-                                            onSelectionChange={(value) => {
-                                                console.log(value)
-                                            }}
-                                            options={products.map((product) => ({
-                                                value: product.code,
-                                                label: product.code,
-                                            }))}
-                                        />
-                                        <Label>Recorte</Label>
-                                        <Select >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccionar recorte" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {cutsOptions}
-                                            </SelectContent>
-                                        </Select>
-                                        <Label>Medida</Label>
-                                        <Input />
-                                        <Label>Cantidad</Label>
-                                        <Button onClick={handleEditCut}>Editar Recorte</Button>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
+                        <div className="flex flex-row justify-between">
+                            <div className="mb-7">
+                                <Popover>
+                                    <PopoverTrigger asChild><Button className="mx-2">Agregar Recorte</Button></PopoverTrigger>
+                                    <PopoverContent className="bg-[#f7f7f7]">
+                                        <div>
+                                            <Label>Codigo producto</Label>
+                                            <ComboboxDemo
+                                                hideIcon={true}
+                                                title="Código de producto"
+                                                classNameButton="block"
+                                                placeholder="Seleccione un producto"
+                                                value={selectedProd}
+                                                onSelectionChange={(value) => {
+                                                    setSelectedProd(value)
+                                                }}
+                                                options={products.map((product) => ({
+                                                    value: product.code,
+                                                    label: product.code,
+                                                }))}
+                                            />
+                                            <Label>Lote</Label>
+                                            <Input defaultValue={lote} onChange={(e) => setLote(e.target.value)} />
+                                            <Label>Caja</Label>
+                                            <Input defaultValue={caja} onChange={(e) => setCaja(e.target.value)} />
+                                            <Label>Ubicacion</Label>
+                                            <Input defaultValue={location} onChange={(e) => setLocation(e.target.value)} />
+                                            <Label>Cantidad</Label>
+                                            <Input type="number" defaultValue={amount} onChange={(e) => setAmount(Number(e.target.value) ?? 0)} />
+                                            <Label>Medida</Label>
+                                            <Input type="number" defaultValue={measure} onChange={(e) => setMeasure(Number(e.target.value) ?? 0)} />
+                                            <Label>Unidad</Label>
+                                            <div  className="pb-2">
+
+                                            
+                                            <Select defaultValue={units} onValueChange={(e: string) => setUnits(e)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccionar unidad"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="mt">Metros</SelectItem>
+                                                    <SelectItem value="ctd">Ctd</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            </div>
+                                            <Button onClick={handleAddCut}>Agregar</Button>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                                <Popover>
+                                    <PopoverTrigger asChild><Button>Editar Recorte</Button></PopoverTrigger>
+                                    <PopoverContent>
+                                        <div>
+                                            <Label>Codigo producto</Label>
+                                            <ComboboxDemo
+                                                title="Código de producto"
+                                                placeholder="Seleccione un producto"
+                                                value={"Agregar recorte"}
+                                                onSelectionChange={(value) => {
+                                                    console.log(value)
+                                                }}
+                                                options={products.map((product) => ({
+                                                    value: product.code,
+                                                    label: product.code,
+                                                }))}
+                                            />
+                                            <Label>Recorte</Label>
+                                            <Select >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccionar recorte" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {cuts.map((cut)=>
+                                                    
+                                                    <SelectItem value={cut.id.toString()}>{cut.measure + " - " + cut.amount}</SelectItem>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            <Label>Medida</Label>
+                                            <Input />
+                                            <Label>Cantidad</Label>
+                                            <Input className="mb-2" />
+                                            <Button onClick={handleEditCut}>Editar Recorte</Button>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <Link href="/mrp/excel-upload">
+                            <Button className="px-3">
+                                Cargar excel
+                                </Button>
+                            </Link>
                         </div>
                         <ListRowContainer style={{ overflowX: "hidden", gridTemplateColumns: `repeat(${Array.from(cutsLengthSet).length +1}, minmax(0, 1fr))` }} className="z-10 grid">
                             <div className={cn(headerCellClassName, "flex md:left-0")}>
