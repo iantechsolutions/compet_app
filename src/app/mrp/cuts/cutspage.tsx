@@ -120,7 +120,104 @@ export default function CutsPage({ cuts }: Props) {
 
     return (
         <>
-            {cuts.length === 0 && <h2 className="font-semibold">No hay recortes para mostrar</h2>}
+            {cuts.length === 0 && 
+            <div>
+                <div className="flex flex-row justify-between">
+                            <div className="mb-7">
+                                <Popover>
+                                    <PopoverTrigger asChild><Button className="mx-2">Agregar Recorte</Button></PopoverTrigger>
+                                    <PopoverContent className="bg-[#f7f7f7]">
+                                        <div>
+                                            <Label>Codigo producto</Label>
+                                            <ComboboxDemo
+                                                hideIcon={true}
+                                                title="Código de producto"
+                                                classNameButton="block"
+                                                placeholder="Seleccione un producto"
+                                                value={selectedProd}
+                                                onSelectionChange={(value) => {
+                                                    setSelectedProd(value)
+                                                }}
+                                                options={products.map((product) => ({
+                                                    value: product.code,
+                                                    label: product.code,
+                                                }))}
+                                            />
+                                            <Label>Lote</Label>
+                                            <Input defaultValue={lote} onChange={(e) => setLote(e.target.value)} />
+                                            <Label>Caja</Label>
+                                            <Input defaultValue={caja} onChange={(e) => setCaja(e.target.value)} />
+                                            <Label>Ubicacion</Label>
+                                            <Input defaultValue={location} onChange={(e) => setLocation(e.target.value)} />
+                                            <Label>Cantidad</Label>
+                                            <Input type="number" defaultValue={amount} onChange={(e) => setAmount(Number(e.target.value) ?? 0)} />
+                                            <Label>Medida</Label>
+                                            <Input type="number" defaultValue={measure} onChange={(e) => setMeasure(Number(e.target.value) ?? 0)} />
+                                            <Label>Unidad</Label>
+                                            <div  className="pb-2">
+
+                                            
+                                            <Select defaultValue={units} onValueChange={(e: string) => setUnits(e)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccionar unidad"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="mt">Metros</SelectItem>
+                                                    <SelectItem value="ctd">Ctd</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            </div>
+                                            <Button onClick={handleAddCut}>Agregar</Button>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                                <Popover>
+                                    <PopoverTrigger asChild><Button>Editar Recorte</Button></PopoverTrigger>
+                                    <PopoverContent>
+                                        <div>
+                                            <Label>Codigo producto</Label>
+                                            <ComboboxDemo
+                                                title="Código de producto"
+                                                placeholder="Seleccione un producto"
+                                                value={"Agregar recorte"}
+                                                onSelectionChange={(value) => {
+                                                    console.log(value)
+                                                }}
+                                                options={products.map((product) => ({
+                                                    value: product.code,
+                                                    label: product.code,
+                                                }))}
+                                            />
+                                            <Label>Recorte</Label>
+                                            <Select >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccionar recorte" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {cuts.map((cut)=>
+                                                    
+                                                    <SelectItem value={cut.id.toString()}>{cut.measure + " - " + cut.amount}</SelectItem>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            <Label>Medida</Label>
+                                            <Input />
+                                            <Label>Cantidad</Label>
+                                            <Input className="mb-2" />
+                                            <Button onClick={handleEditCut}>Editar Recorte</Button>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <Link href="/mrp/excel-upload">
+                            <Button className="px-3">
+                                Cargar excel
+                                </Button>
+                            </Link>
+                        </div>
+                <h2 className="font-semibold">No hay recortes para mostrar</h2>
+            </div>
+            }
             {cuts.length != 0 &&
                 (
                     <>
