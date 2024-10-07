@@ -23,15 +23,15 @@ export const excelCutsDocRouter = createTRPCRouter({
       await Promise.all(
         recRows.map(async (row) => {
           await db.insert(schema.cuts).values({
-            prodId: row.codigoCompet,
-            lote: row.lote,
-            caja: row.caja,
-            location: row.ubicacion,
-            amount: row.cantidad,
-            measure: row.medida,
-            units: row.unidad,
-            stockPhys: row.cantidadTotalMetros,
-            stockTango: row.stockTango,
+            prodId: row.Material,
+            lote: row.Lote,
+            caja: row.Caja,
+            location: row.Ubicación,
+            amount: row.Cantidad,
+            measure: row.Medida,
+            units: row.Unidad,
+            stockPhys: row["Stock Fisico"],
+            stockTango: row["Stock Tango"],
           });
         }),
       );

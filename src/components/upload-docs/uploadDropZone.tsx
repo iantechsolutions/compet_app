@@ -21,7 +21,7 @@ export default function UploadDropZone() {
         onClientUploadComplete={(res)=>{
           const [file] = res;
           if (file){
-            router.push(`/mrp/excel-upload/${file.serverData.id}`);
+            router.push(`/mrp/excel-upload/${file.serverData.uploadId}`);
           }
         }
           

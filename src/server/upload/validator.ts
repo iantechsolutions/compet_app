@@ -7,16 +7,16 @@ const stringToValidIntegerZodTransformer = z
   .refine((value) => !isNaN(value));
 
 const recDocValidator = z.object({
-  codigoCompet: z.string(),
-  lote: z.string(),
-  caja: z.string(),
-  ubicacion: z.string(),
-  cantidad: stringToValidIntegerZodTransformer,
-  medida: z.number(),
-  unidad: z.enum(["mt", "ctd"]),
-  cantidadTotalMetros: stringToValidIntegerZodTransformer,
-  stockFisico: stringToValidIntegerZodTransformer,
-  stockTango: stringToValidIntegerZodTransformer,
+  Material: z.string(),
+  Lote: z.string(),
+  Caja: z.string(),
+  Ubicación: z.string(),
+  Cantidad: stringToValidIntegerZodTransformer,
+  Medida: z.number(),
+  Unidad: z.enum(["mt", "ctd"]),
+  "Cant de mt./pz": stringToValidIntegerZodTransformer,
+  "Stock Fisico":  stringToValidIntegerZodTransformer,
+  "Stock Tango":  stringToValidIntegerZodTransformer,
 });
 
 export const recRowsFormat = (rows: Record<string, unknown>[]) => {
@@ -25,29 +25,29 @@ export const recRowsFormat = (rows: Record<string, unknown>[]) => {
 
 export const recRowsTransformer = (rows: Record<string, unknown>[]) => {
   const finishedArray: {
-    codigoCompet: string;
-    lote: string;
-    caja: string;
-    ubicacion: string;
-    cantidad: number;
-    medida: number;
-    unidad: "mt" | "ctd";
-    cantidadTotalMetros: number;
-    stockFisico: number;
-    stockTango: number;
+    Material: string;
+    Lote: string;
+    Caja: string;
+    Ubicación: string;
+    Cantidad: number;
+    Medida: number;
+    Unidad: "mt" | "ctd";
+    "Cant de mt./pz": number;
+      "Stock Fisico": number;
+      "Stock Tango": number;
   }[] = [];
   const errors: z.ZodError<
     {
-      codigoCompet: string;
-      lote: string;
-      caja: string;
-      ubicacion: string;
-      cantidad: number;
-      medida: number;
-      unidad: "mt" | "ctd";
-      cantidadTotalMetros: number;
-      stockFisico: number;
-      stockTango: number;
+      Material: string;
+      Lote: string;
+      Caja: string;
+      Ubicación: string;
+      Cantidad: number;
+      Medida: number;
+      Unidad: "mt" | "ctd";
+      "Cant de mt./pz": number;
+      "Stock Fisico": number;
+      "Stock Tango": number;
     }[]
   >[] = [];
   rows.map((row) => {

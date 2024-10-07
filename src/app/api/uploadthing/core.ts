@@ -61,10 +61,12 @@ export const ourFileRouter = {
           await db
           .insert(schema.excelCutsDocs)
           .values({
+            id: uploadId,
             uploadAt: new Date(),
             url: file.url,
             fileName: file.name,
           })
+          return { uploadId };
         }
         catch(e){
           console.log(e);
