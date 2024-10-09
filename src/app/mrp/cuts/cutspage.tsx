@@ -179,7 +179,7 @@ export default function CutsPage({ cuts }: Props) {
                                             <ComboboxDemo
                                                 title="Código de producto"
                                                 placeholder="Seleccione un producto"
-                                                value={"Agregar recorte"}
+                                                value={"Seleccionar producto"}
                                                 onSelectionChange={(value) => {
                                                     console.log(value)
                                                 }}
@@ -278,8 +278,9 @@ export default function CutsPage({ cuts }: Props) {
                                             <ComboboxDemo
                                                 title="Código de producto"
                                                 placeholder="Seleccione un producto"
-                                                value={"Agregar recorte"}
+                                                value={"Seleccionar producto"}
                                                 onSelectionChange={(value) => {
+                                                    setSelectedProd(value);
                                                     console.log(value)
                                                 }}
                                                 options={products.map((product) => ({
@@ -293,7 +294,7 @@ export default function CutsPage({ cuts }: Props) {
                                                     <SelectValue placeholder="Seleccionar recorte" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {cuts.map((cut)=>
+                                                    {cuts.filter(x=>x.prodId==selectedProd).map((cut)=>
                                                     
                                                     <SelectItem value={cut.id.toString()}>{cut.measure + " - " + cut.amount}</SelectItem>
                                                     )}
