@@ -176,7 +176,6 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         
         // Buscar si existe en cache
         data = await readFromCache<MRPData>("mrp-data");
-        console.log("AAAAAAAAA");
         if (data) {
           setLoadingMessage("Datos encontrados en caché, comprobando validez");
 
@@ -188,7 +187,6 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
             data = null;
           }
         }
-        console.log("AAAAAAAAA");
         if (data) {
           console.log("Data found in cache!");
           setLoadingMessage("Datos encontrados en caché validados");
