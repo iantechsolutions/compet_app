@@ -7,20 +7,20 @@ import {
   listAllEventsWithSupplyEvents,
   listProductsEvents,
   mapData,
-  MRPProduct,
   type ProductEvent,
 } from "~/mrp_data/transform_mrp_data";
 import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { getUserSetting } from "~/lib/settings";
 import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
-import * as schema from "~/server/db/schema";
+import type * as schema from "~/server/db/schema";
 import { forecastProfiles } from "~/server/db/schema";
 import { eq, type InferSelectModel } from "drizzle-orm";
 import { nullProfile } from "~/lib/nullForecastProfile";
 import { Resend } from "resend";
 import { NotificacionMailTemplate } from "~/components/email-notification-template";
 import { env } from "process";
+import { isSemiElaborate } from "~/lib/utils";
 
 // import { excludeProducts } from 'constants';
 
@@ -38,27 +38,11 @@ export interface ProductWithDependencies {
   cuts: ProductWithDependenciesCut[] | null;
 }
 
-type ConsultProd = {
-  code: string;
-  stock: number;
-  supplies: { supply_product_code: string; quantity: number }[];
-  imports: { arrival_date: Date; ordered_quantity: number }[];
-  description: string;
-};
-
-function prodSemielaboradoLongitud(product: ConsultProd): [number, {code: string}] | null {
-  if (product.description.endsWith("mm") && product.supplies.length === 1) {
-    return [0, { code: product.supplies[0]!.supply_product_code }];
-  }
-
-  return null;
-}
-
 async function getConsumoForProductList(
   listado: ProductWithDependencies[],
   yaConsumidoLoop: Map<string, number>,
   yaConsumidoCuts: Map<number, number>,
-  curatedProducts: ConsultProd[],
+  curatedProducts: Awaited<ReturnType<typeof queryBaseMRPData>>["products"],
   eventsByProductCode: Map<string, ProductEvent[]>,
   // ya están ordenados de menor a mayor measure
   productCuts: Map<string, InferSelectModel<typeof schema.cuts>[]>,
@@ -73,7 +57,7 @@ async function getConsumoForProductList(
     const product = curatedProducts.find((product) => product.code === prod.productCode);
 
     if (product !== undefined) {
-      const semielaborado = prodSemielaboradoLongitud(product);
+      const semielaborado = isSemiElaborate(product);
       const expiredNotImportEvents = (eventsByProductCode.get(product.code) ?? []).filter(
         (event) => event.expired && event.type !== "import",
       );
@@ -83,8 +67,9 @@ async function getConsumoForProductList(
       const inventory = Math.max(0, product.stock - consumedTotal);
 
       if (semielaborado !== null) {
-        const [pcMeasure, supply] = semielaborado;
-        const selectedProdCuts = productCuts.get(supply.code) ?? [];
+        console.log("es semielaborado", semielaborado);
+        const { supply, long: pcMeasure } = semielaborado;
+        const selectedProdCuts = productCuts.get(supply.supply_product_code) ?? [];
         const cutsUsed: ProductWithDependenciesCut[] = [];
 
         let falta = false;
@@ -246,7 +231,7 @@ async function getConsumoForProductList(
               stock: inventory,
               cuts: null,
             };
-            console.log(listadoCopy);
+            // console.log(listadoCopy);
 
             // no hay supplies, se fija si va a importar
           } else {
@@ -383,7 +368,6 @@ export const consultRouter = createTRPCRouter({
         productCuts,
       );
 
-      console.dir(coso, { depth: 4 });
       return coso;
     }),
   mailNotificacion: protectedProcedure
