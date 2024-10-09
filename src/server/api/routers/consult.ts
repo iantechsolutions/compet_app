@@ -193,7 +193,16 @@ async function getConsumoForProductList(
           listadoCopy[index] = {
             arrivalDate: null,
             consumed: pcValue,
-            dependencies: null,
+            dependencies: cutsUsed.map((v) => {
+              return {
+                productCode: v.cut.prodId,
+                stock: v.cut.amount,
+                dependencies: null,
+                arrivalDate: null,
+                consumed: v.amount,
+                cuts: null,
+              };
+            }),
             productCode: product.code,
             stock: inventory,
             cuts: cutsUsed,
