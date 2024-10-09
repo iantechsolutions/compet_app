@@ -762,7 +762,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           </div>
           <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
             <SimpleLineChart data={salesAndBudgets} />
-            <SimpleBartChartRecuts/>
+            <SimpleBartChartRecuts data={cuts}/>
           </div>
         </DataCard>
       </AppLayout >
