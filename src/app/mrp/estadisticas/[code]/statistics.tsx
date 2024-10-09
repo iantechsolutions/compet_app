@@ -475,10 +475,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   function isSemiElaborate(prod: MRPProduct | undefined){
     let long = null;
     let supply = null;
-    if (prod?.description.trim().endsWith("mm") && prod?.supplies && prod?.supplies.length == 1){
+    if (prod?.additional_description.trim().endsWith("mm") && prod?.supplies && prod?.supplies.length == 1){
       console.log(prod);
       supply = prod.supplies[0];
-      long = supply?.quantity;
+      long = (supply?.quantity ?? 0) * 1000;
       
     }
     
