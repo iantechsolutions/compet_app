@@ -453,20 +453,25 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const mapeoConsumo = new Map<string, number>();
     possibleSuppliesOf?.map((supplyOfCode) => {
       const semielaborate = data?.products.find((p) => p.code === supplyOfCode);
-      const longitudSemi = isSemiElaborate(semielaborate);
+      const dataSemi = isSemiElaborate(semielaborate);
       // const longNecesaria = supply.quantity;
-      if (longitudSemi !== null) {
-        const clave = longitudSemi.long + " mm";
-        let events = data?.eventsByProductCode.get(productCode) ?? [];
+      if (dataSemi !== null) {
+        const clave = dataSemi.long + " mm";
+        let events = data?.eventsByProductCode.get(supplyOfCode) ?? [];
         events = events.filter(
           (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
         );
         events.forEach((event) => {
-          mapeoConsumo.set(clave, (event.quantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
+          console.log("pre",(mapeoConsumo.get(clave) ?? 0) )
+          mapeoConsumo.set(clave, (event.originalQuantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
+          console.log("post", (mapeoConsumo.get(clave) ?? 0))
         })
+        console.log(events);
       }
     }
     )
+    console.log("final")
+    console.log(mapeoConsumo);
     return mapeoConsumo;
   }
 
