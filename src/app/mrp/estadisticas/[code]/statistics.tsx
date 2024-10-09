@@ -449,8 +449,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   }
   function getCuts(productCode: string,fromDate: Date,toDate: Date){
     const prod = data?.products.find((p) => p.code === productCode);
-    console.log("prod");
-    console.log(prod);
     const possibleSuppliesOf = prod?.suppliesOf.map(x=>x.product_code);
     const mapeoConsumo = new Map<string,number>();
     possibleSuppliesOf?.map((supplyOfCode)=>{
@@ -476,7 +474,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     let long = null;
     let supply = null;
     if (prod?.additional_description.trim().endsWith("mm") && prod?.supplies && prod?.supplies.length == 1){
-      console.log(prod);
       supply = prod.supplies[0];
       long = (supply?.quantity ?? 0) * 1000;
       
