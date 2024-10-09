@@ -44,19 +44,14 @@ type ConsultProd = {
   supplies: { supply_product_code: string; quantity: number }[];
   imports: { arrival_date: Date; ordered_quantity: number }[];
   description: string;
-}
+};
 
-
-function prodUsesCuts(product: ConsultProd ){
-  // if (product.supplies && product.supplies.length ==1) {
-  //   const cutSize = product.description
-  //   return [true,product];
-  // }
-  if (product.description.endsWith("mm")){
-    return true
+function prodSemielaboradoLongitud(product: ConsultProd): [number, {code: string}] | null {
+  if (product.description.endsWith("mm") && product.supplies.length === 1) {
+    return [0, { code: product.supplies[0]!.supply_product_code }];
   }
 
-  return false
+  return null;
 }
 
 async function getConsumoForProductList(
@@ -77,12 +72,8 @@ async function getConsumoForProductList(
     const pcValue = prod.consumed;
     const product = curatedProducts.find((product) => product.code === prod.productCode);
 
-    // TODO: des-hardcodear
-    // const pcValue = 4;
-    const pcMeasure = 0.25;
-
     if (product !== undefined) {
-      const usesCuts = await prodUsesCuts(product);
+      const semielaborado = prodSemielaboradoLongitud(product);
       const expiredNotImportEvents = (eventsByProductCode.get(product.code) ?? []).filter(
         (event) => event.expired && event.type !== "import",
       );
@@ -91,8 +82,9 @@ async function getConsumoForProductList(
       const consumedTotal = commited + (yaConsumidoLoop.get(pcKey) ?? 0);
       const inventory = Math.max(0, product.stock - consumedTotal);
 
-      if (usesCuts) {
-        const selectedProdCuts = productCuts.get(product.code) ?? [];
+      if (semielaborado !== null) {
+        const [pcMeasure, supply] = semielaborado;
+        const selectedProdCuts = productCuts.get(supply.code) ?? [];
         const cutsUsed: ProductWithDependenciesCut[] = [];
 
         let falta = false;
@@ -105,15 +97,17 @@ async function getConsumoForProductList(
         }
 
         console.dir(selectedProdCuts);
+        let probarSinModulo = false;
 
         do {
           let recorrido = 0;
 
+          // aca solo se fija con mod 0
           for (let i = 0; i < selectedProdCuts.length && pcValueFaltante > 0; i++) {
             const cut = selectedProdCuts[i]!;
             const maxConsumibleCut = cut.amount - (yaConsumidoCuts.get(cut.id) ?? 0);
 
-            if (cut.measure >= pcMeasure && cut.measure % pcMeasure === 0 && maxConsumibleCut > 0) {
+            if (cut.measure >= pcMeasure && (cut.measure % pcMeasure === 0 || probarSinModulo) && maxConsumibleCut > 0) {
               const cutAmountNeeded = Math.ceil((pcValueFaltante * pcMeasure) / cut.measure);
               const cutAmountUsed = Math.min(cutAmountNeeded, maxConsumibleCut);
               cutsUsed.push({
@@ -132,8 +126,11 @@ async function getConsumoForProductList(
           }
 
           if (recorrido === 0) {
-            // falta = true;
-            break;
+            if (!probarSinModulo) {
+              probarSinModulo = true;
+            } else {
+              break;
+            }
           }
         } while (!falta || pcValueFaltante > 0);
 
@@ -376,7 +373,7 @@ export const consultRouter = createTRPCRouter({
       const curatedProducts = data.products.filter(
         (product) => !excludeProducts.some((excludedProduct) => product.code.toLowerCase().startsWith(excludedProduct)),
       );
-      
+
       const coso = await getConsumoForProductList(
         array,
         new Map<string, number>(),
