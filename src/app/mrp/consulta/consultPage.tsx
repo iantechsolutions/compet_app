@@ -15,7 +15,8 @@ import { cn } from "~/lib/utils";
 import { excludeProducts } from "~/server/api/constants";
 import { api } from "~/trpc/react";
 import type { ProductWithDependencies } from "~/server/api/routers/consult";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white";
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
@@ -360,6 +361,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
     }
   }
 
+  console.log(product);
   return (
     <div className="bg-gray-500">
       <ListRowContainer className={`z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
@@ -376,7 +378,26 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           <p>{arrivalDate}</p>
         </div>
         <div className={cn(tableCellClassName, "flex md:left-0 justify-center")}>
+          {product.cuts !== null && product.cuts.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="link" >?</Button>
+              </PopoverTrigger>
+              <PopoverContent className="rounded-xl">
+                {product.cuts.map((cut) => <>
+                  <div key={cut.cut.id} className="flex flex-col gap-1 p-2 rounded-xl border-2 mb-2">
+                      <p>Id: {cut.cut.id}</p>
+                      <p>Location: {cut.cut.location}</p>
+                      <p>Cantidad: {cut.cut.amount}</p>
+                      <p>Medida: {cut.cut.measure}</p>
+                   
+                  </div>
+                </>)}
+              </PopoverContent>
+            </Popover>
+          )}
           {product.dependencies && product.dependencies.length > 0 && (
+
             <Button variant="outline" onClick={toggleDependencies} className=" px-2 my-2">
               {showDependencies ?
                 <ChevronUp />
@@ -384,8 +405,10 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
                 <ChevronDown />
               }
             </Button>
+
           )}
         </div>
+
       </ListRowContainer>
 
       {showDependencies && product.dependencies?.map((dependency) => (
