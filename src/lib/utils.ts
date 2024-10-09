@@ -6,6 +6,7 @@ import { parse, stringify } from "flatted";
 import { nanoid } from "nanoid";
 import { twMerge } from "tailwind-merge";
 import { MRPData, MRPProduct } from "~/mrp_data/transform_mrp_data";
+import { queryBaseMRPData } from "~/serverfunctions";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -107,9 +108,9 @@ export function decodeData<T>(data: string) {
 }
 
 //que devuelva longitud de corte
-export function isSemiElaborate(prod: MRPProduct | undefined): {
-  long: number,
-  supply: MRPData["products"][number]["supplies"][0]
+export function isSemiElaborate(prod: Awaited<ReturnType<typeof queryBaseMRPData>>["products"][0] | undefined): {
+  long: number;
+  supply: MRPData["products"][number]["supplies"][0];
 } | null {
   let long = null;
   let supply = null;
@@ -120,7 +121,7 @@ export function isSemiElaborate(prod: MRPProduct | undefined): {
     long = (supply?.quantity ?? 0) * 1000;
     return {
       long,
-      supply
+      supply,
     };
   }
 
