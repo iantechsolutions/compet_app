@@ -130,9 +130,9 @@ export const userSettings = pgTable(
 export const cuts = pgTable("cuts", {
   id: serial("id").notNull().primaryKey(),
   prodId: varchar("prodId", { length: 255 }).notNull(),
-  lote: varchar("lote", { length: 255 }).notNull(),
-  caja: varchar("caja", { length: 255 }).notNull(),
-  location: varchar("location", { length: 255 }).notNull(),
+  lote: varchar("lote", { length: 255 }),
+  caja: varchar("caja", { length: 255 }),
+  location: varchar("location", { length: 255 }),
   // n de cortes disponibles
   amount: integer("amount").notNull(),
   // longitud o ctd

@@ -78,6 +78,7 @@
     "node-windows": "1.0.0-beta.8",
     "nodemailer": "^6.9.15",
     "path": "^0.12.7",
+    "postgres": "^3.4.4",
     "react": "18.2.0",
     "react-apexcharts": "^1.4.1",
     "react-day-picker": "8.10.1",

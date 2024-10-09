@@ -37,6 +37,10 @@ export const ourFileRouter = {
         maxFileCount: 1,
         maxFileSize: "128MB",
       },
+      "text/csv": {
+        maxFileCount: 1,
+        maxFileSize: "128MB",
+      },
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
         maxFileCount: 1,
         maxFileSize: "128MB",

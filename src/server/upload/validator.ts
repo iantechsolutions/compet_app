@@ -5,18 +5,31 @@ const stringToValidIntegerZodTransformer = z
   .or(z.number())
   .transform((v) => Number(v.toString().replace(/\s/g, "")))
   .refine((value) => !isNaN(value));
+const allToString = z
+  .union([z.number(), z.string()])
+  .transform((value) => {
+    console.log(value);
+    if (typeof value === "number") {
+      return value.toString();
+    } else if (typeof value === "string") {
+      return value;
+    }
+  })
+  .refine((value) => typeof value === "string", {
+    message: "Caracteres incorrectos en columna:",
+  });
 
 const recDocValidator = z.object({
-  Material: z.string(),
-  Lote: z.string(),
-  Caja: z.string(),
-  Ubicación: z.string(),
+  "Codigo Tango": allToString,
+  Lote: allToString.optional(),
+  Caja: allToString.optional(),
+  Ubicación: allToString.optional(),
   Cantidad: stringToValidIntegerZodTransformer,
   Medida: z.number(),
-  Unidad: z.enum(["mts", "ctd"]),
-  "Cant de mt./pz": stringToValidIntegerZodTransformer,
-  "Stock Fisico":  stringToValidIntegerZodTransformer,
-  "Stock Tango":  stringToValidIntegerZodTransformer,
+  Unidad: z.enum(["PZA", "KITS", "MT", "UNI"]),
+  "Cant de mt/pzas": stringToValidIntegerZodTransformer,
+  "Stock Fisico": stringToValidIntegerZodTransformer.optional(),
+  "Stock Tango": stringToValidIntegerZodTransformer.optional(),
 });
 
 export const recRowsFormat = (rows: Record<string, unknown>[]) => {
@@ -25,29 +38,29 @@ export const recRowsFormat = (rows: Record<string, unknown>[]) => {
 
 export const recRowsTransformer = (rows: Record<string, unknown>[]) => {
   const finishedArray: {
-    Material: string;
-    Lote: string;
-    Caja: string;
-    Ubicación: string;
+    "Codigo Tango": string;
+    Lote?: string | undefined | null;
+    Caja?: string | undefined | null;
+    Ubicación?: string | undefined | null;
     Cantidad: number;
     Medida: number;
-    Unidad: "mts" | "ctd";
-    "Cant de mt./pz": number;
-      "Stock Fisico": number;
-      "Stock Tango": number;
+    Unidad: "PZA" | "KITS" | "MT" | "UNI";
+    "Cant de mt/pzas": number;
+    "Stock Fisico"?: number | undefined | null;
+    "Stock Tango"?: number | undefined | null;
   }[] = [];
   const errors: z.ZodError<
     {
-      Material: string;
-      Lote: string;
-      Caja: string;
-      Ubicación: string;
+      "Codigo Tango": string;
+      Lote?: string | undefined | null;
+      Caja?: string | undefined | null;
+      Ubicación?: string | undefined | null;
       Cantidad: number;
       Medida: number;
-      Unidad: "mts" | "ctd";
-      "Cant de mt./pz": number;
-      "Stock Fisico": number;
-      "Stock Tango": number;
+      Unidad: "PZA" | "KITS" | "MT" | "UNI";
+      "Cant de mt/pzas": number;
+      "Stock Fisico"?: number | undefined | null;
+      "Stock Tango"?: number | undefined | null;
     }[]
   >[] = [];
   rows.map((row) => {

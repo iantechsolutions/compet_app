@@ -22,17 +22,23 @@ export const excelCutsDocRouter = createTRPCRouter({
     if (!(recRows instanceof TRPCError)) {
       await Promise.all(
         recRows.map(async (row) => {
+          console.log(row);
+          try{
           await db.insert(schema.cuts).values({
-            prodId: row.Material,
+            prodId: row["Codigo Tango"],
             lote: row.Lote,
             caja: row.Caja,
             location: row.Ubicación,
             amount: row.Cantidad,
-            measure: row.Medida,
+            measure: (row.Medida * 1000),
             units: row.Unidad,
-            stockPhys: row["Stock Fisico"],
-            stockTango: row["Stock Tango"],
+            stockPhys: row["Stock Fisico"] ?? 0,
+            stockTango: row["Stock Tango"] ?? 0,
           });
+        }
+        catch(e){
+          console.log(e);
+        }
         }),
       );
     }
@@ -64,7 +70,9 @@ async function readExcelFile(uploadId: string) {
   }
   const { finishedArray: transformedRows, errors: errorsTransform } = recRowsTransformer(trimmedRows);
   const errors: string[] = [];
+  
   errorsTransform.forEach((error) => {
+    console.log(error);
     errors.push(
       (error.errors.at(0)?.message ?? "") +
         " " +
