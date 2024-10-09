@@ -47,9 +47,13 @@ async function getConsumoForProductList(
   // ya están ordenados de menor a mayor measure
   productCuts: Map<string, InferSelectModel<typeof schema.cuts>[]>,
 ) {
-  const listadoCopy = listado;
+  let listadoCopy = listado;
   // const productConsumo: [string, number][] = [];
   // const yaConsumidoLoop = new Map<string, number>();
+
+  listadoCopy = listado.filter((product) => !excludeProducts.some((excludedProduct) => product.productCode.startsWith(excludedProduct)));
+
+  console.log(listadoCopy.map((v) => v.productCode));
 
   const promises = listado.map(async (prod, index) => {
     const pcKey = prod.productCode;
@@ -67,7 +71,6 @@ async function getConsumoForProductList(
       const inventory = Math.max(0, product.stock - consumedTotal);
 
       if (semielaborado !== null) {
-        console.log("es semielaborado", semielaborado);
         const { supply, long: pcMeasure } = semielaborado;
         const selectedProdCuts = productCuts.get(supply.supply_product_code) ?? [];
         const cutsUsed: ProductWithDependenciesCut[] = [];
@@ -81,7 +84,6 @@ async function getConsumoForProductList(
           falta = true;
         }
 
-        console.dir(selectedProdCuts);
         let probarSinModulo = false;
 
         do {
@@ -365,7 +367,7 @@ export const consultRouter = createTRPCRouter({
       const events = listAllEventsWithSupplyEvents(evolvedData);
       const eventsByProductCode = listProductsEvents(evolvedData, events);
       const curatedProducts = data.products.filter(
-        (product) => !excludeProducts.some((excludedProduct) => product.code.toLowerCase().startsWith(excludedProduct)),
+        (product) => !excludeProducts.some((excludedProduct) => product.code.startsWith(excludedProduct)),
       );
 
       const coso = await getConsumoForProductList(

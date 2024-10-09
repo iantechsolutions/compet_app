@@ -35,6 +35,7 @@ import DataCard from "~/components/ui/dataCard";
 import { ChartNoAxesCombined } from "~/components/icons/chart-combined";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import ListSelectionDialog from "~/components/list-selection-dialog";
+import SimpleBartChartRecuts from "~/components/estadisticas/simpleBartChartRecuts";
 export default function StatisticsPage(props: { user?: NavUserData }) {
   const temporaryDate = new Date();
   temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
@@ -759,8 +760,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
             <StackedAreaChart data={consumption ?? []} />
             <SimpleBartChart data={soldProportions ?? []} />
           </div>
-          <div className="w-full mt-20">
+          <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
             <SimpleLineChart data={salesAndBudgets} />
+            <SimpleBartChartRecuts data={cuts}/>
           </div>
         </DataCard>
       </AppLayout >
