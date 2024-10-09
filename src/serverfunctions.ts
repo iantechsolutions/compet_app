@@ -13,25 +13,39 @@ import type {
   ProductStockCommited,
 } from "~/lib/types";
 import { decodeData, getMonths } from "~/lib/utils";
-import type { DataExport } from "~/scripts/lib/read-from-tango-db";
-import { api } from "~/trpc/server";
 import { utapi } from "./server/uploadthing";
+import { type DataExport } from "./scripts/lib/database";
+import { getDbInstance } from "./scripts/lib/instance";
+import { env } from "./env";
 
+// esto vs el otro?? queryBaseMRPData
 export async function queryBaseMRPData() {
-  const mrpExportFile = await getSetting<string>("mrp.export-file");
+  let data;
+  let exportURL: string;
+  let dataInfo;
 
-  if (!mrpExportFile) {
-    throw new Error(
-      "No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.",
-    );
+  if (env.DB_DIRECT_CONNECTION) {
+    const db = await getDbInstance();
+    data = await db.readAllData();
+    exportURL = "null";
+    dataInfo = {
+      exportDate: Date.now(),
+    };
+  } else {
+    const mrpExportFile = await getSetting<string>("mrp.export-file");
+
+    if (!mrpExportFile) {
+      throw new Error(
+        "No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.",
+      );
+    }
+
+    dataInfo = await getMrpExportInfo();
+    exportURL = dataInfo.exportURL;
+
+    const dataEncoded = await fetch(exportURL).then((res) => res.text());
+    data = decodeData(dataEncoded) as DataExport;
   }
-
-  const dataInfo = await getMrpExportInfo();
-
-  const exportURL = dataInfo.exportURL;
-
-  const dataEncoded = await fetch(exportURL).then((res) => res.text());
-  const data = decodeData(dataEncoded) as DataExport;
 
   const {
     products,

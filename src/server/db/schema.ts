@@ -14,6 +14,7 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
+import { createId } from "~/lib/utils";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -125,3 +126,29 @@ export const userSettings = pgTable(
     compoundKey: primaryKey(us.userId, us.key),
   }),
 );
+
+export const cuts = pgTable("cuts", {
+  id: serial("id").notNull().primaryKey(),
+  prodId: varchar("prodId", { length: 255 }).notNull(),
+  lote: varchar("lote", { length: 255 }).notNull(),
+  caja: varchar("caja", { length: 255 }).notNull(),
+  location: varchar("location", { length: 255 }).notNull(),
+  // n de cortes disponibles
+  amount: integer("amount").notNull(),
+  // longitud o ctd
+  measure: real("measure").notNull(),
+  // tipo de measure (ver en lib/types.ts)
+  units: varchar("units", { length: 255 }).notNull(),
+  stockPhys: integer("stockPhys").notNull(),
+  stockTango: integer("stockTango").notNull(),
+});
+
+export const excelCutsDocs = pgTable("excelCutsDocs", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  url: varchar("url", { length: 255 }).notNull(),
+  uploadAt: timestamp("date", { mode: "date" }).notNull(),
+});

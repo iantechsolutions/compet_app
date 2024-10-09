@@ -1,13 +1,12 @@
 "use client";
 import { useWindowSize } from "@uidotdev/usehooks";
 import dayjs from "dayjs";
-import { ChevronDown, ChevronUp, CornerDownRight, Loader2Icon } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import { ComboboxDemo } from "~/components/combobox";
 // import { List } from "~/components/list";
-import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 import { useMRPData } from "~/components/mrp-data-provider";
 import type { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
@@ -15,7 +14,7 @@ import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
 import { excludeProducts } from "~/server/api/constants";
 import { api } from "~/trpc/react";
-import { ProductWithDependencies } from "~/server/api/routers/consult";
+import type { ProductWithDependencies } from "~/server/api/routers/consult";
 
 const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white";
 
@@ -302,7 +301,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     </AppLayout>
   );
 }
-function ListRowContainer({
+export function ListRowContainer({
   children,
   style,
   id,
@@ -337,6 +336,30 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
   // Toggle visibility of dependencies
   const toggleDependencies = () => setShowDependencies(!showDependencies);
 
+  let arrivalDate: string;
+  if (product.arrivalDate) {
+    arrivalDate = dayjs(product.arrivalDate.toString()).format("YYYY-MM");
+  } else {
+    if (product.dependencies) {
+      arrivalDate = "-";
+    } else {
+      if (product.cuts !== null) {
+        if (product.cuts.length > 0) {
+          // ver product.cuts
+          arrivalDate = "Hay suficientes recortes";
+        } else {
+          arrivalDate = "No hay suficientes recortes";
+        }
+      } else {
+        if (product.stock > product.consumed) {
+          arrivalDate = "Hay suficiente stock";
+        } else {
+          arrivalDate = "No hay pedido registrado";
+        }
+      }
+    }
+  }
+
   return (
     <div className="bg-gray-500">
       <ListRowContainer className={`z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
@@ -350,7 +373,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           <p>{Math.round(product.consumed)}</p>
         </div>
         <div className={cn(tableCellClassName, "flex md:left-0")}>
-          <p>{product.arrivalDate ? dayjs(product.arrivalDate.toString()).format("YYYY-MM") : product.dependencies ? "-" : product.stock > product.consumed ? 'Hay suficiente stock' : "No hay pedido registrado"}</p>
+          <p>{arrivalDate}</p>
         </div>
         <div className={cn(tableCellClassName, "flex md:left-0 justify-center")}>
           {product.dependencies && product.dependencies.length > 0 && (
@@ -365,8 +388,8 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
         </div>
       </ListRowContainer>
 
-      {showDependencies && product.dependencies && product.dependencies.map((dependency, index) => (
-        <div>
+      {showDependencies && product.dependencies?.map((dependency) => (
+        <div key={`div-${dependency.productCode}`}>
           <ProductRow key={dependency.productCode} product={dependency} depth={depth + 1} />
         </div>
       ))}

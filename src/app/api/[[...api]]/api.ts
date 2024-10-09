@@ -5,7 +5,6 @@ import { useContext } from "react";
 import { dataProviderContext } from "~/components/mrp-data-provider";
 // import { queryBaseMRPData, RawMRPData, transformClientsIdsCodes } from '~/mrp_data/query_mrp_data'
 import { CronJob } from "cron";
-import { DataExport, readDataFromDB } from "~/scripts/lib/read-from-tango-db";
 import { api } from "~/trpc/server";
 import { getServerAuthSession } from "~/server/auth";
 import { Resend } from "resend";

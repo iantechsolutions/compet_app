@@ -36,7 +36,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   const { mutateAsync: obtainCurrentProfile } = api.forecast.obtainCurrentProfile.useMutation();
   const { mutateAsync: obtainDataExportInfo } = api.mrpData.obtainDataExportInfo.useMutation();
   const [isUpdating, setIsUpdating] = useState(false);
-
+  
   const channel = gloabalMRPChannel!;
 
   async function dataIsUpToDate(data: MRPData): Promise<boolean> {
@@ -44,7 +44,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     const dataExportInfo = await obtainDataExportInfo();
 
     const forecastProfileMismatch = data?.forecastData?.forecastProfile?.id != currentProfile?.id;
-    const dataExportMismatch = data.dataExportDate != dataExportInfo.exportDate;
+    const dataExportMismatch = dayjs(data.dataExportDate) != dayjs(dataExportInfo.exportDate);
 
     return !forecastProfileMismatch && !dataExportMismatch;
   }
@@ -159,7 +159,6 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   async function initializeData(opts?: { revalidateMode: boolean }): Promise<MRPData | null> {
     try {
       let data: MRPData | null = null;
-
       // Si no se fuerza a buscar los datos en el servidor
       if (!opts?.revalidateMode) {
         // Ver si hay otra pestaña abierta con los datos ya cargados
@@ -174,10 +173,9 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         setLoadingMessage("Buscando datos en caché");
 
         console.log("Data not found in another tab, searching in cache...");
-
+        
         // Buscar si existe en cache
         data = await readFromCache<MRPData>("mrp-data");
-
         if (data) {
           setLoadingMessage("Datos encontrados en caché, comprobando validez");
 
@@ -189,7 +187,6 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
             data = null;
           }
         }
-
         if (data) {
           console.log("Data found in cache!");
           setLoadingMessage("Datos encontrados en caché validados");
@@ -226,7 +223,6 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
 
   useOnMounted(() => {
     void initializeData();
-
     setInterval(
       async () => {
         console.log("Checking if data is still valid...");

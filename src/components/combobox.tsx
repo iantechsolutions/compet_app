@@ -15,9 +15,10 @@ export interface ComboboxProps {
   classNameButton?: string;
   onSelectionChange?: (value: string) => void;
   value?: string;
+  hideIcon?: boolean;
 }
 
-export function ComboboxDemo({ title, placeholder, options = [], onSelectionChange, value, classNameButton }: ComboboxProps) {
+export function ComboboxDemo({ title, placeholder, options = [], onSelectionChange, value, classNameButton, hideIcon=false }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const initialOption = options.find((option) => option.value === value);
   const [_value, _setValue] = React.useState(value ?? "");
@@ -35,7 +36,7 @@ export function ComboboxDemo({ title, placeholder, options = [], onSelectionChan
       <PopoverTrigger asChild={true}>
         <Button variant="outline" role="combobox" aria-expanded={open} className={cn("w-[200px] justify-between", classNameButton)}>
           {value || title}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          {hideIcon ? null : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">

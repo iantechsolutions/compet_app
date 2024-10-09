@@ -13,6 +13,7 @@ export async function saveToCache<T>(key: string, value: T) {
 }
 
 export async function readFromCache<T>(key: string) {
+  try{
   const cache = await getCache();
 
   const response = await cache.match("/" + key);
@@ -24,6 +25,11 @@ export async function readFromCache<T>(key: string) {
   const text = await response.text();
 
   return decodeData<T>(text);
+}
+catch(e){
+  console.log("aca");
+  console.log(e);
+}
 }
 
 export async function deleteFromCache(key: string) {

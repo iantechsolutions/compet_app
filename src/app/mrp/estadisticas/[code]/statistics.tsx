@@ -23,7 +23,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { CrmBudget } from "~/lib/types";
-import { formatStock } from "~/lib/utils";
+import { formatStock, isSemiElaborate } from "~/lib/utils";
 import { SelectCRMClients } from "../../forecast/select-crm-clients";
 import { string } from "zod";
 import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
@@ -72,6 +72,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     TotalSales: number;
     MedianSales: number | undefined;
   }>();
+  const [cuts, setCuts] = useState<Map<string, number>>();
   const [totalConsumedAmount, setTotalConsumedAmount] = useState<number>();
   const [totalMotiveConsumption, setTotalMotiveConsumption] = useState<Map<string, number>>();
   const [hasRun, setHasRun] = useState<boolean>(false);
@@ -110,12 +111,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      const tempCuts = getCuts(productCode, fromDate ?? new Date("2023-09-04"), toDate ?? new Date("2024-09-04"));
       setConsumption(consumptionStats);
       setTotalConsumedAmount(totalTemp);
       setTotalMotiveConsumption(totalMotiveTemp);
       setSalesAndBudgets(tempSales);
       setSoldProportions(tempSoldProportions);
       setGeneralStatistics(tempGeneral);
+      setCuts(tempCuts);
       setHasRun(true);
       setIsLoading(false);
     }
@@ -173,6 +176,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           productCode,
         );
         setGeneralStatistics(tempStatistics);
+        setCuts(getCuts(productCode, fromDate, toDate));
         setIsLoading(false);
       } catch (e) {
         setIsLoading(false);
@@ -212,7 +216,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
     events = events.filter(
-      (event) => new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
@@ -404,7 +408,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     let events = data?.eventsByProductCode.get(productCode) ?? [];
     events = events.filter(
-      (event) => new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
     events.forEach((event) => {
       // event.quantity
@@ -444,6 +448,34 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       MedianSales: orderedQuantities.length > 0 ? median : 0,
     };
   }
+  function getCuts(productCode: string, fromDate: Date, toDate: Date) {
+    const prod = data?.products.find((p) => p.code === productCode);
+    const possibleSuppliesOf = prod?.suppliesOf.map(x => x.product_code);
+    const mapeoConsumo = new Map<string, number>();
+    possibleSuppliesOf?.map((supplyOfCode) => {
+      const semielaborate = data?.products.find((p) => p.code === supplyOfCode);
+      const dataSemi = isSemiElaborate(semielaborate);
+      // const longNecesaria = supply.quantity;
+      if (dataSemi !== null) {
+        const clave = dataSemi.long + " mm";
+        let events = data?.eventsByProductCode.get(supplyOfCode) ?? [];
+        events = events.filter(
+          (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+        );
+        events.forEach((event) => {
+          console.log("pre",(mapeoConsumo.get(clave) ?? 0) )
+          mapeoConsumo.set(clave, (event.originalQuantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
+          console.log("post", (mapeoConsumo.get(clave) ?? 0))
+        })
+        console.log(events);
+      }
+    }
+    )
+    console.log("final")
+    console.log(mapeoConsumo);
+    return mapeoConsumo;
+  }
+
   const [showMore, setShowMore] = useState(false);
 
   const toggleShowMore = () => {
@@ -610,34 +642,34 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                 </Tooltip>
 
                 <Tooltip>
-                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                        <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
-                        <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Mínimas unidades vendidas por pedido.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mínimas unidades vendidas por pedido.</p>
+                  </TooltipContent>
+                </Tooltip>
 
-                    <Tooltip>
-                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                        <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
-                        <p className="text-sm font-medium text-black mt-2">UPP</p>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Unidades promedio por pedido.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">UPP</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Unidades promedio por pedido.</p>
+                  </TooltipContent>
+                </Tooltip>
 
-                    <Tooltip>
-                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                        <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
-                        <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Mediana de unidades por venta.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mediana de unidades por venta.</p>
+                  </TooltipContent>
+                </Tooltip>
 
                 {/* {showMore && (
                   <>
