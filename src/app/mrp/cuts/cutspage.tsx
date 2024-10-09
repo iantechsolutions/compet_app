@@ -1,8 +1,8 @@
 "use client"
 import { cn } from "~/lib/utils";
-import { RouterOutputs } from "~/trpc/shared";
+import type { RouterOutputs } from "~/trpc/shared";
 import { ListRowContainer } from "../consulta/consultPage";
-import { Popover, PopoverTrigger,PopoverContent } from "~/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
@@ -10,15 +10,19 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { useMRPData } from "~/components/mrp-data-provider";
 import { ComboboxDemo } from "~/components/combobox";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { type CutUnits } from "~/lib/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Loader2Icon } from "lucide-react";
 interface Props {
     cuts: RouterOutputs["cuts"]["list"];
 }
 
 export default function CutsPage({ cuts }: Props) {
     const data = useMRPData();
+    const router = useRouter();
+
     const { products } = data;
     const { mutateAsync: getCutByProd, isLoading: loadingGetByProd } = api.cuts.getByProdId.useMutation();
     const { mutateAsync: addCut, isLoading: loadingCreate } = api.cuts.create.useMutation();
@@ -30,36 +34,24 @@ export default function CutsPage({ cuts }: Props) {
     const [measure, setMeasure] = useState<number>(0)
     const [units, setUnits] = useState<string>("")
     const [selectedProd, setSelectedProd] = useState<string>("")
-    const [selectedCut, setSelectedCut] = useState<RouterOutputs["cuts"]["get"] | null>(null)
+    const [selectedCut, setSelectedCut] = useState<string | null>(null)
     const [cutsOptions, setCutsOptions] = useState<JSX.Element[]>([])
+
     async function getCutsOptions(prodId: string) {
         const cutsProd = await getCutByProd({ prodId })
         return cutsProd.map((cut) => <SelectItem value={cut.id.toString()}>{cut.id}</SelectItem>)
     }
-    
-    useEffect(() => {
-        async function getCut() {
-            const cutsOptions = await getCutsOptions(selectedProd)
-            setCutsOptions(cutsOptions)
-        }
-        getCut();
-        console.log("ejecutado");
-    }, [selectedProd])
+
     async function handleEditCut() {
         if (selectedCut) {
             try {
                 await editCut({
-                    id: selectedCut?.id,
+                    id: Number(selectedCut),
                     prodId: selectedProd,
-                    lote: lote,
-                    caja: caja,
-                    location: location,
                     amount: amount,
                     measure: (measure * 1000),
-                    units: units as CutUnits,
-                    stockPhys: 0,
-                    stockTango: 0
-                })
+                });
+                router.refresh();
             } catch (error) {
                 console.log(error)
             }
@@ -67,7 +59,6 @@ export default function CutsPage({ cuts }: Props) {
     }
     async function handleAddCut() {
         try {
-
             await addCut({
                 prodId: selectedProd,
                 lote: lote,
@@ -78,7 +69,8 @@ export default function CutsPage({ cuts }: Props) {
                 units: units as CutUnits,
                 stockPhys: 0,
                 stockTango: 0
-            })
+            });
+            router.refresh();
         } catch (error) {
             console.error(error)
         }
@@ -88,7 +80,7 @@ export default function CutsPage({ cuts }: Props) {
     cuts.forEach((cut) => prodIdSet.add(cut.prodId))
     //obtengo todos las longitudes de recortes sin repetir 
     const cutsLengthSet = new Set<string>()
-    cuts.forEach((cut) => cutsLengthSet.add((cut.measure/1000).toFixed(3)))
+    cuts.forEach((cut) => cutsLengthSet.add((cut.measure / 1000).toFixed(3)))
 
 
     // creo un Map con los prodId y la cantidad de recortes por longitud
@@ -98,11 +90,11 @@ export default function CutsPage({ cuts }: Props) {
             cutsMap.set(cut.prodId, new Map<string, number>())
         }
         const prodMap = cutsMap.get(cut.prodId)
-        if (prodMap && !(prodMap.has((cut.measure/1000).toFixed(3)))) {
-            prodMap.set((cut.measure/1000).toFixed(3), cut.amount)
-        } else if (prodMap && prodMap.has((cut.measure/1000).toFixed(3))) {
-            const currentAmount = prodMap.get((cut.measure/1000).toFixed(3)) ?? 0;
-            prodMap.set((cut.measure/1000).toFixed(3), currentAmount + cut.amount);
+        if (prodMap && !(prodMap.has((cut.measure / 1000).toFixed(3)))) {
+            prodMap.set((cut.measure / 1000).toFixed(3), cut.amount)
+        } else if (prodMap && prodMap.has((cut.measure / 1000).toFixed(3))) {
+            const currentAmount = prodMap.get((cut.measure / 1000).toFixed(3)) ?? 0;
+            prodMap.set((cut.measure / 1000).toFixed(3), currentAmount + cut.amount);
         }
     }
 
@@ -120,103 +112,103 @@ export default function CutsPage({ cuts }: Props) {
 
     return (
         <>
-            {cuts.length === 0 && 
-            <div>
-                <div className="flex flex-row justify-between">
-                            <div className="mb-7">
-                                <Popover>
-                                    <PopoverTrigger asChild><Button className="mx-2">Agregar Recorte</Button></PopoverTrigger>
-                                    <PopoverContent className="bg-[#f7f7f7]">
-                                        <div>
-                                            <Label>Codigo producto</Label>
-                                            <ComboboxDemo
-                                                hideIcon={true}
-                                                title="Código de producto"
-                                                classNameButton="block"
-                                                placeholder="Seleccione un producto"
-                                                value={selectedProd}
-                                                onSelectionChange={(value) => {
-                                                    setSelectedProd(value)
-                                                }}
-                                                options={products.map((product) => ({
-                                                    value: product.code,
-                                                    label: product.code,
-                                                }))}
-                                            />
-                                            <Label>Lote</Label>
-                                            <Input defaultValue={lote} onChange={(e) => setLote(e.target.value)} />
-                                            <Label>Caja</Label>
-                                            <Input defaultValue={caja} onChange={(e) => setCaja(e.target.value)} />
-                                            <Label>Ubicacion</Label>
-                                            <Input defaultValue={location} onChange={(e) => setLocation(e.target.value)} />
-                                            <Label>Cantidad</Label>
-                                            <Input type="number" defaultValue={amount} onChange={(e) => setAmount(Number(e.target.value) ?? 0)} />
-                                            <Label>Medida</Label>
-                                            <Input type="number" defaultValue={measure} onChange={(e) => setMeasure(Number(e.target.value) ?? 0)} />
-                                            <Label>Unidad</Label>
-                                            <div  className="pb-2">
+            {cuts.length === 0 &&
+                <div>
+                    <div className="flex flex-row justify-between">
+                        <div className="mb-7">
+                            <Popover>
+                                <PopoverTrigger asChild><Button className="mx-2" disabled={loadingCreate}>Agregar Recorte {loadingCreate ? <Loader2Icon className="animate-spin ml-2" size={10} /> : <></>}</Button></PopoverTrigger>
+                                <PopoverContent className="bg-[#f7f7f7]">
+                                    <div>
+                                        <Label>Codigo producto</Label>
+                                        <ComboboxDemo
+                                            hideIcon={true}
+                                            title="Código de producto"
+                                            classNameButton="block"
+                                            placeholder="Seleccione un producto"
+                                            value={selectedProd}
+                                            onSelectionChange={(value) => {
+                                                setSelectedProd(value)
+                                            }}
+                                            options={products.map((product) => ({
+                                                value: product.code,
+                                                label: product.code,
+                                            }))}
+                                        />
+                                        <Label>Lote</Label>
+                                        <Input defaultValue={lote} onChange={(e) => setLote(e.target.value)} />
+                                        <Label>Caja</Label>
+                                        <Input defaultValue={caja} onChange={(e) => setCaja(e.target.value)} />
+                                        <Label>Ubicacion</Label>
+                                        <Input defaultValue={location} onChange={(e) => setLocation(e.target.value)} />
+                                        <Label>Cantidad</Label>
+                                        <Input type="number" defaultValue={amount} onChange={(e) => setAmount(Number(e.target.value) ?? 0)} />
+                                        <Label>Medida</Label>
+                                        <Input type="number" defaultValue={measure} onChange={(e) => setMeasure(Number(e.target.value) ?? 0)} />
+                                        <Label>Unidad</Label>
+                                        <div className="pb-2">
 
-                                            
+
                                             <Select defaultValue={units} onValueChange={(e: string) => setUnits(e)}>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccionar unidad"/>
+                                                    <SelectValue placeholder="Seleccionar unidad" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="mts">Metros</SelectItem>
                                                     <SelectItem value="ctd">Ctd</SelectItem>
                                                 </SelectContent>
                                             </Select>
-                                            </div>
-                                            <Button onClick={handleAddCut}>Agregar</Button>
                                         </div>
-                                    </PopoverContent>
-                                </Popover>
-                                <Popover>
-                                    <PopoverTrigger asChild><Button>Editar Recorte</Button></PopoverTrigger>
-                                    <PopoverContent>
-                                        <div>
-                                            <Label>Codigo producto</Label>
-                                            <ComboboxDemo
-                                                title="Código de producto"
-                                                placeholder="Seleccione un producto"
-                                                value={"Seleccionar producto"}
-                                                onSelectionChange={(value) => {
-                                                    console.log(value)
-                                                }}
-                                                options={products.map((product) => ({
-                                                    value: product.code,
-                                                    label: product.code,
-                                                }))}
-                                            />
-                                            <Label>Recorte</Label>
-                                            <Select >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccionar recorte" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {cuts.map((cut)=>
-                                                    
+                                        <Button onClick={handleAddCut} disabled={loadingCreate}>Agregar {loadingCreate ? <Loader2Icon className="animate-spin ml-2" size={10} /> : <></>}</Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                            <Popover>
+                                <PopoverTrigger asChild><Button disabled={loadingEdit}>Editar Recorte {loadingEdit ? <Loader2Icon className="animate-spin ml-2" size={10} /> : <></>}</Button></PopoverTrigger>
+                                <PopoverContent>
+                                    <div>
+                                        <Label>Codigo producto</Label>
+                                        <ComboboxDemo
+                                            title="Código de producto"
+                                            placeholder="Seleccione un producto"
+                                            value={selectedCut ?? undefined}
+                                            onSelectionChange={(value) => {
+                                                setSelectedCut(value);
+                                            }}
+                                            options={products.map((product) => ({
+                                                value: product.code,
+                                                label: product.code,
+                                            }))}
+                                        />
+                                        <Label>Recorte</Label>
+                                        <Select onValueChange={(e: string) => setSelectedCut(e)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccionar recorte" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {cuts.map((cut) =>
+
                                                     <SelectItem value={cut.id.toString()}>{cut.measure + " - " + cut.amount}</SelectItem>
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            <Label>Medida</Label>
-                                            <Input />
-                                            <Label>Cantidad</Label>
-                                            <Input className="mb-2" />
-                                            <Button onClick={handleEditCut}>Editar Recorte</Button>
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                            <Link href="/mrp/excel-upload">
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <Label>Cantidad</Label>
+                                        <Input type="number" defaultValue={amount} onChange={(e) => setAmount(Number(e.target.value) ?? 0)} />
+                                        <Label>Medida</Label>
+                                        <Input className="mb-2" type="number" defaultValue={measure} onChange={(e) => setMeasure(Number(e.target.value) ?? 0)} />
+                                        <Button onClick={handleEditCut} disabled={loadingEdit}>Editar Recorte {loadingEdit ? <Loader2Icon className="animate-spin ml-2" size={10} /> : <></>}</Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <Link href="/mrp/excel-upload">
                             <Button className="px-3">
                                 Cargar excel
-                                </Button>
-                            </Link>
-                        </div>
-                <h2 className="font-semibold">No hay recortes para mostrar</h2>
-            </div>
+                            </Button>
+                        </Link>
+                    </div>
+                    <h2 className="font-semibold">No hay recortes para mostrar</h2>
+                </div>
             }
             {cuts.length != 0 &&
                 (
@@ -224,7 +216,7 @@ export default function CutsPage({ cuts }: Props) {
                         <div className="flex flex-row justify-between">
                             <div className="mb-7">
                                 <Popover>
-                                    <PopoverTrigger asChild><Button className="mx-2">Agregar Recorte</Button></PopoverTrigger>
+                                    <PopoverTrigger asChild><Button className="mx-2" disabled={loadingCreate}>Agregar Recorte {loadingCreate ? <Loader2Icon className="animate-spin ml-2" size={10} /> : <></>}</Button></PopoverTrigger>
                                     <PopoverContent className="bg-[#f7f7f7]">
                                         <div>
                                             <Label>Codigo producto</Label>
@@ -253,35 +245,34 @@ export default function CutsPage({ cuts }: Props) {
                                             <Label>Medida</Label>
                                             <Input type="number" defaultValue={measure} onChange={(e) => setMeasure(Number(e.target.value) ?? 0)} />
                                             <Label>Unidad</Label>
-                                            <div  className="pb-2">
+                                            <div className="pb-2">
 
-                                            
-                                            <Select defaultValue={units} onValueChange={(e: string) => setUnits(e)}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccionar unidad"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="mts">Metros</SelectItem>
-                                                    <SelectItem value="ctd">Ctd</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+
+                                                <Select defaultValue={units} onValueChange={(e: string) => setUnits(e)}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccionar unidad" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="mts">Metros</SelectItem>
+                                                        <SelectItem value="ctd">Ctd</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
-                                            <Button onClick={handleAddCut}>Agregar</Button>
+                                            <Button onClick={handleAddCut} disabled={loadingCreate}>Agregar {loadingCreate ? <Loader2Icon className="animate-spin ml-2" size={10} /> : <></>}</Button>
                                         </div>
                                     </PopoverContent>
                                 </Popover>
                                 <Popover>
-                                    <PopoverTrigger asChild><Button>Editar Recorte</Button></PopoverTrigger>
+                                    <PopoverTrigger asChild><Button disabled={loadingEdit}>Editar Recorte {loadingEdit ? <Loader2Icon className="animate-spin ml-2" size={10} /> : <></>}</Button></PopoverTrigger>
                                     <PopoverContent>
                                         <div>
                                             <Label>Codigo producto</Label>
                                             <ComboboxDemo
                                                 title="Código de producto"
                                                 placeholder="Seleccione un producto"
-                                                value={"Seleccionar producto"}
+                                                value={selectedProd ?? undefined}
                                                 onSelectionChange={(value) => {
                                                     setSelectedProd(value);
-                                                    console.log(value)
                                                 }}
                                                 options={products.map((product) => ({
                                                     value: product.code,
@@ -289,33 +280,32 @@ export default function CutsPage({ cuts }: Props) {
                                                 }))}
                                             />
                                             <Label>Recorte</Label>
-                                            <Select >
+                                            <Select onValueChange={(e: string) => setSelectedCut(e)}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Seleccionar recorte" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {cuts.filter(x=>x.prodId==selectedProd).map((cut)=>
-                                                    
-                                                    <SelectItem value={cut.id.toString()}>{cut.measure + " - " + cut.amount}</SelectItem>
+                                                    {cuts.filter(x => x.prodId == selectedProd).map((cut) =>
+                                                        <SelectItem value={cut.id.toString()}>{cut.measure + " - " + cut.amount}</SelectItem>
                                                     )}
                                                 </SelectContent>
                                             </Select>
-                                            <Label>Medida</Label>
-                                            <Input />
                                             <Label>Cantidad</Label>
-                                            <Input className="mb-2" />
-                                            <Button onClick={handleEditCut}>Editar Recorte</Button>
+                                            <Input type="number" defaultValue={amount} onChange={(e) => setAmount(Number(e.target.value) ?? 0)} />
+                                            <Label>Medida</Label>
+                                            <Input className="mb-2" type="number" defaultValue={measure} onChange={(e) => setMeasure(Number(e.target.value) ?? 0)} />
+                                            <Button onClick={handleEditCut} disabled={loadingEdit}>Editar Recorte {loadingEdit ? <Loader2Icon className="animate-spin ml-2" size={10} /> : <></>}</Button>
                                         </div>
                                     </PopoverContent>
                                 </Popover>
                             </div>
                             <Link href="/mrp/excel-upload">
-                            <Button className="px-3">
-                                Cargar excel
+                                <Button className="px-3">
+                                    Cargar excel
                                 </Button>
                             </Link>
                         </div>
-                        <ListRowContainer style={{ overflowX: "hidden", gridTemplateColumns: `repeat(${Array.from(cutsLengthSet).length +1}, minmax(0, 1fr))` }} className="z-10 grid">
+                        <ListRowContainer style={{ overflowX: "hidden", gridTemplateColumns: `repeat(${Array.from(cutsLengthSet).length + 1}, minmax(0, 1fr))` }} className="z-10 grid">
                             <div className={cn(headerCellClassName, "flex md:left-0")}>
                                 <p>Codigo Producto</p>
                             </div>
@@ -326,7 +316,7 @@ export default function CutsPage({ cuts }: Props) {
                             ))}
                         </ListRowContainer>
                         {Array.from(cutsMap).map(([prodId, prodMap]) => (
-                            <ListRowContainer key={prodId} style={{ overflowX: "hidden",gridTemplateColumns: `repeat(${Array.from(cutsLengthSet).length +1}, minmax(0, 1fr))`  }} className="z-10 grid">
+                            <ListRowContainer key={prodId} style={{ overflowX: "hidden", gridTemplateColumns: `repeat(${Array.from(cutsLengthSet).length + 1}, minmax(0, 1fr))` }} className="z-10 grid">
                                 <div className={cn(tableCellClassName, "flex md:left-0")}>
                                     <p>{prodId}</p>
                                 </div>
