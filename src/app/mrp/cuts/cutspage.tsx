@@ -55,7 +55,7 @@ export default function CutsPage({ cuts }: Props) {
                     caja: caja,
                     location: location,
                     amount: amount,
-                    measure: measure,
+                    measure: (measure * 1000),
                     units: units as CutUnits,
                     stockPhys: 0,
                     stockTango: 0
@@ -74,7 +74,7 @@ export default function CutsPage({ cuts }: Props) {
                 caja: caja,
                 location: location,
                 amount: amount,
-                measure: measure,
+                measure: (measure * 1000),
                 units: units as CutUnits,
                 stockPhys: 0,
                 stockTango: 0
@@ -88,7 +88,7 @@ export default function CutsPage({ cuts }: Props) {
     cuts.forEach((cut) => prodIdSet.add(cut.prodId))
     //obtengo todos las longitudes de recortes sin repetir 
     const cutsLengthSet = new Set<string>()
-    cuts.forEach((cut) => cutsLengthSet.add(cut.measure.toString()))
+    cuts.forEach((cut) => cutsLengthSet.add((cut.measure/1000).toFixed(2)))
 
 
     // creo un Map con los prodId y la cantidad de recortes por longitud
