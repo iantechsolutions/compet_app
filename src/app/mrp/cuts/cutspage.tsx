@@ -88,7 +88,7 @@ export default function CutsPage({ cuts }: Props) {
     cuts.forEach((cut) => prodIdSet.add(cut.prodId))
     //obtengo todos las longitudes de recortes sin repetir 
     const cutsLengthSet = new Set<string>()
-    cuts.forEach((cut) => cutsLengthSet.add((cut.measure/1000).toFixed(2)))
+    cuts.forEach((cut) => cutsLengthSet.add((cut.measure/1000).toFixed(3)))
 
 
     // creo un Map con los prodId y la cantidad de recortes por longitud
@@ -98,11 +98,11 @@ export default function CutsPage({ cuts }: Props) {
             cutsMap.set(cut.prodId, new Map<string, number>())
         }
         const prodMap = cutsMap.get(cut.prodId)
-        if (prodMap && !(prodMap.has(cut.measure.toString()))) {
-            prodMap.set(cut.measure.toString(), cut.amount)
-        } else if (prodMap && prodMap.has(cut.measure.toString())) {
-            const currentAmount = prodMap.get(cut.measure.toString()) ?? 0;
-            prodMap.set(cut.measure.toString(), currentAmount + cut.amount);
+        if (prodMap && !(prodMap.has((cut.measure/1000).toFixed(3)))) {
+            prodMap.set((cut.measure/1000).toFixed(3), cut.amount)
+        } else if (prodMap && prodMap.has((cut.measure/1000).toFixed(3))) {
+            const currentAmount = prodMap.get((cut.measure/1000).toFixed(3)) ?? 0;
+            prodMap.set((cut.measure/1000).toFixed(3), currentAmount + cut.amount);
         }
     }
 
@@ -321,7 +321,7 @@ export default function CutsPage({ cuts }: Props) {
                             </div>
                             {Array.from(cutsLengthSet).map((cutLength) => (
                                 <div key={cutLength} className={cn(headerCellClassName, "flex md:left-0")}>
-                                    <p>Longitud: {cutLength}</p>
+                                    <p>{cutLength}</p>
                                 </div>
                             ))}
                         </ListRowContainer>
