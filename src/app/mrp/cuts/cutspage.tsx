@@ -261,7 +261,7 @@ export default function CutsPage({ cuts }: Props) {
                                                     <SelectValue placeholder="Seleccionar unidad"/>
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="mt">Metros</SelectItem>
+                                                    <SelectItem value="mts">Metros</SelectItem>
                                                     <SelectItem value="ctd">Ctd</SelectItem>
                                                 </SelectContent>
                                             </Select>

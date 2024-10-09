@@ -13,7 +13,7 @@ const recDocValidator = z.object({
   Ubicación: z.string(),
   Cantidad: stringToValidIntegerZodTransformer,
   Medida: z.number(),
-  Unidad: z.enum(["mt", "ctd"]),
+  Unidad: z.enum(["mts", "ctd"]),
   "Cant de mt./pz": stringToValidIntegerZodTransformer,
   "Stock Fisico":  stringToValidIntegerZodTransformer,
   "Stock Tango":  stringToValidIntegerZodTransformer,
@@ -31,7 +31,7 @@ export const recRowsTransformer = (rows: Record<string, unknown>[]) => {
     Ubicación: string;
     Cantidad: number;
     Medida: number;
-    Unidad: "mt" | "ctd";
+    Unidad: "mts" | "ctd";
     "Cant de mt./pz": number;
       "Stock Fisico": number;
       "Stock Tango": number;
@@ -44,7 +44,7 @@ export const recRowsTransformer = (rows: Record<string, unknown>[]) => {
       Ubicación: string;
       Cantidad: number;
       Medida: number;
-      Unidad: "mt" | "ctd";
+      Unidad: "mts" | "ctd";
       "Cant de mt./pz": number;
       "Stock Fisico": number;
       "Stock Tango": number;
