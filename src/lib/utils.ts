@@ -116,7 +116,6 @@ export function isSemiElaborate(prod: Awaited<ReturnType<typeof queryBaseMRPData
   let supply = null;
 
   if (prod?.additional_description.trim().endsWith("mm") && prod?.supplies && prod?.supplies.length == 1) {
-    console.log(prod);
     supply = prod.supplies[0]!;
     long = (supply?.quantity ?? 0) * 1000;
     return {
