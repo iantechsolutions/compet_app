@@ -71,6 +71,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     TotalSales: number;
     MedianSales: number | undefined;
   }>();
+  const [cuts, setCuts] = useState<Map<string, number>>();
   const [totalConsumedAmount, setTotalConsumedAmount] = useState<number>();
   const [totalMotiveConsumption, setTotalMotiveConsumption] = useState<Map<string, number>>();
   const [hasRun, setHasRun] = useState<boolean>(false);
@@ -109,12 +110,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      const tempCuts = getCuts(productCode,fromDate ?? new Date("2023-09-04"),toDate ?? new Date("2024-09-04"));
       setConsumption(consumptionStats);
       setTotalConsumedAmount(totalTemp);
       setTotalMotiveConsumption(totalMotiveTemp);
       setSalesAndBudgets(tempSales);
       setSoldProportions(tempSoldProportions);
       setGeneralStatistics(tempGeneral);
+      setCuts(tempCuts);
       setHasRun(true);
       setIsLoading(false);
     }
@@ -172,6 +175,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           productCode,
         );
         setGeneralStatistics(tempStatistics);
+        setCuts(getCuts(productCode,fromDate,toDate));
         setIsLoading(false);
       } catch (e) {
         setIsLoading(false);
@@ -211,7 +215,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
     events = events.filter(
-      (event) => new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type!="import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
@@ -403,7 +407,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     let events = data?.eventsByProductCode.get(productCode) ?? [];
     events = events.filter(
-      (event) => new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type!="import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
     events.forEach((event) => {
       // event.quantity
@@ -443,6 +447,35 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       MedianSales: orderedQuantities.length > 0 ? median : 0,
     };
   }
+  function getCuts(productCode: string,fromDate: Date,toDate: Date){
+    const prod = data?.products.find((p) => p.code === productCode);
+    const possibleSuppliesOf = prod?.suppliesOf.map(x=>x.product_code);
+    const mapeoConsumo = new Map<string,number>();
+    possibleSuppliesOf?.map((supplyOfCode)=>{
+      const semielaborate = data?.products.find((p) => p.code === supplyOfCode);
+      const longitudSemi = isSemiElaborate(semielaborate)
+      // const longNecesaria = supply.quantity;
+      if (longitudSemi){
+        const clave = longitudSemi+" mm";
+        let events = data?.eventsByProductCode.get(productCode) ?? [];
+        events = events.filter(
+          (event) => event.type!="import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+        );
+        events.forEach((event)=>{
+          mapeoConsumo.set(clave,(event.quantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
+        })
+      }
+    }
+    )
+    return mapeoConsumo;
+  }
+  //que devuelva longitud de corte
+  function isSemiElaborate(prod: any){
+    return false;
+  }
+
+
+
   const [showMore, setShowMore] = useState(false);
 
   const toggleShowMore = () => {
