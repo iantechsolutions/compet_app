@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import { parse, stringify } from "flatted";
 import { nanoid } from "nanoid";
 import { twMerge } from "tailwind-merge";
+import { MRPData, MRPProduct } from "~/mrp_data/transform_mrp_data";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -103,4 +104,25 @@ export function decodeData<T>(data: string) {
 
     return value;
   });
+}
+
+//que devuelva longitud de corte
+export function isSemiElaborate(prod: MRPProduct | undefined): {
+  long: number,
+  supply: MRPData["products"][number]["supplies"][0]
+} | null {
+  let long = null;
+  let supply = null;
+
+  if (prod?.additional_description.trim().endsWith("mm") && prod?.supplies && prod?.supplies.length == 1) {
+    console.log(prod);
+    supply = prod.supplies[0]!;
+    long = (supply?.quantity ?? 0) * 1000;
+    return {
+      long,
+      supply
+    };
+  }
+
+  return null;
 }

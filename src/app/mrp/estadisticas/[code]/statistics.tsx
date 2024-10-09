@@ -23,7 +23,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { CrmBudget } from "~/lib/types";
-import { formatStock } from "~/lib/utils";
+import { formatStock, isSemiElaborate } from "~/lib/utils";
 import { SelectCRMClients } from "../../forecast/select-crm-clients";
 import { string } from "zod";
 import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
@@ -110,7 +110,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
-      const tempCuts = getCuts(productCode,fromDate ?? new Date("2023-09-04"),toDate ?? new Date("2024-09-04"));
+      const tempCuts = getCuts(productCode, fromDate ?? new Date("2023-09-04"), toDate ?? new Date("2024-09-04"));
       setConsumption(consumptionStats);
       setTotalConsumedAmount(totalTemp);
       setTotalMotiveConsumption(totalMotiveTemp);
@@ -175,7 +175,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           productCode,
         );
         setGeneralStatistics(tempStatistics);
-        setCuts(getCuts(productCode,fromDate,toDate));
+        setCuts(getCuts(productCode, fromDate, toDate));
         setIsLoading(false);
       } catch (e) {
         setIsLoading(false);
@@ -215,7 +215,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
     events = events.filter(
-      (event) => event.type!="import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
@@ -407,7 +407,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     let events = data?.eventsByProductCode.get(productCode) ?? [];
     events = events.filter(
-      (event) => event.type!="import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
     events.forEach((event) => {
       // event.quantity
@@ -447,45 +447,30 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       MedianSales: orderedQuantities.length > 0 ? median : 0,
     };
   }
-  function getCuts(productCode: string,fromDate: Date,toDate: Date){
+  function getCuts(productCode: string, fromDate: Date, toDate: Date) {
     const prod = data?.products.find((p) => p.code === productCode);
     console.log("prod");
     console.log(prod);
-    const possibleSuppliesOf = prod?.suppliesOf.map(x=>x.product_code);
-    const mapeoConsumo = new Map<string,number>();
-    possibleSuppliesOf?.map((supplyOfCode)=>{
+    const possibleSuppliesOf = prod?.suppliesOf.map(x => x.product_code);
+    const mapeoConsumo = new Map<string, number>();
+    possibleSuppliesOf?.map((supplyOfCode) => {
       const semielaborate = data?.products.find((p) => p.code === supplyOfCode);
-      const longitudSemi = isSemiElaborate(semielaborate)
+      const longitudSemi = isSemiElaborate(semielaborate);
       // const longNecesaria = supply.quantity;
-      if (longitudSemi){
-        const clave = longitudSemi+" mm";
+      if (longitudSemi !== null) {
+        const clave = longitudSemi.long + " mm";
         let events = data?.eventsByProductCode.get(productCode) ?? [];
         events = events.filter(
-          (event) => event.type!="import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+          (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
         );
-        events.forEach((event)=>{
-          mapeoConsumo.set(clave,(event.quantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
+        events.forEach((event) => {
+          mapeoConsumo.set(clave, (event.quantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
         })
       }
     }
     )
     return mapeoConsumo;
   }
-  //que devuelva longitud de corte
-  function isSemiElaborate(prod: MRPProduct | undefined){
-    let long = null;
-    let supply = null;
-    if (prod?.additional_description.trim().endsWith("mm") && prod?.supplies && prod?.supplies.length == 1){
-      console.log(prod);
-      supply = prod.supplies[0];
-      long = (supply?.quantity ?? 0) * 1000;
-      
-    }
-    
-    return [long,supply];
-  }
-
-
 
   const [showMore, setShowMore] = useState(false);
 
@@ -653,34 +638,34 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                 </Tooltip>
 
                 <Tooltip>
-                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                        <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
-                        <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Mínimas unidades vendidas por pedido.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mínimas unidades vendidas por pedido.</p>
+                  </TooltipContent>
+                </Tooltip>
 
-                    <Tooltip>
-                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                        <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
-                        <p className="text-sm font-medium text-black mt-2">UPP</p>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Unidades promedio por pedido.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">UPP</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Unidades promedio por pedido.</p>
+                  </TooltipContent>
+                </Tooltip>
 
-                    <Tooltip>
-                      <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                        <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
-                        <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Mediana de unidades por venta.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                    <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mediana de unidades por venta.</p>
+                  </TooltipContent>
+                </Tooltip>
 
                 {/* {showMore && (
                   <>
