@@ -51,11 +51,11 @@ export default function StackedAreaChart({ data }: GraphicProps) {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height="100%" aspect={2}>
+    <ResponsiveContainer width="48%" height="48%" aspect={2}>
       <>
         <LineChart
-          width={1077}
-          height={400}
+           width={500}
+           height={400}
           data={transformedData}
           margin={{
             top: 5,
