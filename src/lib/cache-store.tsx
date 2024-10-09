@@ -14,7 +14,6 @@ export async function saveToCache<T>(key: string, value: T) {
 
 export async function readFromCache<T>(key: string) {
   try{
-  console.log("AAAAAAAAA");
   const cache = await getCache();
 
   const response = await cache.match("/" + key);
