@@ -1,7 +1,34 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 // import { configDotenv } from "dotenv";
 import { z } from "zod";
-import { stringAsBoolean } from "./lib/utils";
+
+export const stringAsBoolean = z
+  .union([z.string(), z.boolean()])
+  .nullable()
+  .optional()
+  .transform((value) => {
+    if (
+      (typeof value === "string" && value.toLowerCase() === "verdadero") ||
+      (typeof value === "string" && value.toLowerCase() === "si")
+    ) {
+      return true;
+    }
+    if (
+      (typeof value === "string" && value.toLowerCase() === "falso") ||
+      (typeof value === "string" && value.toLowerCase() === "no")
+    ) {
+      return false;
+    }
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (!value || value == "") {
+      return false;
+    }
+  })
+  .refine((value) => typeof value === "boolean", {
+    message: "Caracteres incorrectos en columna:",
+  });
 
 if (!process.env.NODE_ENV) {
   // configDotenv()
