@@ -270,25 +270,24 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       motive: string;
       amount: number;
     }[] = [];
-    const sales = data?.orders.filter(
+    const sales = data?.sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.order_date)) &&
-        new Date(String(order.order_date)) >= fromDate &&
-        new Date(String(order.order_date)) <= toDate,
+        new Date(String(order.emission_date)) >= fromDate &&
+        new Date(String(order.emission_date)) <= new Date(String(toDate)),
     );
     sales.forEach((sale) => {
-      const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+      const order_products = sale.products;
       const product = order_products?.find((order_product) => order_product.product_code === productCode);
       if (product) {
         salesList.push({
-          date: new Date(String(sale.order_date)).toISOString().slice(0, 10),
+          date: new Date(String(sale.emission_date)).toISOString().slice(0, 10),
           motive: "Venta Directa",
-          amount: product.ordered_quantity,
+          amount: product.CANTIDAD,
         });
         const currentMotiveAmount = totalMotiveConsumption.get("Venta Directa") ?? 0;
-        totalMotiveConsumption.set("Venta Directa", currentMotiveAmount + product.ordered_quantity);
-        totalConsumedAmount += product.ordered_quantity;
+        totalMotiveConsumption.set("Venta Directa", currentMotiveAmount + product.CANTIDAD);
+        totalConsumedAmount += product.CANTIDAD;
       }
     });
 
@@ -320,16 +319,16 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         new Date(String(budget.date)) >= fromDateCopy &&
         budget.products.filter((product) => product.product_code === productCode).length > 0,
     );
-    const sales = data?.orders.filter((order) => !clientExemptionList?.includes(order.client_code));
+    const sales = data?.sold.filter((order) => !clientExemptionList?.includes(order.client_code));
     const salesList = [];
     const budgetsList = [];
     while (fromDateCopy.getTime() <= toDate.getTime()) {
       const day = fromDateCopy.toISOString().slice(0, 10);
       const salesOnDay = sales?.filter(
         (sale) =>
-          new Date(String(sale?.order_date)) instanceof Date &&
-          !isNaN(new Date(String(sale.order_date)).getTime()) &&
-          new Date(String(sale.order_date)).toISOString().slice(0, 10) === day,
+          new Date(String(sale?.emission_date)) instanceof Date &&
+          !isNaN(new Date(String(sale.emission_date)).getTime()) &&
+          new Date(String(sale.emission_date)).toISOString().slice(0, 10) === day,
       );
       const budgetsOnDay = budgets?.filter(
         (budget) =>
@@ -339,10 +338,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       );
       let totalSales = 0;
       salesOnDay?.forEach((sale) => {
-        const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+        const order_products = sale.products;
         if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
           const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
-          totalSales += order_product?.ordered_quantity ?? 0;
+          totalSales += order_product?.CANTIDAD ?? 0;
         }
       });
       if (totalSales > 0) {
@@ -372,23 +371,23 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.orders.filter(
+    const sales = data?.sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.order_date)) &&
-        new Date(String(order.order_date)) >= fromDate &&
-        new Date(String(order.order_date)) <= toDate,
+        new Date(String(order.emission_date)) >= fromDate &&
+        new Date(String(order.emission_date)) <= new Date(String(toDate)),
     );
 
     const clientInformation = new Map<string, [number, number]>();
     sales?.forEach((sale) => {
-      const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+      const order_products = sale.products;
       if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
         const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
         const [totalSales, amountOfSalse] = clientInformation.get(sale.client_code) ?? [0, 0];
-        clientInformation.set(sale.client_code, [totalSales + (order_product?.ordered_quantity ?? 0), amountOfSalse + 1]);
+        clientInformation.set(sale.client_code, [totalSales + (order_product?.CANTIDAD ?? 0), amountOfSalse + 1]);
       }
     });
+
     const clientList = Array.from(clientInformation.entries()).map(([key, value]) => {
       const [totalSales, amountOfSales] = value;
 
@@ -409,34 +408,38 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.orders.filter(
+    const sales = data?.sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.order_date)) >= fromDate &&
-        new Date(String(order.order_date)) <= new Date(String(toDate)),
+        new Date(String(order.emission_date)) >= fromDate &&
+        new Date(String(order.emission_date)) <= new Date(String(toDate)),
     );
+
     const validOrderProducts: {
-      id: number;
-      order_number: string;
+      sale?: (typeof sales)[0];
       product_code: string;
       ordered_quantity: number;
     }[] = [];
+
     sales?.forEach((sale) => {
-      const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+      const order_products = sale.products;
       if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
         const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
         if (order_product) {
-          validOrderProducts.push(order_product);
+          validOrderProducts.push({
+            product_code: order_product.product_code,
+            sale: sale,
+            ordered_quantity: order_product.CANTIDAD,
+          });
         }
       }
     });
-
-
 
     let events = eventsByProductCode.get(productCode) ?? [];
     events = events.filter(
       (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
+
     events.forEach((event) => {
       // event.quantity
       if (event.assemblyId) {
@@ -449,8 +452,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           day = new Date(String(event.date)).toISOString().slice(0, 10);
         }
         validOrderProducts.push({
-          id: 0,
-          order_number: "",
           product_code: productCode,
           ordered_quantity: totalConsumptionOnEvent,
         });
