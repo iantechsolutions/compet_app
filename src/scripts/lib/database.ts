@@ -120,6 +120,21 @@ export class Database {
         });
     }
 
+    public async getProductByCode(code: string): Promise<typeof productSchema["_output"]> {
+        const rows = await this.assertConnected()
+            .request()
+            .input('code', sql.VarChar, code)
+            .query(`SELECT
+                COD_ARTICU as code,
+                DESCRIPCIO as description,
+                DESC_ADIC as additional_description
+                FROM STA11
+                WHERE COD_ARTICU = @code`);
+
+        const records = rows.recordset.map(k => Database.trimAllProperties(k as Record<string, unknown>));
+        return productSchema.parse(records);
+    }
+
     public async getCommitedStock(): Promise<typeof productStockCommitedSchema["_output"][]> {
         return await cachedAsyncFetch('db-getCommitedStock', 30000, async () => {
             return await this.fetchTableWithQuery(

@@ -1,10 +1,20 @@
 import { getDbInstance } from "~/scripts/lib/instance";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { z } from "zod";
 
 export const dbRouter = createTRPCRouter({
   getProducts: protectedProcedure.query(async () => {
     return await (await getDbInstance()).getProducts();
   }),
+  getProductByCode: protectedProcedure
+    .input(
+      z.object({
+        code: z.string().min(1).max(255),
+      }),
+    )
+    .query(async ({ input }) => {
+      return await (await getDbInstance()).getProductByCode(input.code);
+    }),
   getCommitedStock: protectedProcedure.query(async () => {
     return await (await getDbInstance()).getCommitedStock();
   }),
