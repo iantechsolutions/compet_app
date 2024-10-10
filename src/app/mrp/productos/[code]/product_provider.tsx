@@ -1,10 +1,10 @@
 "use client";
 import { createContext, useContext } from "react";
-import { MRPProduct } from "~/mrp_data/transform_mrp_data";
+import type { RouterOutputs } from "~/trpc/shared";
 
-const productContext = createContext<MRPProduct | null>(null);
+const productContext = createContext<RouterOutputs['db']['getProductByCode'] | null>(null);
 
-export function ProductProvider(props: { children: React.ReactNode; product: MRPProduct }) {
+export function ProductProvider(props: { children: React.ReactNode; product: RouterOutputs['db']['getProductByCode'] }) {
   return <productContext.Provider value={props.product}>{props.children}</productContext.Provider>;
 }
 

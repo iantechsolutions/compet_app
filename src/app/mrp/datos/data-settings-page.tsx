@@ -1,23 +1,18 @@
 "use client";
-import { getUserSetting, setUserSetting } from "~/lib/settings";
 import dayjs from "dayjs";
-import { Loader2Icon} from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import DataUploadingCard from "~/components/data-uploading-card";
-import { useMRPData, useMRPInvalidateAndReloadData } from "~/components/mrp-data-provider";
 import type { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
 import { Button } from "~/components/ui/button";
-import { Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle } from "~/components/ui/card";
+import {
+  Card,
+} from "~/components/ui/card";
 import { useGlobalState, useOnMounted } from "~/lib/hooks";
 import { nullProfile } from "~/lib/nullForecastProfile";
 import { cn } from "~/lib/utils";
@@ -39,11 +34,21 @@ export default function DataSettingsPage(props: {
   mails: string[] | null;
 }) {
   const date = dayjs(props.dataInfo.exportDate);
-  const data = useMRPData();
-  const invalidateAndReloadData = useMRPInvalidateAndReloadData();
+  const { data, isLoading } = api.db.getForecastProfile.useQuery();
   const forecastProfile = props.forecastProfile ?? nullProfile;
+  const router = useRouter();
 
-  const dataMismatch = data.forecastData?.forecastProfile.id != forecastProfile.id || data.dataExportUrl != props.dataInfo.exportURL;
+  if (isLoading || !data) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+        <Button variant="secondary" disabled>
+          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
+        </Button>
+      </div>
+    );
+  }
+
+  const dataMismatch = data.id != forecastProfile.id;
 
   return (
     <AppLayout title={<h1>Config. de datos</h1>} user={props.user} sidenav={<AppSidenav />}>
@@ -66,40 +71,40 @@ export default function DataSettingsPage(props: {
         <Title className="text-base font-semibold tracking-tight uppercase mt-5 text-black">Mostrando actualmente</Title>
         <section className="flex flex-row flex-auto  gap-8 justify-between mx-8">
           <DataCardSection title={"Archivo de datos"} className="w-60">
-            <Link href={data.dataExportUrl} className="font-semibold text-[#5da4f5] underline-none" target="_blank">
+            <Link href={props.dataInfo.exportURL} className="font-semibold text-[#5da4f5] underline-none" target="_blank">
               Link aquí
             </Link>
           </DataCardSection>
           <DataCardSection title={"Perfil de forecast"} className="w-40">
-            <p><b>{data.forecastData!.forecastProfile.name} (id: {data.forecastData!.forecastProfile.id ?? 0})</b></p>
+            <p><b>{data.name} (id: {data.id ?? 0})</b></p>
           </DataCardSection>
           <DataCardSection title={"Última exportación de datos"} className="w-52">
-            <p><b>{dayjs(data.dataExportDate).format("DD/MM/YYYY")}</b>
-            {` `}a las{` `}
-            <b>{dayjs(data.dataExportDate).format("HH:mm:ss")}</b></p>
+            <p><b>{dayjs(props.dataInfo.exportDate).format("DD/MM/YYYY")}</b>
+              {` `}a las{` `}
+              <b>{dayjs(props.dataInfo.exportDate).format("HH:mm:ss")}</b></p>
           </DataCardSection>
         </section>
         {dataMismatch && (
           <div className="flex mt-8 justify-center">
-          <p className="font-semibold text-red-500 opacity-60">Los datos mostrados no coinciden con los datos exportados. Recargue los datos.</p>
-        </div>)}
-      {!dataMismatch && (
-        <div className="flex mt-8 justify-center">
-          <p className="font-semibold text-green-500 opacity-60">Datos sincronizados correctamente.</p>
-        </div>)}
+            <p className="font-semibold text-red-500 opacity-60">Los datos mostrados no coinciden con los datos exportados. Recargue los datos.</p>
+          </div>)}
+        {!dataMismatch && (
+          <div className="flex mt-8 justify-center">
+            <p className="font-semibold text-green-500 opacity-60">Datos sincronizados correctamente.</p>
+          </div>)}
         <Button
-        className=" mx-auto px-8 font-semibold mt-6"
-        onClick={() => invalidateAndReloadData()}
-        variant={dataMismatch ? "default" : "secondary"}>
-        Recargar datos
-      </Button>
+          className=" mx-auto px-8 font-semibold mt-6"
+          onClick={() => router.refresh()}
+          variant={dataMismatch ? "default" : "secondary"}>
+          Recargar datos
+        </Button>
       </DataCard>
-            
-      <DataCard icon={<Database02Icon/>} title={"Base de datos de tango"}>
+
+      <DataCard icon={<Database02Icon />} title={"Base de datos de tango"}>
         <RemoteUpdateComponent />
       </DataCard>
 
-      <DataCard icon={<Database02Icon/>} title={"Configuración de stock crítico"}>
+      <DataCard icon={<Database02Icon />} title={"Configuración de stock crítico"}>
         <MailSendingConfiguration id={props.user?.id ?? ""} />
       </DataCard>
     </AppLayout>
@@ -126,8 +131,6 @@ function RemoteUpdateComponent() {
     progressRef.current = value;
     _setRemoteUpdateProgress(value);
   };
-
-  const invalidateAndReloadData = useMRPInvalidateAndReloadData();
 
   const timerRef = useRef<any>(0);
 
@@ -215,7 +218,6 @@ function RemoteUpdateComponent() {
       room.on("message", async (message) => {
         const data = JSON.parse(message.data) as RemoteUpdateProgress;
         if (data.finished) {
-          invalidateAndReloadData();
           router.refresh();
           setTimeout(() => {
             setRemoteUpdateProgress(null);
@@ -344,69 +346,69 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
     <section className="relative w-full pb-14 mb-0">
       <div className="flex flex-col flex-auto max-w-[600px]">
 
-      <>
-        <div className="mb-3">
-          <div className="flex justify-start">
-            <p className="py-2">Cantidad de meses primera revision</p>
-            {/* <CustomHover hoverText="?" hoverContent='' /> */}
-            <CustomHover
-               hoverContent={"Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)"}
-               />
-          </div>
-          <Input
-            disabled={isLoading || isMailConfigLoading}
-            id="name"
-            name="name"
-            type="number"
-            value={firstCheck}
-            onChange={(e) => setFirstCheck(Number(e.target.value))}
-            placeholder="2"
-            required
-            />
-        </div>
-        <div className="mb-3">
-          <div className="flex justify-start">
-            <p className="py-2">Cantidad de meses segunda revision</p>
-            <CustomHover
-               hoverContent={"Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)"}
+        <>
+          <div className="mb-3">
+            <div className="flex justify-start">
+              <p className="py-2">Cantidad de meses primera revision</p>
+              {/* <CustomHover hoverText="?" hoverContent='' /> */}
+              <CustomHover
+                hoverContent={"Cantidad de meses a futuro en los que buscar stock critico (incluyendo mes actual)"}
+              />
+            </div>
+            <Input
+              disabled={isLoading || isMailConfigLoading}
+              id="name"
+              name="name"
+              type="number"
+              value={firstCheck}
+              onChange={(e) => setFirstCheck(Number(e.target.value))}
+              placeholder="2"
+              required
             />
           </div>
-          <Input
-            disabled={isLoading || isMailConfigLoading}
-            id="name"
-            name="name"
-            value={secondCheck}
-            type="number"
-            onChange={(e) => setSecondCheck(Number(e.target.value))}
-            placeholder="12"
-            required
-            />
-        </div>
-        <div className="mb-3">
-          <div className="flex justify-start">
-            <p className="py-2">Cantidad de meses para regularización del stock</p>
-            <CustomHover
-              hoverContent={<p>No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses.
-                <br/>
-                Ej: Si un insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1.</p>}
+          <div className="mb-3">
+            <div className="flex justify-start">
+              <p className="py-2">Cantidad de meses segunda revision</p>
+              <CustomHover
+                hoverContent={"Cantidad de meses a futuro en los que buscar la regularizacion del stock critico (incluyendo mes actual)"}
+              />
+            </div>
+            <Input
+              disabled={isLoading || isMailConfigLoading}
+              id="name"
+              name="name"
+              value={secondCheck}
+              type="number"
+              onChange={(e) => setSecondCheck(Number(e.target.value))}
+              placeholder="12"
+              required
             />
           </div>
-          <Input
-            disabled={isLoading || isMailConfigLoading}
-            id="name"
-            name="name"
-            value={belowNMonths}
-            type="number"
-            onChange={(e) => setBelowNMonths(Number(e.target.value))}
-            placeholder="0"
-            required
+          <div className="mb-3">
+            <div className="flex justify-start">
+              <p className="py-2">Cantidad de meses para regularización del stock</p>
+              <CustomHover
+                hoverContent={<p>No se notificara el insumo, en caso de que el stock se regularize antes de pasadas esta cantidad de meses.
+                  <br />
+                  Ej: Si un insumo se queda en menos de 0 en Enero, no se notificaria si este numero es mayor a 1.</p>}
+              />
+            </div>
+            <Input
+              disabled={isLoading || isMailConfigLoading}
+              id="name"
+              name="name"
+              value={belowNMonths}
+              type="number"
+              onChange={(e) => setBelowNMonths(Number(e.target.value))}
+              placeholder="0"
+              required
             />
-        </div>
-      </>
-      <Title className="flex text-base font-semibold tracking-tight uppercase mt-12 text-black gap-3">
-      <MailAtSign01Icon/>
-        Mails a los que notificar en caso de stock critico</Title>
-      {/* <Button 
+          </div>
+        </>
+        <Title className="flex text-base font-semibold tracking-tight uppercase mt-12 text-black gap-3">
+          <MailAtSign01Icon />
+          Mails a los que notificar en caso de stock critico</Title>
+        {/* <Button 
             className='mb-5'
             onClick={() => {
               setMails([...mailsList, '']);
@@ -415,55 +417,55 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
               }>
               Agregar mail
               </Button> */}
-      <br />
-      {mailsList &&
-        mailsList.map((mail, index) => (
-          <div key={index} className="mb-4 flex items-center gap-3 p-4">
-            <div>
-              <Input
-                id="name"
-                name="name"
-                value={mailsList[index]}
-                onChange={(e) => handleEmailChange(e.target.value, index)}
-                placeholder="xxx@xxx.com"
-                required
+        <br />
+        {mailsList &&
+          mailsList.map((mail, index) => (
+            <div key={index} className="mb-4 flex items-center gap-3 p-4">
+              <div>
+                <Input
+                  id="name"
+                  name="name"
+                  value={mailsList[index]}
+                  onChange={(e) => handleEmailChange(e.target.value, index)}
+                  placeholder="xxx@xxx.com"
+                  required
                 />
-            </div>
-            <Button
-              disabled={isLoading || isMailConfigLoading || sendingMails}
-              onClick={() => {
-                insertMailAtIndex(index);
-              }}
-              variant="question"
-              >
-              <AddCircleIcon className="h-6 w-6" />
-            </Button>
-            {!(mailsList.length === 1 || isLoading || isMailConfigLoading || sendingMails) && (
+              </div>
               <Button
-              onClick={() => {
-                const newMails = [...mailsList];
-                newMails.splice(index, 1);
-                setMails(newMails);
-              }}
-              variant="question"
+                disabled={isLoading || isMailConfigLoading || sendingMails}
+                onClick={() => {
+                  insertMailAtIndex(index);
+                }}
+                variant="question"
               >
-                <CancelCircleIcon className="h-6 w-6" />
+                <AddCircleIcon className="h-6 w-6" />
               </Button>
-            )}
-          </div>
-        ))}
-      <div className="mb-2 absolute bottom-0 w-full flex justify-center gap-3 p-4 ">
-        <Button
-        className="flex px-6"
-        onClick={() => {
-          handleMailListSave(mailsList);
-        }}
-          disabled={isLoading || isMailConfigLoading || sendingMails}
-        >
-          {isLoading && <Loader2Icon className="mr-2 animate-spin" />}
-          Guardar configuracion
-        </Button>
-        {/* <Button
+              {!(mailsList.length === 1 || isLoading || isMailConfigLoading || sendingMails) && (
+                <Button
+                  onClick={() => {
+                    const newMails = [...mailsList];
+                    newMails.splice(index, 1);
+                    setMails(newMails);
+                  }}
+                  variant="question"
+                >
+                  <CancelCircleIcon className="h-6 w-6" />
+                </Button>
+              )}
+            </div>
+          ))}
+        <div className="mb-2 absolute bottom-0 w-full flex justify-center gap-3 p-4 ">
+          <Button
+            className="flex px-6"
+            onClick={() => {
+              handleMailListSave(mailsList);
+            }}
+            disabled={isLoading || isMailConfigLoading || sendingMails}
+          >
+            {isLoading && <Loader2Icon className="mr-2 animate-spin" />}
+            Guardar configuracion
+          </Button>
+          {/* <Button
           onClick={() => {
             handleMailTest(mailsList);
             }}
@@ -472,7 +474,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
             {sendingMails && <Loader2Icon className="mr-2 animate-spin" />}
             Enviar mails
             </Button> */}
-      </div>
+        </div>
       </div>
     </section>
   );

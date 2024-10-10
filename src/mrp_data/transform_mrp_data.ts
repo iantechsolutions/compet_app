@@ -8,6 +8,7 @@ import type { ForecastData } from "~/mrp_data/query_mrp_forecast_data";
 export type { RawMRPData, ForecastData };
 import dayjs from "dayjs";
 import type { RawMRPData } from "~/mrp_data/query_mrp_data";
+import { Client, Import, Order, OrderProduct, Product, ProductAssembly, ProductImport, Provider } from "~/lib/types";
 
 export type ProductEventType = "import" | "order" | "supply" | "forecast";
 
@@ -251,7 +252,7 @@ export function listAllEvents(data: MappedData) {
 // Esto sucita cuando se agotan los productos que son armados y se tienen que crear nuevos armados,
 // en estos casos se asocia al pedido la materia prima necesaria para armar el producto
 export function listAllEventsWithSupplyEvents(data: MappedData) {
-  let events = [...listAllEvents(data)];
+  let events: ProductEvent[] = [...listAllEvents(data)];
 
   const stockOfProductTmp = new Map<string, number>();
 
@@ -404,7 +405,7 @@ export function stockOfProductByMonth(initialStock: number, productEvents: Produ
   return stockByMonth;
 }
 
-function eventsOfProductByMonth(productEvents: ProductEvent[], months: string[]) {
+export function eventsOfProductByMonth(productEvents: ProductEvent[], months: string[]) {
   const eventsByMonth = new Map<string, ProductEvent[]>();
 
   for (const event of productEvents) {
@@ -423,7 +424,7 @@ function eventsOfProductByMonth(productEvents: ProductEvent[], months: string[])
 }
 
 // Generamos mapas para acceder a los datos de forma más eficiente
-export function mapData(rawData: RawMRPData, forecastData?: ForecastData) {
+export function mapData(rawData: RawMRPData, forecastData?: ForecastData): MappedData {
   // Productos y provedores por código
   const productsByCode = new Map(rawData.products.map((product) => [product.code, product]));
   const providersByCode = new Map(rawData.providers.map((provider) => [provider.code, provider]));
@@ -463,10 +464,9 @@ export function mapData(rawData: RawMRPData, forecastData?: ForecastData) {
   rawData.orderProducts.forEach((order) => {
     orderProductsByProductCode.set(order.product_code, [...(orderProductsByProductCode.get(order.product_code) ?? []), order]);
   });
+
   const orderProductsById = new Map(rawData.orderProducts.map((order) => [order.id, order]));
-
   const clientsByCode = new Map(rawData.clients.map((client) => [client.code, client]));
-
   const assemblyById = new Map(rawData.assemblies.map((assembly) => [assembly.id, assembly]));
 
   return {
@@ -491,4 +491,17 @@ export function mapData(rawData: RawMRPData, forecastData?: ForecastData) {
   };
 }
 
-type MappedData = ReturnType<typeof mapData>;
+export type MappedData = RawMRPData & {
+  forecastData?: ForecastData;
+  productsByCode: Map<string, RawMRPData["products"][0]>;
+  providersByCode: Map<string, Provider>;
+  importsById: Map<string, Import>;
+  productImportsById: Map<number, ProductImport>;
+  productImportsByProductCode: Map<string, ProductImport>;
+  ordersByOrderNumber: Map<string, Order>;
+  orderProductsByOrderNumber: Map<String, OrderProduct[]>;
+  orderProductsByProductCode: Map<String, OrderProduct[]>;
+  orderProductsById: Map<number, OrderProduct>;
+  clientsByCode: Map<string, Client>;
+  assemblyById: Map<number, ProductAssembly>;
+};

@@ -7,8 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~
 import { cn, formatStock } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { ProductEventRow } from "./event_row";
+import type { RouterOutputs } from "~/trpc/shared";
 
-export function ForecastSupplyEventsRow(props: { events: ProductEvent[]; month: string }) {
+export function ForecastSupplyEventsRow(props: { events: ProductEvent[]; month: string; monolito: RouterOutputs['db']['getMonolito']; }) {
   const openId = useId();
 
   const sum = props.events.reduce((acc, event) => acc + event.quantity, 0);
@@ -75,7 +76,7 @@ export function ForecastSupplyEventsRow(props: { events: ProductEvent[]; month: 
               </TableHeader>
               <TableBody>
                 {props.events.map((event, index) => {
-                  return <ProductEventRow key={index} event={event} productCode={event.productCode} nobg nodate nostate />;
+                  return <ProductEventRow monolito={props.monolito} key={index} event={event} productCode={event.productCode} nobg nodate nostate />;
                 })}
               </TableBody>
             </Table>

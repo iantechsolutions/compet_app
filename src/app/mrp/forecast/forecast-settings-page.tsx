@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import DataUploadingCard from "~/components/data-uploading-card";
-import { useMRPData, useMRPDataIsUpdating, useMRPInvalidateAndReloadData } from "~/components/mrp-data-provider";
 import type { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
 import { Button } from "~/components/ui/button";
@@ -12,21 +11,16 @@ import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/shared";
 import ForecastDialogForm from "./forecast-dialog-form";
 import ForecastProfileCard from "./forecast-profile-card";
+import type { ForecastProfile } from "~/mrp_data/transform_mrp_data";
 
 export default function ForecastSettingsPage(props: { user?: NavUserData; forecastProfiles: RouterOutputs["forecast"]["listProfiles"] }) {
   const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isApplyingProfile } = api.forecast.applyProfile.useMutation();
   const { mutateAsync: applyNullProfile, isLoading: isApplyingNullProfile } = api.forecast.applyNullProfile.useMutation();
+  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
 
   const isApplying = isApplyingProfile || isApplyingNullProfile;
-
   const router = useRouter();
-
-  const data = useMRPData();
-
-  const invalidateAndReloadData = useMRPInvalidateAndReloadData();
-
-  const isUpdating = useMRPDataIsUpdating();
 
   async function handleDeleteProfile(id: number) {
     if (confirm("¿Estás seguro de que quieres eliminar este perfil?")) {
@@ -42,7 +36,6 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
         console.log("Applied profile!", id);
       })
       .finally(() => {
-        invalidateAndReloadData();
         router.refresh();
       });
   }
@@ -53,13 +46,23 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
         console.log("Applied null profile!");
       })
       .finally(() => {
-        invalidateAndReloadData();
         router.refresh();
       });
   }
 
-  let appliedProfile = data.forecastData?.forecastProfile;
-  if (!appliedProfile?.id) appliedProfile = undefined;
+  if (isLoadingData || !monolito) {
+    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+      <Button variant="secondary" disabled>
+        <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
+      </Button>
+    </div>;
+  }
+
+  let appliedProfile: ForecastProfile | undefined = monolito.data.forecastData?.forecastProfile;
+  if (!appliedProfile?.id)
+    appliedProfile = undefined;
+
+  const isUpdating = false;
 
   return (
     <AppLayout title={<h1>Configuración de forecast</h1>} user={props?.user} sidenav={<AppSidenav />}>
@@ -81,7 +84,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
 
       <div className="flex justify-between">
         <Title>Perfiles de forecast</Title>
-        <ForecastDialogForm disabled={isUpdating}>
+        <ForecastDialogForm disabled={isUpdating} monolito={monolito}>
           <Button disabled={isApplying} type="button" className="ml-auto">
             <PlusIcon className="mr-2" />
             Crear perfil
@@ -111,6 +114,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
             return (
               <ForecastProfileCard
                 key={profile.id}
+                monolito={monolito}
                 profile={profile}
                 handleApplyProfile={handleApplyProfile}
                 handleDeleteProfile={handleDeleteProfile}

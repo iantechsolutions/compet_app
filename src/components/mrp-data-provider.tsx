@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable */
 
-import { Loader2Icon } from "lucide-react";
+/* import { Loader2Icon } from "lucide-react";
 import { createContext, useContext, useState } from "react";
 import { readFromCache, saveToCache } from "~/lib/cache-store";
 import { useOnMounted } from "~/lib/hooks";
@@ -281,3 +281,4 @@ export function useMRPLoadingMessage() {
   const ctx = useMRPContext();
   return ctx.loadingMessage;
 }
+*/

@@ -6,10 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~
 import { XIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { useMRPData } from "~/components/mrp-data-provider";
 import { useOnScroll } from "~/lib/hooks";
 import { cn, formatStock } from "~/lib/utils";
 import type { MRPProduct } from "~/mrp_data/transform_mrp_data";
+import type { RouterOutputs } from "~/trpc/shared";
 
 export function TargetOverlayInfoCard(props: {
   product: MRPProduct;
@@ -17,10 +17,11 @@ export function TargetOverlayInfoCard(props: {
   onClose: () => void;
   productHref: string;
   trackElementId: string;
+  forecastProfile: RouterOutputs['db']['getMonolito']['forecastData']['forecastProfile']
 }) {
   const classNames = "fixed left-0 right-0 w-[350px] z-20";
 
-  const { product } = props;
+  const { product, forecastProfile } = props;
 
   const stock = props.column ? product.stock_at.get(props.column) : 0;
   const imported = props.column ? product.imported_quantity_by_month.get(props.column) : 0;
@@ -29,8 +30,6 @@ export function TargetOverlayInfoCard(props: {
   // const usedAsForecast = props.column ? product.used_as_forecast_quantity_by_month.get(props.column) : 0
   const usedAsForecastSold = props.column ? product.used_as_forecast_type_sold_quantity_by_month.get(props.column) : 0;
   const usedAsForecastBudgets = props.column ? product.used_as_forecast_type_budget_quantity_by_month.get(props.column) : 0;
-
-  const data = useMRPData();
 
   useEffect(() => {
     function listener(e: KeyboardEvent) {
@@ -154,7 +153,7 @@ export function TargetOverlayInfoCard(props: {
                 <TableCell className="font-medium">Stock</TableCell>
                 <TableCell>{formatStock(stock ?? 0)}</TableCell>
               </TableRow>
-              {data.forecastData?.forecastProfile.includeSales && (
+              {forecastProfile.includeSales && (
                 <TableRow>
                   <TableCell className="font-medium">Forecast</TableCell>
                   <TableCell className="font-medium text-orange-900">
@@ -163,7 +162,7 @@ export function TargetOverlayInfoCard(props: {
                   </TableCell>
                 </TableRow>
               )}
-              {data.forecastData?.forecastProfile.includeBudgets && (
+              {forecastProfile.includeBudgets && (
                 <TableRow>
                   <TableCell className="font-medium">Forecast</TableCell>
                   <TableCell className="font-medium text-orange-700">

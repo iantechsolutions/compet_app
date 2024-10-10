@@ -1,21 +1,20 @@
-"use client";
-import { useParams } from "next/navigation";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
-import { useMRPData } from "~/components/mrp-data-provider";
-import { NavUserData } from "~/components/nav-user-section";
+import type { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
-import type { MRPData, MRPProduct } from "~/mrp_data/transform_mrp_data";
 import { ProductProvider } from "./product_provider";
+import { api } from "~/trpc/server";
+import { SessionProvider } from "next-auth/react";
 
-export default function ProductLayoutComponent(props: { children: React.ReactNode; user: NavUserData }) {
-  const data: MRPData = useMRPData();
+export default async function ProductLayoutComponent(props: { children: React.ReactNode; user: NavUserData, params: { code: string } }) {
+  const productCode = decodeURIComponent(props.params.code ?? "");
+  let product = null;
 
-  const params = useParams<{ code: string }>();
-
-  const productCode = decodeURIComponent(params?.code ?? "");
-
-  const product: MRPProduct | null = data.products.find((p) => p.code === productCode) ?? null;
+  try {
+    product = await api.db.getProductByCode.query({ code: productCode })
+  } catch (e) {
+    console.debug(e);
+  }
 
   if (!product) {
     return (
@@ -37,7 +36,9 @@ export default function ProductLayoutComponent(props: { children: React.ReactNod
       user={props?.user}
       sidenav={<AppSidenav />}
     >
-      <ProductProvider product={product}>{props.children}</ProductProvider>
+      <SessionProvider>
+        <ProductProvider product={product}>{props.children}</ProductProvider>
+      </SessionProvider>
     </AppLayout>
   );
 }

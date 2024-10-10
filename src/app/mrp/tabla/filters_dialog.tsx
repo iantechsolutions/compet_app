@@ -1,17 +1,15 @@
 "use client";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { useWindowSize } from "@uidotdev/usehooks";
 import { Ban, Settings2Icon } from "lucide-react";
 import { useId, useMemo, useState } from "react";
-import { FixedSizeList as List } from "react-window";
 import { ComboboxDemo } from "~/components/combobox";
 import ListSelectionDialog from "~/components/list-selection-dialog";
-import { useMRPData } from "~/components/mrp-data-provider";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { useShortcut } from "~/lib/hooks";
+import type { RouterOutputs } from "~/trpc/shared";
 
 export type Filters = {
   search: string;
@@ -20,8 +18,13 @@ export type Filters = {
   suppliesOf?: string;
 };
 
-export function FiltersDialog(props: { initialFilters: Filters; onApply: (filters: Filters) => void; number: number }) {
-  const data = useMRPData();
+export function FiltersDialog(props: {
+  initialFilters: Filters;
+  onApply: (filters: Filters) => void;
+  number: number;
+  monolito: RouterOutputs['db']['getMonolito'],
+}) {
+  const data = props.monolito.data;
   const products = data.products;
   const [filters, setFilters] = useState<Filters>(props.initialFilters);
 
@@ -37,7 +40,7 @@ export function FiltersDialog(props: { initialFilters: Filters; onApply: (filter
   function handleSuppliesOfChange(value: string | undefined) {
     setFilters({
       ...filters,
-      suppliesOf: value?.trim() || undefined,
+      suppliesOf: value?.trim(),
     });
   }
 
@@ -93,7 +96,7 @@ export function FiltersDialog(props: { initialFilters: Filters; onApply: (filter
           <ComboboxDemo
             title="Codigo de producto"
             placeholder="Seleccione un producto finalizado por el que buscar"
-            value={filters.suppliesOf || ""}
+            value={filters.suppliesOf ?? ""}
             onSelectionChange={(value) => {
               handleSuppliesOfChange(value);
             }}
@@ -107,7 +110,7 @@ export function FiltersDialog(props: { initialFilters: Filters; onApply: (filter
           <Button
             variant={"ghost"}
             // className='h-5 w-5'
-            onClick={(e) => handleSuppliesOfChange(undefined)}
+            onClick={() => handleSuppliesOfChange(undefined)}
           >
             <Ban height={20} width={20} />
           </Button>
@@ -119,7 +122,7 @@ export function FiltersDialog(props: { initialFilters: Filters; onApply: (filter
           </label>
         </div>
 
-        <ProvidersFilter onChange={setHideProviders} value={filters.hideProviders} />
+        <ProvidersFilter onChange={setHideProviders} value={filters.hideProviders} monolito={props.monolito} />
 
         <DialogFooter>
           <DialogPrimitive.Close id={closeId} asChild>
@@ -133,9 +136,14 @@ export function FiltersDialog(props: { initialFilters: Filters; onApply: (filter
   );
 }
 
-function ProviderRow(props: { index: number; style: React.CSSProperties; value: Set<string>; onChange: (providers: Set<string>) => void }) {
-  const providers = useMRPData().providers;
-
+function ProviderRow(props: {
+  index: number;
+  style: React.CSSProperties;
+  value: Set<string>;
+  onChange: (providers: Set<string>) => void;
+  monolito: RouterOutputs['db']['getMonolito'];
+}) {
+  const providers = props.monolito.data.providers;
   const provider = providers[props.index]!;
 
   const labelId = "label-" + provider.code;
@@ -177,8 +185,12 @@ function ProviderRow(props: { index: number; style: React.CSSProperties; value: 
   );
 }
 
-function ProvidersFilter(props: { value: Set<string>; onChange: (providers: Set<string>) => void }) {
-  const data = useMRPData();
+function ProvidersFilter(props: {
+  value: Set<string>;
+  onChange: (providers: Set<string>) => void;
+  monolito: RouterOutputs['db']['getMonolito'];
+}) {
+  const data = props.monolito.data;
   const providers = data.providers;
   const products = data.products;
 

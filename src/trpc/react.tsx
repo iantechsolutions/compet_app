@@ -11,7 +11,13 @@ import { getUrl, transformer } from "./shared";
 export const api = createTRPCReact<AppRouter>();
 
 export function TRPCReactProvider(props: { children: React.ReactNode; cookies: string }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        cacheTime: 1000 * 60 * 15 // 15 minutos de caché
+      }
+    }
+  }));
 
   const [trpcClient] = useState(() =>
     api.createClient({

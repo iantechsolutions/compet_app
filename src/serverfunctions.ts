@@ -3,7 +3,6 @@ import { getSetting } from "~/lib/settings";
 import type {
   CrmBudget,
   CrmBudgetProduct,
-  CrmClient,
   Order,
   OrderProductSold,
   Product,
@@ -18,6 +17,28 @@ import { type DataExport } from "./scripts/lib/database";
 import { getDbInstance } from "./scripts/lib/instance";
 import { env } from "./env";
 
+export async function queryBaseMRPDataUT() {
+  const mrpExportFile = await getSetting<string>("mrp.export-file");
+
+  if (!mrpExportFile) {
+    throw new Error(
+      "No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.",
+    );
+  }
+
+  const dataInfo = await getMrpExportInfo();
+  const exportURL = dataInfo.exportURL;
+
+  const dataEncoded = await fetch(exportURL).then((res) => res.text());
+  const data = decodeData(dataEncoded) as DataExport;
+
+  return {
+    dataInfo,
+    data,
+    exportURL,
+  };
+}
+
 // esto vs el otro?? queryBaseMRPData
 export async function queryBaseMRPData() {
   let data;
@@ -26,25 +47,16 @@ export async function queryBaseMRPData() {
 
   if (env.DB_DIRECT_CONNECTION) {
     const db = await getDbInstance();
-    data = await db.readAllData();
+    data = await db.readAllDataDirect();
     exportURL = "null";
     dataInfo = {
       exportDate: Date.now(),
     };
   } else {
-    const mrpExportFile = await getSetting<string>("mrp.export-file");
-
-    if (!mrpExportFile) {
-      throw new Error(
-        "No se encontró el archivo de exportación de datos. Se debe ejecutar el script `load-data`, asegurarse de configurar uploadthing correctamente.",
-      );
-    }
-
-    dataInfo = await getMrpExportInfo();
-    exportURL = dataInfo.exportURL;
-
-    const dataEncoded = await fetch(exportURL).then((res) => res.text());
-    data = decodeData(dataEncoded) as DataExport;
+    const ret = await queryBaseMRPDataUT();
+    dataInfo = ret.dataInfo;
+    data = ret.data;
+    exportURL = ret.exportURL;
   }
 
   const {
@@ -76,11 +88,11 @@ export async function queryBaseMRPData() {
     productByCode.set(product.code, product);
   }
 
-  const stockCommitedByProduct: Map<string, ProductStockCommited> = new Map();
+  const stockCommitedByProduct = new Map<string, ProductStockCommited>();
   for (const stockCommited of products_stock_commited) {
     // Por alguna razón puede haber más de una fila con el mismo código de producto
     // Por eso vamos a combinarlas
-    const prev = stockCommitedByProduct.get(stockCommited.product_code) || {
+    const prev = stockCommitedByProduct.get(stockCommited.product_code) ?? {
       product_code: stockCommited.product_code,
       stock_quantity: 0,
       commited_quantity: 0,
@@ -97,15 +109,15 @@ export async function queryBaseMRPData() {
     });
   }
 
-  const productImportsByProduct: Map<string, ProductImport[]> = new Map();
+  const productImportsByProduct = new Map<string, ProductImport[]>();
   for (const productImport of products_imports) {
     const productImports = productImportsByProduct.get(productImport.product_code) ?? [];
     productImports.push(productImport);
     productImportsByProduct.set(productImport.product_code, productImports);
   }
 
-  const suppliesOfProduct: Map<string, (ProductAssembly & { product: Product })[]> = new Map();
-  const suppliesOfOfProduct: Map<string, (ProductAssembly & { product: Product })[]> = new Map();
+  const suppliesOfProduct = new Map<string, (ProductAssembly & { product: Product })[]>();
+  const suppliesOfOfProduct = new Map<string, (ProductAssembly & { product: Product })[]>();
   for (const assembly of products_assemblies) {
     const supplies = suppliesOfProduct.get(assembly.product_code) ?? [];
     let product = productByCode.get(assembly.supply_product_code)!;
@@ -142,7 +154,7 @@ export async function queryBaseMRPData() {
     budgetsById.set(budget.budget_id, budget);
   }
 
-  const budgetProductByBudgetId: Map<number, CrmBudgetProduct[]> = new Map();
+  const budgetProductByBudgetId = new Map<number, CrmBudgetProduct[]>();
   for (const budgetProduct of budget_products) {
     const budgetProducts = budgetProductByBudgetId.get(budgetProduct.budget_id) ?? [];
     budgetProducts.push(budgetProduct);
@@ -204,13 +216,13 @@ export function transformClientsIdsCodes({
   clients,
   crm_clients,
 }: Pick<DataExport, "crm_clients" | "clients" | "budgets">): Pick<DataExport, "crm_clients" | "clients" | "budgets"> {
-  const clientsByCode: Map<string, (typeof clients)[number]> = new Map();
+  const clientsByCode = new Map<string, (typeof clients)[number]>();
 
   for (const client of clients) {
     clientsByCode.set(client.code, client);
   }
 
-  const clientIdMap: Map<string, string> = new Map();
+  const clientIdMap = new Map<string, string>();
 
   for (const c of crm_clients) {
     const code = clientsByCode.get(c.tango_code)?.code;

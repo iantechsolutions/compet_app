@@ -7,7 +7,6 @@ import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
 import { ComboboxDemo } from "~/components/combobox";
 // import { List } from "~/components/list";
-import { useMRPData } from "~/components/mrp-data-provider";
 import type { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -15,8 +14,8 @@ import { cn } from "~/lib/utils";
 import { excludeProducts } from "~/server/api/constants";
 import { api } from "~/trpc/react";
 import type { ProductWithDependencies } from "~/server/api/routers/consult";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import type { RouterOutputs } from "~/trpc/shared";
 const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white";
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
@@ -37,24 +36,25 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     imports: { arrival_date: Date; ordered_quantity: number }[];
   }
 
+  const { data, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
 
-  const data = useMRPData();
-  console.log(data?.sold.length);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<RouterOutputs['db']['getProducts']>([]);
   const [availabilityResult, setAvailabilityResult] = useState<{
     isPossible: boolean;
     buildDate?: number | null;
     productData: Map<string, { productDescription: string, stock: string, consumed: string, arrivalDate: Date | null }>;
   } | null>(null);
+
   const [finalList, setFinalList] = useState<ProductWithDependencies[]>([]);
+
   useEffect(() => {
     if (data) {
       // const months = data.months;
-      
-      const prod = data.products.filter(
+
+      const prod = data.filter(
         (product) => !excludeProducts.some((excludedProduct) => product.code.toLowerCase().startsWith(excludedProduct.toLowerCase())),
       );
-      
+
       setProducts(
         prod,
         // .filter((product) => {
@@ -71,7 +71,18 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     }
   }, [data]);
 
+  const size = useWindowSize();
   const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
+
+  if (isLoadingProducts || !products) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+        <Button variant="secondary" disabled>
+          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
+        </Button>
+      </div>
+    );
+  }
 
   async function handleImportEmail() {
     // if (availabilityResult?.arrivalDatesNull) {
@@ -92,7 +103,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
         listado: productList,
       });
       // const array: { productCode: string; productDescription: string; stock: string; consumed: string; arrivalDate: Date | null; }[] = []
-      
+
       setFinalList(res);
     }
   }
@@ -122,7 +133,6 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   }
   const headerCellClassName = "flex items-center justify-center font-semibold bg-stone-100 h-10 px-2";
 
-  const size = useWindowSize();
   return (
     <AppLayout
       title={
@@ -359,7 +369,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
     }
   }
 
-  
+
   return (
     <div className="bg-gray-500">
       <ListRowContainer className={`z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
@@ -384,11 +394,11 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
               <PopoverContent className="rounded-xl">
                 {product.cuts.map((cut) => <>
                   <div key={cut.cut.id} className="flex flex-col gap-1 p-2 rounded-xl border-2 mb-2">
-                      <p>Id: {cut.cut.id}</p>
-                      <p>Location: {cut.cut.location}</p>
-                      <p>Cantidad: {cut.cut.amount}</p>
-                      <p>Medida: {cut.cut.measure}</p>
-                   
+                    <p>Id: {cut.cut.id}</p>
+                    <p>Location: {cut.cut.location}</p>
+                    <p>Cantidad: {cut.cut.amount}</p>
+                    <p>Medida: {cut.cut.measure}</p>
+
                   </div>
                 </>)}
               </PopoverContent>

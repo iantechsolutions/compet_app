@@ -1,43 +1,22 @@
 import { Hono } from "hono";
-import { utapi } from "~/server/uploadthing";
 import { forecastProfiles } from "~/server/db/schema";
-import { useContext } from "react";
-import { dataProviderContext } from "~/components/mrp-data-provider";
-// import { queryBaseMRPData, RawMRPData, transformClientsIdsCodes } from '~/mrp_data/query_mrp_data'
-import { CronJob } from "cron";
-import { api } from "~/trpc/server";
-import { getServerAuthSession } from "~/server/auth";
 import { Resend } from "resend";
 import { env } from "process";
 import { EmailTemplate } from "~/components/email-template";
 import {
-  ForecastData,
-  ForecastProfile,
-  listAllEvents,
+  type ForecastProfile,
   listAllEventsWithSupplyEvents,
   listProductsEvents,
   mapData,
-  ProductEvent,
   stockOfProductByMonth,
 } from "~/mrp_data/transform_mrp_data";
 import dayjs from "dayjs";
 import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
-import { getSetting, getUserSetting } from "~/lib/settings";
+import { getUserSetting } from "~/lib/settings";
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { nullProfile } from "~/lib/nullForecastProfile";
-import { decodeData, getMonths, monthCodeFromDate } from "~/lib/utils";
-import {
-  CrmBudget,
-  CrmBudgetProduct,
-  Order,
-  OrderProductSold,
-  Product,
-  ProductAssembly,
-  ProductImport,
-  ProductProvider,
-  ProductStockCommited,
-} from "~/lib/types";
+import { getMonths } from "~/lib/utils";
 import { queryBaseMRPData } from "~/serverfunctions";
 import { excludeProducts } from "~/server/api/constants";
 const resend = new Resend(env.RESEND_API_KEY);
@@ -195,13 +174,13 @@ app.get("/individualMail", async (c) => {
 
     try {
       const visitedMails: string[] = [];
-      let mails = await getUserSetting<string[]>("mrp.mails", "");
+      const mails = await getUserSetting<string[]>("mrp.mails", "");
       if (mails && mails.length > 0) {
         const BelowNMonths = await getUserSetting<number>("mrp.mails.ignoreIfMonths", "");
         const firstCheck = await getUserSetting<number>("mrp.mails.firstSearch", "");
         const secondCheck = await getUserSetting<number>("mrp.mails.secondSearch", "");
 
-        let rawdata = await queryBaseMRPData();
+        const rawdata = await queryBaseMRPData();
         rawdata.products = rawdata.products.filter(
           (product) => !excludeProducts.some((excludedProduct) => product.code.toLowerCase().startsWith(excludedProduct.toLowerCase())),
         );
