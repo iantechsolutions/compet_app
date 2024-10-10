@@ -34,9 +34,9 @@ export default function AppSidenav() {
       <SidenavItem icon={<Table2Icon />} href="/mrp/tabla">
         Tabla
       </SidenavItem>
-      <SidenavItem icon={<Table />} href="/mrp/cuts">
+      {/* <SidenavItem icon={<Table />} href="/mrp/cuts">
         Tabla recortes
-      </SidenavItem>
+      </SidenavItem> */}
       {/* <SidenavItem icon={<BarcodeIcon />} href="/mrp/productos">Productos</SidenavItem>
         <SidenavItem icon={<ShoppingBagIcon />} href="/mrp/pedidos">Pedidos</SidenavItem> */}
       <SidenavItem icon={<BarChartBigIcon />} href="/mrp/forecast">

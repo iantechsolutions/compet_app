@@ -15,11 +15,11 @@ export default async function Home() {
         <Link href="/mrp/tabla" prefetch>
           <Button className="w-full py-6">Tabla del MRP</Button>
         </Link>
-        <Link href="/mrp/cuts" prefetch>
+        {/* <Link href="/mrp/cuts" prefetch>
           <Button className="w-full">
             Tabla Recortes
           </Button>
-        </Link>
+        </Link> */}
         <Link href="/mrp/forecast" prefetch>
           <Button className="w-full" variant="outline">
             Configuración de forecast
