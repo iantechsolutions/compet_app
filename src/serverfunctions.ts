@@ -71,7 +71,7 @@ export async function queryBaseMRPData() {
     crm_clients: crm_clients_bad,
   });
 
-  const productByCode: Map<string, Product> = new Map();
+  const productByCode = new Map<string, Product>();
   for (const product of products) {
     productByCode.set(product.code, product);
   }
@@ -118,26 +118,26 @@ export async function queryBaseMRPData() {
     suppliesOfOfProduct.set(assembly.supply_product_code, suppliesOf);
   }
 
-  const productProivderOfProduct: Map<string, ProductProvider[]> = new Map();
+  const productProivderOfProduct = new Map<string, ProductProvider[]>();
   for (const productProvider of product_providers) {
     const productProviders = productProivderOfProduct.get(productProvider.product_code) ?? [];
     productProviders.push(productProvider);
     productProivderOfProduct.set(productProvider.product_code, productProviders);
   }
 
-  const ordersByOrderNumber: Map<string, Order> = new Map();
+  const ordersByOrderNumber = new Map<string, Order>();
   for (const order of orders) {
     ordersByOrderNumber.set(order.order_number, order);
   }
 
-  const productSoldByN_COMP: Map<string, OrderProductSold[]> = new Map();
+  const productSoldByN_COMP = new Map<string, OrderProductSold[]>();
   for (const soldProduct of products_sold) {
     const orderProducts = productSoldByN_COMP.get(soldProduct.N_COMP) ?? [];
     orderProducts.push(soldProduct);
     productSoldByN_COMP.set(soldProduct.N_COMP, orderProducts);
   }
 
-  const budgetsById: Map<number, CrmBudget> = new Map();
+  const budgetsById = new Map<number, CrmBudget>();
   for (const budget of budgets) {
     budgetsById.set(budget.budget_id, budget);
   }

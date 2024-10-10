@@ -28,8 +28,7 @@ export async function setSetting<T>(key: string, value: T) {
 }
 
 export async function deleteSetting(key: string) {
-  const r = await db.delete(settings).where(eq(settings.key, key));
-  return r.rowCount == 1;
+  await db.delete(settings).where(eq(settings.key, key));
 }
 
 export async function getUserSetting<T>(key: string, userId: string): Promise<T | null> {
@@ -59,6 +58,5 @@ export async function setUserSetting<T>(key: string, userId: string, value: T) {
 }
 
 export async function deleteUserSetting(key: string, userId: string) {
-  const r = await db.delete(userSettings).where(and(eq(userSettings.key, key), eq(userSettings.userId, userId)));
-  return r.rowCount == 1;
+  await db.delete(userSettings).where(and(eq(userSettings.key, key), eq(userSettings.userId, userId)));
 }

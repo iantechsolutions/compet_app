@@ -306,6 +306,27 @@ export class Database {
         });
     }
 
+    public async getBudgetById(id: string): Promise<typeof crmBudgetSchema["_output"]> {
+        const rows = await this.assertConnected()
+            .request()
+            .input('code', sql.VarChar, id)
+            .query(`SELECT
+                ID_Presupuesto as budget_id,
+                ID_Cliente as client_id,
+                ID_Categoria as category_id,
+                Fecha_Entrega as date,
+                FechaVigencia as validity_date,
+                Finalizada as finished_date,
+                Prox_Contacto as next_contact_date,
+                FechaUltimoCambio as last_update,
+                Comentarios as comments
+                FROM CRM_PRESUPUESTOS
+                WHERE ID_Presupuesto = @code`);
+
+        const records = rows.recordset.map(k => Database.trimAllProperties(k as Record<string, unknown>));
+        return crmBudgetSchema.parse(records);
+    }
+
     public async getBudgetProducts(): Promise<typeof crmBudgetProductSchema["_output"][]> {
         return await cachedAsyncFetch('db-getBudgetProducts', 30000, async () => {
             return await this.fetchTableWithQuery(
