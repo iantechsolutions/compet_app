@@ -81,8 +81,8 @@ export default function ProductPage() {
             <Badge>
               {product.description} - {product.additional_description}
             </Badge>
-            <Badge className="ml-2">Stock: {product.stock}</Badge>
-            <Badge className="ml-2">Comprometido: {product.commited}</Badge>
+            <Badge className="ml-2">Stock: {Math.round(product.stock)}</Badge>
+            <Badge className="ml-2">Comprometido: {Math.round(product.commited)}</Badge>
           </div>
           <div className="py-2">
             {product?.providers.map((provider, i) => {

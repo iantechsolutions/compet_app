@@ -659,7 +659,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.MaximumSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MaximumSales ?? 0).toFixed(2)}</p>
                     <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -669,7 +669,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MinimumSales ?? 0).toFixed(2)}</p>
                     <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -679,7 +679,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{(generalStatistics?.AverageSales ?? 0).toFixed(2)}</p>
                     <p className="text-sm font-medium text-black mt-2">UPP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -689,7 +689,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MedianSales ?? 0).toFixed(2)}</p>
                     <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
