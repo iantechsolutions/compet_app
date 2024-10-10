@@ -38,10 +38,8 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   }
 
 
-
-
-
   const data = useMRPData();
+  console.log(data?.sold.length);
   const [products, setProducts] = useState<Product[]>([]);
   const [availabilityResult, setAvailabilityResult] = useState<{
     isPossible: boolean;
@@ -52,11 +50,11 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   useEffect(() => {
     if (data) {
       // const months = data.months;
-      console.log("pre", data.products.length);
+      
       const prod = data.products.filter(
         (product) => !excludeProducts.some((excludedProduct) => product.code.toLowerCase().startsWith(excludedProduct.toLowerCase())),
       );
-      console.log("post", prod.length);
+      
       setProducts(
         prod,
         // .filter((product) => {
@@ -94,7 +92,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
         listado: productList,
       });
       // const array: { productCode: string; productDescription: string; stock: string; consumed: string; arrivalDate: Date | null; }[] = []
-      console.log("res", res);
+      
       setFinalList(res);
     }
   }
@@ -361,7 +359,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
     }
   }
 
-  console.log(product);
+  
   return (
     <div className="bg-gray-500">
       <ListRowContainer className={`z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
