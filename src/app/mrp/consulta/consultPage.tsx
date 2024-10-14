@@ -37,8 +37,10 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   }
 
   const { data, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
+  const { data: budgets, isLoading: isLoadingBudgets } = api.db.getBudgetProductsByBudgetId.useQuery();
 
   const [products, setProducts] = useState<RouterOutputs['db']['getProducts']>([]);
+  const [budgetSelected, setBudgetSelected] = useState<null | string>(null);
   const [availabilityResult, setAvailabilityResult] = useState<{
     isPossible: boolean;
     buildDate?: number | null;
@@ -71,10 +73,26 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     }
   }, [data]);
 
+  useEffect(() => {
+    if (typeof budgetSelected === 'string' && budgetSelected.length > 0) {
+      const budget = budgets?.get(Number(budgetSelected));
+      if (budget === undefined) {
+        console.error(`budgetSelected ${budgetSelected} undefined`, budgets);
+      } else {
+        setProductList(budget.map(v => {
+          return {
+            productCode: v.product_code,
+            quantity: v.quantity
+          }
+        }));
+      }
+    }
+  }, [budgetSelected])
+
   const size = useWindowSize();
   const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
 
-  if (isLoadingProducts || !products) {
+  if (isLoadingProducts || !products || isLoadingBudgets || !budgets) {
     return (
       <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
         <Button variant="secondary" disabled>
@@ -83,6 +101,8 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
       </div>
     );
   }
+
+  console.log(budgets);
 
   async function handleImportEmail() {
     // if (availabilityResult?.arrivalDatesNull) {
@@ -144,7 +164,25 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
       sidenav={<AppSidenav />}
     >
       <div className="p-8">
-        <h1 className="mb-6 text-3xl font-bold">Consulta de Producción</h1>
+
+        {/* TODO ponerlo prolijo */}
+        <div className="w-full justify-between flex flex-row">
+          <h1 className="mb-6 text-3xl font-bold">Consulta de Producción</h1>
+          <ComboboxDemo
+            title="Importar pedido"
+            placeholder="Importar pedido"
+            value={budgetSelected ?? ""}
+            onSelectionChange={(value) => {
+              if (value) {
+                setBudgetSelected(value);
+              }
+            }}
+            options={Array.from(budgets.keys()).map((v) => ({
+              value: v.toString(),
+              label: v.toString(),
+            }))}
+          />
+        </div>
 
         {/* Product List Styled as a Bill */}
         <div className="grid grid-cols-1 gap-4">
