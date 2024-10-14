@@ -91,7 +91,7 @@ export default function CutsPage({ cuts }: Props) {
   cuts.forEach((cut) => prodIdSet.add(cut.prodId))
   //obtengo todos las longitudes de recortes sin repetir 
   const cutsLengthSet = new Set<string>()
-  cuts.forEach((cut) => cutsLengthSet.add((cut.measure / 1000).toFixed(3).replace(".", ",")))
+  cuts.forEach((cut) => cutsLengthSet.add((cut.measure / 1000).toFixed(2).replace(".", ",")))
 
 
     // creo un Map con los prodId y la cantidad de recortes por longitud
@@ -101,11 +101,11 @@ export default function CutsPage({ cuts }: Props) {
             cutsMap.set(cut.prodId, new Map<string, number>())
         }
         const prodMap = cutsMap.get(cut.prodId)
-        if (prodMap && !(prodMap.has((cut.measure / 1000).toFixed(3).replace(".", ",")))) {
-            prodMap.set((cut.measure / 1000).toFixed(3).replace(".", ","), cut.amount)
-        } else if (prodMap && prodMap.has((cut.measure / 1000).toFixed(3).replace(".", ","))) {
-            const currentAmount = prodMap.get((cut.measure / 1000).toFixed(3).replace(".", ",")) ?? 0;
-            prodMap.set((cut.measure / 1000).toFixed(3).replace(".", ","), currentAmount + cut.amount);
+        if (prodMap && !(prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ",")))) {
+            prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), cut.amount)
+        } else if (prodMap && prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ","))) {
+            const currentAmount = prodMap.get((cut.measure / 1000).toFixed(2).replace(".", ",")) ?? 0;
+            prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), currentAmount + cut.amount);
         }
     }
 

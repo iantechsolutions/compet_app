@@ -12,6 +12,7 @@ export default function CutsTable({ cutsMap }: Props) {
                 <TableRow className="bg-[#f7f7f7] text-[#3e3e3e]">
                     <TableHead className="w-[500px]">Código producto</TableHead>
                     <TableHead>Cantidad de recortes</TableHead>
+                    <TableHead>Total Metros</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -22,6 +23,9 @@ export default function CutsTable({ cutsMap }: Props) {
                             <TableRow key={prodId}>
                                 <TableCell>{prodId}</TableCell>
                                 <TableCell>{prodMap.size} recortes</TableCell>
+                                <TableCell>{Array.from(prodMap).map(x=>x
+                                ).reduce((acc, [measure, amount]) => acc + (amount * parseFloat(measure)), 0).toFixed(2)
+                                }</TableCell>
                                 <TableCell>
                                     <Button
                                         onClick={() => setOpen(!open)}
@@ -37,7 +41,7 @@ export default function CutsTable({ cutsMap }: Props) {
                                                 <TableRow className="bg-[#f7f7f7] text-[#3e3e3e]">
                                                     <TableHead>Medida</TableHead>
                                                     {Array.from(prodMap).map(([measure, amount]) => (
-                                                        <TableHead>{measure}</TableHead>
+                                                        <TableHead>{measure} mt</TableHead>
                                                     ))}
                                                 </TableRow>
                                                 <TableRow>
