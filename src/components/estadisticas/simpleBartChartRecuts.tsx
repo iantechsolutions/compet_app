@@ -21,7 +21,7 @@ export default function SimpleBartChartRecuts(props: RecutsProps) {
                     }}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <Tooltip />
+                    {/* <Tooltip /> */}
                     <Legend content={<CustomLegend textContent="Cantidad de recortes por medida" />} />
                     <XAxis dataKey="name" />
                     <YAxis />
