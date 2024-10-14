@@ -73,22 +73,6 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     }
   }, [data]);
 
-  useEffect(() => {
-    if (typeof budgetSelected === 'string' && budgetSelected.length > 0) {
-      const budget = budgets?.get(Number(budgetSelected));
-      if (budget === undefined) {
-        console.error(`budgetSelected ${budgetSelected} undefined`, budgets);
-      } else {
-        setProductList(budget.map(v => {
-          return {
-            productCode: v.product_code,
-            quantity: v.quantity
-          }
-        }));
-      }
-    }
-  }, [budgetSelected])
-
   const size = useWindowSize();
   const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
 
@@ -168,20 +152,39 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
         {/* TODO ponerlo prolijo */}
         <div className="w-full justify-between flex flex-row">
           <h1 className="mb-6 text-3xl font-bold">Consulta de Producción</h1>
-          <ComboboxDemo
-            title="Importar pedido"
-            placeholder="Importar pedido"
-            value={budgetSelected ?? ""}
-            onSelectionChange={(value) => {
-              if (value) {
-                setBudgetSelected(value);
+          <div className="flex flex-row">
+            <div className="pr-4">
+              <ComboboxDemo
+                title="Código de presup."
+                placeholder="Código de presup."
+                value={budgetSelected ?? ""}
+                onSelectionChange={(value) => {
+                  if (value) {
+                    setBudgetSelected(value);
+                  }
+                }}
+                options={Array.from(budgets.keys()).map((v) => ({
+                  value: v.toString(),
+                  label: v.toString(),
+                }))}
+              />
+            </div>
+            <Button onClick={() => {
+              if (typeof budgetSelected === 'string' && budgetSelected.length > 0) {
+                const budget = budgets?.get(Number(budgetSelected));
+                if (budget === undefined) {
+                  console.error(`budgetSelected ${budgetSelected} undefined`, budgets);
+                } else {
+                  setProductList(budget.map(v => {
+                    return {
+                      productCode: v.product_code,
+                      quantity: v.quantity
+                    }
+                  }));
+                }
               }
-            }}
-            options={Array.from(budgets.keys()).map((v) => ({
-              value: v.toString(),
-              label: v.toString(),
-            }))}
-          />
+            }} disabled={budgets?.get(Number(budgetSelected)) === undefined}>Importar presupuesto</Button>
+          </div>
         </div>
 
         {/* Product List Styled as a Bill */}
