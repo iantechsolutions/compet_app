@@ -8,14 +8,17 @@ import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, 
 import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
-import { useMRPData } from "~/components/mrp-data-provider";
 import type { NavUserData } from "~/components/nav-user-section";
 import { useOnScroll } from "~/lib/hooks";
 import { cn, formatStock } from "~/lib/utils";
-import type { MRPData, MRPProduct } from "~/mrp_data/transform_mrp_data";
+import type { MRPProduct } from "~/mrp_data/transform_mrp_data";
 import { type Filters, FiltersDialog } from "./filters_dialog";
 import { useFocus } from "./focused_provider";
 import { TargetOverlayInfoCard } from "./overlay";
+import { api } from "~/trpc/react";
+import { RouterOutputs } from "~/trpc/shared";
+import { Button } from "~/components/ui/button";
+import { Loader2Icon } from "lucide-react";
 
 function ProductInfoCell({ product }: { product: MRPProduct }) {
   const [currentFocus, setFocus] = useFocus();
@@ -116,13 +119,14 @@ function ListRowContainer({
   style,
   id,
   className,
+  months,
 }: {
   children: React.ReactNode;
   style?: React.CSSProperties;
   className?: string;
   id?: string;
+  months: string[];
 }) {
-  const data = useMRPData();
   return (
     <div
       className={className}
@@ -130,7 +134,7 @@ function ListRowContainer({
       style={{
         ...style,
         display: "grid",
-        gridTemplateColumns: `371px repeat(${data.months.length + 2}, minmax(130px, 1fr))`,
+        gridTemplateColumns: `371px repeat(${months.length + 2}, minmax(130px, 1fr))`,
       }}
     >
       {children}
@@ -141,12 +145,13 @@ function ListRowContainer({
 function ListRow({ index, style }: { index: number; style: React.CSSProperties }) {
   const ctx = useContext(listRowContext);
   const products = ctx.filteredProducts;
-  const data = useMRPData();
+  const months = ctx.months;
   const product = products[index]!;
 
   return (
     <ListRowContainer
       key={index}
+      months={months}
       style={{
         ...style,
         width: "", // para que el sticky funcione
@@ -154,7 +159,7 @@ function ListRow({ index, style }: { index: number; style: React.CSSProperties }
     >
       <ProductInfoCell product={product} />
       <StockCommitedCells product={product} />
-      {data.months.map((month) => (
+      {months.map((month) => (
         <StockAtMonthCell key={month} product={product} month={month} />
       ))}
     </ListRowContainer>
@@ -163,12 +168,14 @@ function ListRow({ index, style }: { index: number; style: React.CSSProperties }
 
 const listRowContext = createContext<{
   filteredProducts: MRPProduct[];
+  months: string[];
 }>({
   filteredProducts: [],
+  months: [],
 });
 
 export function Table(props: { user?: NavUserData }) {
-  const data = useMRPData();
+  const { data, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
 
   const [filters, setFilters] = useFilters();
 
@@ -216,6 +223,16 @@ export function Table(props: { user?: NavUserData }) {
     document.getElementsByClassName(scrollClassName)[0]?.scrollTo(0, (window as any).listScroll);
   }, []);
 
+  if (isLoadingData || !data || !filtered) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+        <Button variant="secondary" disabled>
+          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <AppLayout
       title={<h1>COMPET MRP</h1>}
@@ -224,7 +241,7 @@ export function Table(props: { user?: NavUserData }) {
       hideMenuOnDesktop
       noPadding
       noUserSection
-      actions={<FiltersDialog onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
+      actions={<FiltersDialog monolito={data} onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
     >
       {currentFocus && !closedOverlay && (
         <TargetOverlayInfoCard
@@ -232,13 +249,14 @@ export function Table(props: { user?: NavUserData }) {
           column={currentFocus.month}
           product={currentFocus.product}
           productHref={`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`}
+          forecastProfile={data.forecastData.forecastProfile}
           onClose={() => {
             setClosedOverlay(true);
           }}
         />
       )}
 
-      <ListRowContainer id={headerId} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
+      <ListRowContainer id={headerId} months={data.data.months} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
         <div className={cn(headerCellClassName, "flex justify-start md:sticky md:left-0")}>
           <p>Producto</p>
         </div>
@@ -248,14 +266,14 @@ export function Table(props: { user?: NavUserData }) {
         <div className={cn(headerCellClassName, "text-sm")}>
           <p>Comprometido</p>
         </div>
-        {data.months.map((month) => (
+        {data.data.months.map((month) => (
           <div key={month} className={cn(headerCellClassName, "text-sm")}>
             <p>{month}</p>
           </div>
         ))}
       </ListRowContainer>
       <div className="" style={{ height: h, width: w }}>
-        <listRowContext.Provider value={{ filteredProducts: filtered }}>
+        <listRowContext.Provider value={{ filteredProducts: filtered, months: data.data.months }}>
           <List onScroll={handleListScroll} className={scrollClassName} height={h} width={w} itemCount={filtered.length} itemSize={57}>
             {ListRow}
           </List>
@@ -317,8 +335,14 @@ function useFilters() {
   return [filters, setFilters] as const;
 }
 
-function useFiltered(data: MRPData, filters: Filters) {
+function useFiltered(monolito: RouterOutputs['db']['getMonolito'] | undefined, filters: Filters) {
   return useMemo(() => {
+    if (!monolito) {
+      return null;
+    }
+
+    const data = monolito.data;
+
     let list = data.products;
     const months = data.months;
     if (filters.hideAllZero) {
@@ -375,5 +399,5 @@ function useFiltered(data: MRPData, filters: Filters) {
       });
     }
     return list;
-  }, [data, filters]);
+  }, [monolito, filters]);
 }

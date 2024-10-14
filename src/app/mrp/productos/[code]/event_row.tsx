@@ -1,10 +1,10 @@
 import dayjs from "dayjs";
 import Link from "next/link";
-import { useMRPData } from "~/components/mrp-data-provider";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
 import { TableCell, TableRow } from "~/components/ui/table";
 import { cn, formatStock } from "~/lib/utils";
-import type { MRPData, ProductEvent } from "~/mrp_data/transform_mrp_data";
+import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
+import type { RouterOutputs } from "~/trpc/shared";
 
 export function ProductEventRow(props: {
   event: ProductEvent;
@@ -13,8 +13,9 @@ export function ProductEventRow(props: {
   nostate?: boolean;
   nodate?: boolean;
   nostock?: boolean;
+  monolito: RouterOutputs['db']['getMonolito'];
 }) {
-  const data = useMRPData();
+  const data = props.monolito.data;
 
   const { event, productCode } = props;
 
@@ -88,7 +89,7 @@ export function ProductEventRow(props: {
       );
     }
 
-    if (event.parentEvent && event.parentEvent.parentEvent) {
+    if (event.parentEvent?.parentEvent) {
       typeName = (
         <>
           <span className="font-medium underline">{supplyName}</span>
@@ -176,7 +177,7 @@ export function ProductEventRow(props: {
         <EventHoverCard data={data} event={event}>
           <div className="inline-block">
             <ReferenceComponent orderNumber={event.isForecast ? "forecast" : orderNumber} productCode={productCode} />
-            {event.type === "import" && importation && importation.id}
+            {event.type === "import" && importation?.id}
             {parentProductCode && (
               <>
                 {" -> "}
@@ -222,9 +223,8 @@ export function ProductEventRow(props: {
   );
 }
 
-function EventHoverCard(props: { event: ProductEvent; data: MRPData; children: React.ReactNode }) {
+function EventHoverCard(props: { event: ProductEvent; data: RouterOutputs['db']['getMonolito']['data']; children: React.ReactNode }) {
   const event = props.event;
-
   const childEvents = event.childEvents ?? [];
 
   const parentEvent = event.parentEvent;
@@ -245,7 +245,7 @@ function EventHoverCard(props: { event: ProductEvent; data: MRPData; children: R
         )}
 
         {parentEvent && childEvents.length > 0 && <div className="h-2" />}
-        {childEvents!.length > 0 && (
+        {childEvents.length > 0 && (
           <>
             <p className="mb-2 font-medium">Consumo de insumos</p>
             {childEvents?.map((childEvent, i) => {

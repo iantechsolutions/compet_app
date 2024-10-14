@@ -2,30 +2,14 @@
 import { ring2 } from "ldrs";
 
 import { useParams } from "next/navigation";
-import { AreaChart, ChevronDownIcon, ChevronUpIcon, Filter, Loader2Icon, XSquareIcon } from "lucide-react";
+import { AreaChart, ChevronDownIcon, ChevronUpIcon, Filter, Loader2Icon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
-import { useMRPData } from "~/components/mrp-data-provider";
-import { NavUserData } from "~/components/nav-user-section";
+import type { NavUserData } from "~/components/nav-user-section";
 import { Button } from "~/components/ui/button";
-import { MRPProduct } from "~/mrp_data/transform_mrp_data";
-import { FixedSizeList as List } from "react-window";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
-import { CrmBudget } from "~/lib/types";
-import { formatStock, isSemiElaborate } from "~/lib/utils";
+import { isSemiElaborate } from "~/lib/utils";
 import { SelectCRMClients } from "../../forecast/select-crm-clients";
-import { string } from "zod";
 import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
 import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
 import SimpleBartChart from "~/components/estadisticas/simpleBartChart";
@@ -36,18 +20,17 @@ import { ChartNoAxesCombined } from "~/components/icons/chart-combined";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import ListSelectionDialog from "~/components/list-selection-dialog";
 import SimpleBartChartRecuts from "~/components/estadisticas/simpleBartChartRecuts";
+import { api } from "~/trpc/react";
+
 export default function StatisticsPage(props: { user?: NavUserData }) {
   const temporaryDate = new Date();
   temporaryDate.setFullYear(temporaryDate.getFullYear() - 1);
+
   const [fromDate, setFromDate] = useState<Date | undefined>(temporaryDate);
   const [isLoading, setIsLoading] = useState(true);
   const [handleFiltersStage, setHandleFiltersStage] = useState(0);
-  const data = useMRPData();
   const params = useParams<{ code: string }>();
   const productCode = decodeURIComponent(params?.code ?? "");
-  const product: MRPProduct | null = data.products.find((p) => p.code === productCode) ?? null;
-  const providers = data.providers;
-  const products = data.products;
   const [providersSelected, setProvidersSelected] = useState<Set<string>>(new Set());
   const [toDate, setToDate] = useState<Date | undefined>(new Date());
   const [unselectedClients, setSelected] = useState<Set<string>>(new Set());
@@ -58,7 +41,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       amount: number;
     }[]
   >();
-
 
   const [salesAndBudgets, setSalesAndBudgets] = useState<{
     salesList: { date: string; totalSales: number }[];
@@ -72,13 +54,60 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     TotalSales: number;
     MedianSales: number | undefined;
   }>();
+
   const [cuts, setCuts] = useState<Map<string, number>>();
   const [totalConsumedAmount, setTotalConsumedAmount] = useState<number>();
   const [totalMotiveConsumption, setTotalMotiveConsumption] = useState<Map<string, number>>();
   const [hasRun, setHasRun] = useState<boolean>(false);
+
+  const [showMore, setShowMore] = useState(false);
+  const [showMore2, setShowMore2] = useState(false);
+
+  const { data: queryRes, isLoading: isLoadingData } = api.db.getEventsAndForecast.useQuery();
+
   ring2.register();
+  const productsByProvider = useMemo(() => {
+    if (isLoadingData) {
+      return null;
+    }
+
+    const map = new Map<string, number>();
+
+    for (const product of queryRes?.data.products ?? []) {
+      for (const provider of product.providers) {
+        map.set(provider.provider_code, (map.get(provider.provider_code) ?? 0) + 1);
+      }
+    }
+
+    return map;
+  }, [queryRes, isLoadingData]);
+
+  const filteredProviders = useMemo(() => {
+    if (isLoadingData) {
+      return null;
+    }
+
+    return queryRes?.data.providers.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
+  }, [queryRes, productsByProvider, isLoadingData]);
+
+  const allProviersCodes = useMemo(() => {
+    if (isLoadingData) {
+      return null;
+    }
+
+    return new Set<string>(filteredProviders?.map((p) => p.code));
+  }, [filteredProviders, isLoadingData]);
+
+  const defaultValues = useMemo(() => {
+    if (isLoadingData) {
+      return null;
+    }
+
+    return Array.from(allProviersCodes ?? new Set<string>()).filter((code) => !providersSelected.has(code));
+  }, [allProviersCodes, providersSelected, isLoadingData]);
+
   useEffect(() => {
-    if (fromDate && toDate && !hasRun) {
+    if (fromDate && toDate && !hasRun && !isLoadingData) {
       const {
         list: consumptionStats,
         totalConsumedAmount: totalTemp,
@@ -122,30 +151,37 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       setHasRun(true);
       setIsLoading(false);
     }
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, defaultValues, isLoadingData]);
 
-  const productsByProvider = useMemo(() => {
-    const map = new Map<string, number>();
-
-    for (const product of products) {
-      for (const provider of product.providers) {
-        map.set(provider.provider_code, (map.get(provider.provider_code) ?? 0) + 1);
-      }
+  useEffect(() => {
+    if (handleFiltersStage === 1) {
+      // le doy tiempo a react para renderizar el loader antes de que se congele todo
+      setTimeout(() => setHandleFiltersStage(2), 150);
+    } else if (handleFiltersStage === 2) {
+      handleUpdateFilters();
+      setHandleFiltersStage(0);
     }
+  }, [handleFiltersStage]);
 
-    return map;
-  }, [products, products]);
-  const filteredProviders = useMemo(() => {
-    return providers.filter((p) => productsByProvider.get(p.code) ?? 0 > 0);
-  }, [providers, providersSelected]);
+  if (isLoadingData || !queryRes)
+    return (
+      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+        <Button variant="secondary" disabled>
+          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
+        </Button>
+      </div>
+    );
 
-  const allProviersCodes = useMemo(() => {
-    return new Set<string>(filteredProviders.map((p) => p.code));
-  }, [providers]);
+  const crmMonolito = {
+    data: {
+      budget_products: queryRes.data.budget_products,
+      budgetsById: queryRes.data.budgetsById,
+      crm_clients: queryRes.data.crm_clients
+    }
+  };
 
-  const defaultValues = useMemo(() => {
-    return Array.from(allProviersCodes).filter((code) => !providersSelected.has(code));
-  }, [allProviersCodes, providersSelected]);
+  const { data, eventsByProductCode } = queryRes;
+  const product = data.products.find((p) => p.code === productCode) ?? null;
 
   function handleUpdateFilters() {
     if (fromDate && toDate) {
@@ -184,16 +220,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
   }
 
-  useEffect(() => {
-    if (handleFiltersStage === 1) {
-      // le doy tiempo a react para renderizar el loader antes de que se congele todo
-      setTimeout(() => setHandleFiltersStage(2), 150);
-    } else if (handleFiltersStage === 2) {
-      handleUpdateFilters();
-      setHandleFiltersStage(0);
-    }
-  }, [handleFiltersStage]);
-
   function handleUpdateFiltersLoad() {
     setHandleFiltersStage(1);
     setIsLoading(true);
@@ -212,7 +238,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    let events = data?.eventsByProductCode.get(productCode) ?? [];
+    let events = eventsByProductCode.get(productCode) ?? [];
     let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
     events = events.filter(
@@ -221,10 +247,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
       const assembliesQuantities =
-        event.parentEvent && event.parentEvent.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+        event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
       if (event.assemblyId) {
         const assembly = data?.assemblyById.get(event.assemblyId);
-        let totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
+        const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
         if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
@@ -239,30 +265,29 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       }
     });
 
-    let salesList: {
+    const salesList: {
       date: string;
       motive: string;
       amount: number;
     }[] = [];
-    const sales = data?.orders.filter(
+    const sales = data?.sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.order_date)) &&
-        new Date(String(order.order_date)) >= fromDate &&
-        new Date(String(order.order_date)) <= toDate,
+        new Date(String(order.emission_date)) >= fromDate &&
+        new Date(String(order.emission_date)) <= new Date(String(toDate)),
     );
     sales.forEach((sale) => {
-      const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+      const order_products = sale.products;
       const product = order_products?.find((order_product) => order_product.product_code === productCode);
       if (product) {
         salesList.push({
-          date: new Date(String(sale.order_date)).toISOString().slice(0, 10),
+          date: new Date(String(sale.emission_date)).toISOString().slice(0, 10),
           motive: "Venta Directa",
-          amount: product.ordered_quantity,
+          amount: product.CANTIDAD,
         });
         const currentMotiveAmount = totalMotiveConsumption.get("Venta Directa") ?? 0;
-        totalMotiveConsumption.set("Venta Directa", currentMotiveAmount + product.ordered_quantity);
-        totalConsumedAmount += product.ordered_quantity;
+        totalMotiveConsumption.set("Venta Directa", currentMotiveAmount + product.CANTIDAD);
+        totalConsumedAmount += product.CANTIDAD;
       }
     });
 
@@ -277,6 +302,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       totalMotiveConsumption,
     };
   }
+
   function getSalesAndBudgets(
     fromDate: Date,
     toDate: Date,
@@ -293,16 +319,16 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         new Date(String(budget.date)) >= fromDateCopy &&
         budget.products.filter((product) => product.product_code === productCode).length > 0,
     );
-    const sales = data?.orders.filter((order) => !clientExemptionList?.includes(order.client_code));
-    let salesList = [];
-    let budgetsList = [];
+    const sales = data?.sold.filter((order) => !clientExemptionList?.includes(order.client_code));
+    const salesList = [];
+    const budgetsList = [];
     while (fromDateCopy.getTime() <= toDate.getTime()) {
       const day = fromDateCopy.toISOString().slice(0, 10);
       const salesOnDay = sales?.filter(
         (sale) =>
-          new Date(String(sale?.order_date)) instanceof Date &&
-          !isNaN(new Date(String(sale.order_date)).getTime()) &&
-          new Date(String(sale.order_date)).toISOString().slice(0, 10) === day,
+          new Date(String(sale?.emission_date)) instanceof Date &&
+          !isNaN(new Date(String(sale.emission_date)).getTime()) &&
+          new Date(String(sale.emission_date)).toISOString().slice(0, 10) === day,
       );
       const budgetsOnDay = budgets?.filter(
         (budget) =>
@@ -312,10 +338,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       );
       let totalSales = 0;
       salesOnDay?.forEach((sale) => {
-        const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+        const order_products = sale.products;
         if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
           const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
-          totalSales += order_product?.ordered_quantity ?? 0;
+          totalSales += order_product?.CANTIDAD ?? 0;
         }
       });
       if (totalSales > 0) {
@@ -337,6 +363,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
     return { salesList, budgetsList };
   }
+
   function getSoldProportions(
     fromDate: Date,
     toDate: Date,
@@ -344,23 +371,23 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.orders.filter(
+    const sales = data?.sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.order_date)) &&
-        new Date(String(order.order_date)) >= fromDate &&
-        new Date(String(order.order_date)) <= toDate,
+        new Date(String(order.emission_date)) >= fromDate &&
+        new Date(String(order.emission_date)) <= new Date(String(toDate)),
     );
 
     const clientInformation = new Map<string, [number, number]>();
     sales?.forEach((sale) => {
-      const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+      const order_products = sale.products;
       if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
         const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
         const [totalSales, amountOfSalse] = clientInformation.get(sale.client_code) ?? [0, 0];
-        clientInformation.set(sale.client_code, [totalSales + (order_product?.ordered_quantity ?? 0), amountOfSalse + 1]);
+        clientInformation.set(sale.client_code, [totalSales + (order_product?.CANTIDAD ?? 0), amountOfSalse + 1]);
       }
     });
+
     const clientList = Array.from(clientInformation.entries()).map(([key, value]) => {
       const [totalSales, amountOfSales] = value;
 
@@ -373,6 +400,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     // salesList.push({ totalSales, averageSales: totalSales / (salesAmount), });
     return clientList;
   }
+
   function getGeneralStatistics(
     fromDate: Date,
     toDate: Date,
@@ -380,50 +408,50 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-
-
-    const sales = data?.orders.filter(
+    const sales = data?.sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.order_date)) >= fromDate &&
-        new Date(String(order.order_date)) <= new Date(String(toDate)),
+        new Date(String(order.emission_date)) >= fromDate &&
+        new Date(String(order.emission_date)) <= new Date(String(toDate)),
     );
-    let validOrderProducts: {
-      id: number;
-      order_number: string;
+
+    const validOrderProducts: {
+      sale?: (typeof sales)[0];
       product_code: string;
       ordered_quantity: number;
     }[] = [];
+
     sales?.forEach((sale) => {
-      const order_products = data?.orderProductsByOrderNumber.get(sale.order_number);
+      const order_products = sale.products;
       if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
         const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
         if (order_product) {
-          validOrderProducts.push(order_product);
+          validOrderProducts.push({
+            product_code: order_product.product_code,
+            sale: sale,
+            ordered_quantity: order_product.CANTIDAD,
+          });
         }
       }
     });
 
-
-
-    let events = data?.eventsByProductCode.get(productCode) ?? [];
+    let events = eventsByProductCode.get(productCode) ?? [];
     events = events.filter(
       (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
+
     events.forEach((event) => {
       // event.quantity
       if (event.assemblyId) {
         const assembliesQuantities =
-          event.parentEvent && event.parentEvent.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+          event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
         const assembly = data?.assemblyById.get(event.assemblyId);
-        let totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
+        const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         let day = "";
         if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
           day = new Date(String(event.date)).toISOString().slice(0, 10);
         }
         validOrderProducts.push({
-          id: 0,
-          order_number: "",
           product_code: productCode,
           ordered_quantity: totalConsumptionOnEvent,
         });
@@ -448,6 +476,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       MedianSales: orderedQuantities.length > 0 ? median : 0,
     };
   }
+
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
     const prod = data?.products.find((p) => p.code === productCode);
     const possibleSuppliesOf = prod?.suppliesOf.map(x => x.product_code);
@@ -458,12 +487,12 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       // const longNecesaria = supply.quantity;
       if (dataSemi !== null) {
         const clave = dataSemi.long + " mm";
-        let events = data?.eventsByProductCode.get(supplyOfCode) ?? [];
+        let events = eventsByProductCode.get(supplyOfCode) ?? [];
         events = events.filter(
           (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
         );
         events.forEach((event) => {
-          console.log("pre",(mapeoConsumo.get(clave) ?? 0) )
+          console.log("pre", (mapeoConsumo.get(clave) ?? 0))
           mapeoConsumo.set(clave, (event.originalQuantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
           console.log("post", (mapeoConsumo.get(clave) ?? 0))
         })
@@ -476,13 +505,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     return mapeoConsumo;
   }
 
-  const [showMore, setShowMore] = useState(false);
 
   const toggleShowMore = () => {
     setShowMore((showMore) => !showMore);
   };
-
-  const [showMore2, setShowMore2] = useState(false);
 
   const toggleShowMore2 = () => {
     setShowMore2((showMore2) => !showMore2);
@@ -504,16 +530,16 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           <div className="flex gap-3">
             <ListSelectionDialog
               title="Proveedores"
-              options={filteredProviders.map((p) => ({
+              options={filteredProviders?.map((p) => ({
                 title: p.name,
-                subtitle: p.code + " - " + (p.address || "") + " " + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
+                subtitle: p.code + " - " + (p.address || "") + " " + ` - Productos: ${productsByProvider?.get(p.code) ?? 0}`,
                 value: p.code,
-              }))}
-              defaultValues={defaultValues}
+              })) ?? []}
+              defaultValues={defaultValues ?? []}
               onApply={(selectedList) => {
                 const selected = new Set(selectedList);
                 const value = new Set<string>();
-                for (const provider of filteredProviders) {
+                for (const provider of filteredProviders ?? []) {
                   if (!selected.has(provider.code)) {
                     value.add(provider.code);
                   }
@@ -527,7 +553,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                 Proveedores
               </Button>
             </ListSelectionDialog>
-            <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
+            <SelectCRMClients monolito={crmMonolito} setSelected={setSelected} unselected={unselectedClients} />
           </div>
           <div className="flex ml-3 gap-3">
             <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} message="Fecha desde" label={""} />
@@ -562,16 +588,16 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           <div className="flex gap-1">
             <ListSelectionDialog
               title="Proveedores"
-              options={filteredProviders.map((p) => ({
+              options={filteredProviders?.map((p) => ({
                 title: p.name,
-                subtitle: p.code + " - " + (p.address || "") + " " + ` - Productos: ${productsByProvider.get(p.code) ?? 0}`,
+                subtitle: p.code + " - " + (p.address || "") + " " + ` - Productos: ${productsByProvider?.get(p.code) ?? 0}`,
                 value: p.code,
-              }))}
-              defaultValues={defaultValues}
+              })) ?? []}
+              defaultValues={defaultValues ?? []}
               onApply={(selectedList) => {
                 const selected = new Set(selectedList);
                 const value = new Set<string>();
-                for (const provider of filteredProviders) {
+                for (const provider of filteredProviders ?? []) {
                   if (!selected.has(provider.code)) {
                     value.add(provider.code);
                   }
@@ -587,7 +613,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
                 Proveedores
               </Button>
             </ListSelectionDialog>
-            <SelectCRMClients setSelected={setSelected} unselected={unselectedClients} />
+            <SelectCRMClients monolito={crmMonolito} setSelected={setSelected} unselected={unselectedClients} />
           </div>
           <div className="flex gap-3">
             <DatePicker onChange={(e) => setFromDate(e)} value={fromDate ?? undefined} label="Desde" message="Desde" />
@@ -633,7 +659,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.MaximumSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MaximumSales ?? 0).toFixed(2)}</p>
                     <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -643,7 +669,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.MinimumSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MinimumSales ?? 0).toFixed(2)}</p>
                     <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -653,7 +679,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.AverageSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{(generalStatistics?.AverageSales ?? 0).toFixed(2)}</p>
                     <p className="text-sm font-medium text-black mt-2">UPP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -663,7 +689,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.MedianSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MedianSales ?? 0).toFixed(2)}</p>
                     <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -762,7 +788,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           </div>
           <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
             <SimpleLineChart data={salesAndBudgets} />
-            <SimpleBartChartRecuts data={cuts}/>
+            <SimpleBartChartRecuts data={cuts} />
           </div>
         </DataCard>
       </AppLayout >

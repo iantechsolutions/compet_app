@@ -1,5 +1,5 @@
 /* eslint-disable */
-import 'server-only';
+import "server-only";
 
 import dayjs from "dayjs";
 import { getSetting } from "~/lib/settings";
@@ -18,8 +18,8 @@ import type {
 import { decodeData, getMonths } from "~/lib/utils";
 import { DataExport } from "~/scripts/lib/database";
 import { getDbInstance } from "~/scripts/lib/instance";
-import { env } from '~/env';
-import { api } from '~/trpc/server';
+import { env } from "~/env";
+import { api } from "~/trpc/server";
 
 export async function queryBaseMRPData() {
   let data;

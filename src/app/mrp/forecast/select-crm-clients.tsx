@@ -1,7 +1,6 @@
 import { CheckCheckIcon, CheckIcon, XSquareIcon } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef } from "react";
 import { FixedSizeList as List } from "react-window";
-import { useMRPData } from "~/components/mrp-data-provider";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,12 +15,20 @@ import {
 import { Button } from "~/components/ui/button";
 import type { CrmBudget } from "~/lib/types";
 import { formatStock } from "~/lib/utils";
+import type { RouterOutputs } from "~/trpc/shared";
 
-export function SelectCRMClients(props: { setSelected: (selected: Set<string>) => void; unselected: Set<string> }) {
+export function SelectCRMClients(props: {
+  setSelected: (selected: Set<string>) => void; unselected: Set<string>; monolito: {
+    data: {
+      budget_products: RouterOutputs['db']['getMonolito']['data']['budget_products'];
+      budgetsById: RouterOutputs['db']['getMonolito']['data']['budgetsById'];
+      crm_clients: RouterOutputs['db']['getMonolito']['data']['crm_clients'];
+    }
+  }
+}) {
   const setSelected = props.setSelected;
   const unselected = props.unselected;
-
-  const data = useMRPData();
+  const data = props.monolito.data;
 
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();

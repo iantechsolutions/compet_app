@@ -1,10 +1,10 @@
 "use client";
 import dayjs from "dayjs";
+import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
-import { useMRPData } from "~/components/mrp-data-provider";
 import type { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
 
@@ -12,21 +12,30 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/
 import { Button } from "~/components/ui/button";
 import { cn, formatStockWithDecimals } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
+import { api } from "~/trpc/react";
+import type { RouterOutputs } from "~/trpc/shared";
 
 function useProductRef() {
   const params = useSearchParams();
-  return params?.get("product_ref") || null;
+  return params?.get("product_ref") ?? null;
 }
 
 export default function OrderPage(props: { user?: NavUserData }) {
-  const data = useMRPData();
+  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
 
   const params = useParams<{ code: string }>();
-
   const orderNumber = decodeURIComponent(params?.code ?? "");
+  const productRef = useProductRef();
 
-  const order = data.ordersByOrderNumber.get(orderNumber);
+  if (isLoadingData || !monolito) {
+    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+      <Button variant="secondary" disabled>
+        <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
+      </Button>
+    </div>;
+  }
 
+  const order = monolito.data.ordersByOrderNumber.get(orderNumber);
   if (!order) {
     return (
       <AppLayout title={<h1>Error 404</h1>} user={props?.user} sidenav={<AppSidenav />}>
@@ -36,12 +45,12 @@ export default function OrderPage(props: { user?: NavUserData }) {
     );
   }
 
-  const orderProducts = data.orderProductsByOrderNumber.get(orderNumber) ?? [];
+  const orderProducts = monolito.data.orderProductsByOrderNumber.get(orderNumber) ?? [];
 
   const eventsByOrderProductId = new Map<number, ProductEvent[]>();
 
   for (const orderProduct of orderProducts) {
-    let events = data.eventsByProductCode.get(orderProduct.product_code) ?? [];
+    let events = monolito.data.eventsByProductCode.get(orderProduct.product_code) ?? [];
 
     events = events.filter((event) => event.referenceId === orderProduct.id);
 
@@ -50,9 +59,8 @@ export default function OrderPage(props: { user?: NavUserData }) {
     }
   }
 
-  const client = data.clientsByCode.get(order.client_code);
-
-  const productRef = useProductRef();
+  const client = monolito.data.clientsByCode.get(order.client_code);
+  console.log(eventsByOrderProductId);
 
   return (
     <AppLayout title={<h1>Pedido N°: {order.order_number}</h1>} user={props?.user} sidenav={<AppSidenav />}>
@@ -65,7 +73,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
       </div>
       <Accordion type="single" collapsible className="w-full">
         {orderProducts.map((orderProduct) => {
-          const product = data.productsByCode.get(orderProduct.product_code);
+          const product = monolito.data.productsByCode.get(orderProduct.product_code);
 
           if (!product) return <></>;
 
@@ -87,7 +95,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
               </AccordionTrigger>
               <AccordionContent className="px-3">
                 {eventsByOrderProductId.get(orderProduct.id)?.map((event, i) => {
-                  return <EventRenderer key={i} event={event} top />;
+                  return <EventRenderer key={i} event={event} top monolito={monolito} />;
                 })}
               </AccordionContent>
             </AccordionItem>
@@ -98,10 +106,13 @@ export default function OrderPage(props: { user?: NavUserData }) {
   );
 }
 
-function EventRenderer(props: { event: ProductEvent; top: boolean }) {
+function EventRenderer(props: { event: ProductEvent | null; top: boolean; monolito: RouterOutputs['db']['getMonolito']; }) {
   const event = props.event;
+  if (!event) {
+    return <></>;
+  }
 
-  const data = useMRPData();
+  const data = props.monolito.data;
 
   const product = data.productsByCode.get(event.productCode);
 
@@ -110,7 +121,7 @@ function EventRenderer(props: { event: ProductEvent; top: boolean }) {
   if (!product) return <></>;
 
   const assembliesQuantities =
-    event.parentEvent && event.parentEvent.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+    event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
 
   const productRef = useProductRef();
 
@@ -145,7 +156,7 @@ function EventRenderer(props: { event: ProductEvent; top: boolean }) {
       {event.childEvents?.map((childEvent, i) => {
         return (
           <div className="m-3" key={i}>
-            <EventRenderer event={childEvent} top={false} />
+            <EventRenderer event={childEvent} top={false} monolito={props.monolito} />
           </div>
         );
       })}

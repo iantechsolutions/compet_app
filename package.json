@@ -16,7 +16,7 @@
     "listen-load-data": "tsx src/scripts/listen-load-data.ts",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "format": "npx prettier --write ."
   },
   "dependencies": {

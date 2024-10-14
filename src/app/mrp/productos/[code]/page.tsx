@@ -1,39 +1,76 @@
 "use client";
 import dayjs from "dayjs";
 import { useParams } from "next/navigation";
-import { Fragment, useState } from "react";
-import { useMRPData } from "~/components/mrp-data-provider";
+import { Fragment, useMemo, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { formatStock } from "~/lib/utils";
-import type { MRPData } from "~/mrp_data/transform_mrp_data";
+import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { ProductEventsChart } from "./chart";
 import { ProductEventRow } from "./event_row";
 import { ForecastSupplyEventsRow } from "./forecast_supply_events_row";
-import { useCurrentProduct } from "./product_provider";
-import { useProductPageData } from "./use_product_page_data";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { Loader2Icon } from "lucide-react";
+import { api } from "~/trpc/react";
+import AppLayout from "~/components/applayout";
+import { Title } from "~/components/title";
+import AppSidenav from "~/components/app-sidenav";
+import { useSession } from "next-auth/react";
 
 export default function ProductPage() {
-  const data: MRPData = useMRPData();
+  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
 
   const params = useParams<{ code: string }>();
   const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
 
   const productCode = decodeURIComponent(params?.code ?? "");
+  const product = monolito?.data.products.find(v => v.code === productCode);
+  const auth = useSession();
 
-  const product = useCurrentProduct();
+  const productData = useMemo(() => {
+    if (!monolito || !product) {
+      return null;
+    }
 
-  const productData = useProductPageData(product);
+    const data = monolito.data;
+    const events = data.eventsByProductCode.get(product.code) ?? [];
 
-  if (isLoadingStats) {
+    const dataByMonth = new Map<string, { events: ProductEvent[]; supplyForecastEvents: ProductEvent[] }>();
+
+    for (const event of events) {
+      const month = dayjs(event.date).format("YYYY-MM");
+
+      const data = dataByMonth.get(month) ?? {
+        events: [],
+        supplyForecastEvents: [],
+      };
+
+      if (event.type === "supply" && event.isForecast) {
+        data.supplyForecastEvents.push(event);
+      } else {
+        data.events.push(event);
+      }
+
+      dataByMonth.set(month, data);
+    }
+
+    return dataByMonth;
+  }, [product, monolito]);
+
+  if (isLoadingStats || isLoadingData || !monolito) {
     return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
       <Button variant="secondary" disabled>
-        <Loader2Icon className="mr-2 animate-spin" /> Cargando estadísticas
+        <Loader2Icon className="mr-2 animate-spin" /> {isLoadingStats ? 'Cargando estadísticas' : 'Cargando datos'}
       </Button>
     </div>;
+  } else if (!product) {
+    return (
+      <AppLayout title={<h1>Error 404</h1>} user={auth.data?.user} sidenav={<AppSidenav />}>
+        <Title>No se encontró el producto</Title>
+        <p>No encontramos ningún producto con el código "{productCode}".</p>
+      </AppLayout>
+    );
   }
 
   return (
@@ -44,14 +81,14 @@ export default function ProductPage() {
             <Badge>
               {product.description} - {product.additional_description}
             </Badge>
-            <Badge className="ml-2">Stock: {product.stock}</Badge>
-            <Badge className="ml-2">Comprometido: {product.commited}</Badge>
+            <Badge className="ml-2">Stock: {Math.round(product.stock)}</Badge>
+            <Badge className="ml-2">Comprometido: {Math.round(product.commited)}</Badge>
           </div>
           <div className="py-2">
             {product?.providers.map((provider, i) => {
               return (
                 <Badge key={i} variant="secondary" className="mr-2">
-                  {data.providersByCode.get(provider.provider_code)?.name ?? provider.provider_code}
+                  {monolito.data.providersByCode.get(provider.provider_code)?.name ?? provider.provider_code}
                 </Badge>
               );
             })}
@@ -61,7 +98,7 @@ export default function ProductPage() {
           <Button variant="outline">Ver estadisticas</Button>
         </Link>
       </div>
-      <ProductEventsChart key={product.code} product={product} months={data.months} />
+      <ProductEventsChart key={product.code} product={product} months={monolito.data.months} />
       <div className="max-w-full overflow-x-auto">
         <Table className="min-w-[600px]">
           {/* <TableCaption>Lista de importaciones pedidos y armados</TableCaption> */}
@@ -88,7 +125,7 @@ export default function ProductPage() {
               </TableCell>
             </TableRow>
 
-            {Array.from(productData.entries()).map(([month, p], i) => {
+            {Array.from(productData?.entries() ?? []).map(([month, p], i) => {
               const forecastEvents = p.events.filter((e) => e.isForecast);
 
               const nonForecastEvents = p.events.filter((e) => !e.isForecast);
@@ -121,11 +158,11 @@ export default function ProductPage() {
                     </TableCell>
                   </TableRow>
                   {forecastEvents.map((event, i) => {
-                    return <ProductEventRow key={`row:${month}:f_${i}`} event={event} productCode={productCode} nostock />;
+                    return <ProductEventRow monolito={monolito} key={`row:${month}:f_${i}`} event={event} productCode={productCode} nostock />;
                   })}
-                  <ForecastSupplyEventsRow events={p.supplyForecastEvents} month={month} key={`forecast_supply_event_row:${month}`} />
+                  <ForecastSupplyEventsRow monolito={monolito} events={p.supplyForecastEvents} month={month} key={`forecast_supply_event_row:${month}`} />
                   {nonForecastEvents.map((event, i) => {
-                    return <ProductEventRow key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />;
+                    return <ProductEventRow monolito={monolito} key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />;
                   })}
                 </Fragment>
               );

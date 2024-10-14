@@ -1,9 +1,11 @@
-import { Loader2Icon } from "lucide-react";
-import { useMRPDataIsUpdating, useMRPLoadingMessage } from "./mrp-data-provider";
-import { Card } from "./ui/card";
+// import { Loader2Icon } from "lucide-react";
+// import { useMRPDataIsUpdating, useMRPLoadingMessage } from "./mrp-data-provider";
+// import { Card } from "./ui/card";
 
 export default function DataUploadingCard() {
-  const isUpdating = useMRPDataIsUpdating();
+  return <></>;
+
+  /* const isUpdating = useMRPDataIsUpdating();
   const loadingMessage = useMRPLoadingMessage();
 
   return (
@@ -18,5 +20,5 @@ export default function DataUploadingCard() {
         </Card>
       )}
     </>
-  );
+  ); */
 }

@@ -2,7 +2,6 @@ import { ListTodoIcon, Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useMemo, useState } from "react";
 import ListSelectionDialog from "~/components/list-selection-dialog";
-import { useMRPData, useMRPInvalidateAndReloadData } from "~/components/mrp-data-provider";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
@@ -11,8 +10,9 @@ import { Label } from "~/components/ui/label";
 import type { CrmBudget } from "~/lib/types";
 import { formatStock } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import type { RouterOutputs } from "~/trpc/shared";
 
-export default function ForecastDialogForm(props: { disabled?: boolean; children: React.ReactNode }) {
+export default function ForecastDialogForm(props: { disabled?: boolean; children: React.ReactNode; monolito: RouterOutputs['db']['getMonolito']; }) {
   const { mutateAsync: createProfile, isLoading: isLoading1 } = api.forecast.createProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isLoading2 } = api.forecast.applyProfile.useMutation();
 
@@ -29,9 +29,7 @@ export default function ForecastDialogForm(props: { disabled?: boolean; children
   const [clientInclusionList, setClientInclusionList] = useState<string[] | null>(null);
 
   const router = useRouter();
-  const invalidateAndReloadData = useMRPInvalidateAndReloadData();
-
-  const data = useMRPData();
+  const data = props.monolito.data;
 
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
@@ -71,7 +69,7 @@ export default function ForecastDialogForm(props: { disabled?: boolean; children
         clientInclusionList,
       });
       await applyProfile({ id: insertId });
-      invalidateAndReloadData();
+      router.refresh();
     } catch (error) {
       console.error(error);
       alert(error);

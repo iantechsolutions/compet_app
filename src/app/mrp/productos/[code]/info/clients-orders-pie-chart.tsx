@@ -1,14 +1,14 @@
 import React from "react";
 import { Chart } from "react-google-charts";
-import { useMRPData } from "~/components/mrp-data-provider";
+import type { RouterOutputs } from "~/trpc/shared";
 
 type Order = {
   client_code: string;
   quantity: number;
 };
 
-export default function ClientsOrdersQuantityPieChart({ orders }: { orders: Order[] }) {
-  const mrpData = useMRPData();
+export default function ClientsOrdersQuantityPieChart({ orders, monolito }: { orders: Order[]; monolito: RouterOutputs['db']['getMonolito']; }) {
+  const mrpData = monolito.data;
 
   const data: [string, string | number][] = [["Clientes", "Cantidad adquirida"]];
 

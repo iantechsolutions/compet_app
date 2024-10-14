@@ -2,7 +2,6 @@ import dayjs from "dayjs";
 import { Trash2Icon } from "lucide-react";
 import { useMemo } from "react";
 import ListSelectionDialog from "~/components/list-selection-dialog";
-import { useMRPData } from "~/components/mrp-data-provider";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import type { CrmBudget } from "~/lib/types";
@@ -14,10 +13,10 @@ export default function ForecastProfileCard(props: {
   handleDeleteProfile: (id: number) => void;
   handleApplyProfile: (id: number) => void;
   isLoading: boolean;
+  monolito: RouterOutputs['db']['getMonolito'];
 }) {
   const profile = props.profile;
-
-  const data = useMRPData();
+  const data = props.monolito.data;
 
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
