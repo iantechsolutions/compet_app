@@ -78,8 +78,8 @@ export default function CutsPage({ cuts }: Props) {
         amount: amount,
         measure: (measure * 1000),
         units: units as CutUnits,
-        stockPhys: 0,
-        stockTango: 0
+        stockPhys: "0",
+        stockTango: "0"
       });
       router.refresh();
     } catch (error) {

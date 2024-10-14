@@ -17,8 +17,8 @@ export const cutsRouter = createTRPCRouter({
         amount: z.number().nonnegative(),
         measure: z.number().nonnegative(),
         units: z.enum(CutUnitsZEnum),
-        stockPhys: z.number(),
-        stockTango: z.number(),
+        stockPhys: z.string(),
+        stockTango: z.string(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -74,11 +74,11 @@ export const cutsRouter = createTRPCRouter({
         lote: z.string().min(1).max(255).optional(),
         caja: z.string().min(1).max(255).optional(),
         location: z.string().min(1).max(255).optional(),
-        amount: z.number().int().nonnegative().optional(),
+        amount: z.number().nonnegative().optional(),
         measure: z.number().nonnegative().optional(),
         units: z.enum(CutUnitsZEnum).optional(),
-        stockPhys: z.number().optional(),
-        stockTango: z.number().optional(),
+        stockPhys: z.string().optional(),
+        stockTango: z.string().optional(),
       }),
     )
     .mutation(async ({ input }) => {
