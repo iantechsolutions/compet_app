@@ -33,6 +33,7 @@ import type { Session } from "next-auth";
 import { cachedAsyncFetch } from "~/lib/cache";
 import { defaultCacheTtl } from "~/scripts/lib/database";
 
+export const maxDuration = 300;
 const getProductByCode = async () => {
   const products = await (await getDbInstance()).getProducts();
   const productByCode = new Map<string, Product>();
