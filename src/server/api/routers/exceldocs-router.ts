@@ -32,8 +32,8 @@ export const excelCutsDocRouter = createTRPCRouter({
             amount: row.Cantidad,
             measure: (row.Medida * 1000),
             units: row.Unidad,
-            stockPhys: row["Stock Fisico"] ?? 0,
-            stockTango: row["Stock Tango"] ?? 0,
+            stockPhys: row["Stock Fisico"] ?? "0",
+            stockTango: row["Stock Tango"] ?? "0",
           });
         }
         catch(e){

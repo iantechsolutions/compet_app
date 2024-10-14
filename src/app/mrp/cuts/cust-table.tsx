@@ -39,13 +39,13 @@ export default function CutsTable({ cutsMap }: Props) {
                                         <Table>
                                             <TableHeader>
                                                 <TableRow className="bg-[#f7f7f7] text-[#3e3e3e]">
-                                                    <TableHead>Medida</TableHead>
+                                                    <TableHead>Medidas</TableHead>
                                                     {Array.from(prodMap).map(([measure, amount]) => (
                                                         <TableHead>{measure} mt</TableHead>
                                                     ))}
                                                 </TableRow>
                                                 <TableRow>
-                                                    <TableHead>Cantidad</TableHead>
+                                                    <TableHead>Cantidad de recortes</TableHead>
                                                     {Array.from(prodMap).map(([measure, amount]) => (
                                                         <TableCell>{amount}</TableCell>
                                                     ))}

@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 const stringToValidIntegerZodTransformer = z
-  .string()
-  .or(z.number())
-  .transform((v) => Number(v.toString().replace(/\s/g, "")))
+  .union([z.string(), z.number(), z.null()])
+  .transform((v) => v === null ? 0 : Number(v.toString().replace(/\s/g, "")))
   .refine((value) => !isNaN(value));
+
 const allToString = z
   .union([z.number(), z.string()])
   .transform((value) => {
@@ -28,8 +28,8 @@ const recDocValidator = z.object({
   Medida: z.number(),
   Unidad: z.enum(["PZA", "KITS", "MT", "UNI"]),
   "Cant de mt/pzas": stringToValidIntegerZodTransformer,
-  "Stock Fisico": stringToValidIntegerZodTransformer.optional(),
-  "Stock Tango": stringToValidIntegerZodTransformer.optional(),
+  "Stock Fisico": allToString.optional(),
+  "Stock Tango": allToString.optional(),
 });
 
 export const recRowsFormat = (rows: Record<string, unknown>[]) => {
@@ -46,8 +46,8 @@ export const recRowsTransformer = (rows: Record<string, unknown>[]) => {
     Medida: number;
     Unidad: "PZA" | "KITS" | "MT" | "UNI";
     "Cant de mt/pzas": number;
-    "Stock Fisico"?: number | undefined | null;
-    "Stock Tango"?: number | undefined | null;
+    "Stock Fisico"?: string | undefined | null;
+    "Stock Tango"?: string | undefined | null;
   }[] = [];
   const errors: z.ZodError<
     {
@@ -59,8 +59,8 @@ export const recRowsTransformer = (rows: Record<string, unknown>[]) => {
       Medida: number;
       Unidad: "PZA" | "KITS" | "MT" | "UNI";
       "Cant de mt/pzas": number;
-      "Stock Fisico"?: number | undefined | null;
-      "Stock Tango"?: number | undefined | null;
+      "Stock Fisico"?: string | undefined | null;
+      "Stock Tango"?: string | undefined | null;
     }[]
   >[] = [];
   rows.map((row) => {

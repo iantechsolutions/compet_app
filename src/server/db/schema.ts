@@ -134,13 +134,13 @@ export const cuts = pgTable("cuts", {
   caja: varchar("caja", { length: 255 }),
   location: varchar("location", { length: 255 }),
   // n de cortes disponibles
-  amount: integer("amount").notNull(),
+  amount: real("amount").notNull(),
   // longitud o ctd
   measure: real("measure").notNull(),
   // tipo de measure (ver en lib/types.ts)
   units: varchar("units", { length: 255 }).notNull(),
-  stockPhys: integer("stockPhys").notNull(),
-  stockTango: integer("stockTango").notNull(),
+  stockPhys: varchar("stockPhys").notNull(),
+  stockTango: varchar("stockTango").notNull(),
 });
 
 export const excelCutsDocs = pgTable("excelCutsDocs", {

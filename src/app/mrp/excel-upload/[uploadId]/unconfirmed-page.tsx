@@ -1,7 +1,7 @@
 "use client"
 import { RouterOutputs } from "~/trpc/shared"
 import dayjs from "dayjs";
-import { FileSpreadsheetIcon } from "lucide-react";
+import { FileSpreadsheetIcon,Loader2Icon } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react"
@@ -54,11 +54,13 @@ export default function UnconfirmedPage({ upload }: Props) {
                 </div>
             </Card>
 
-            <div className="flex gap-1">
-                <Button onClick={handleRead}>
+            <div className="flex gap-1 pt-3">
+                {/* <Button onClick={handleRead} disabled={isReadingLoading || isDataLoading}>
+                    {isReadingLoading && <Loader2Icon className="mr-2 animate-spin" />}
                     Leer archivo
-                </Button>
-                <Button onClick={handleConfirm} >
+                </Button> */}
+                <Button onClick={handleConfirm} disabled={isReadingLoading || isDataLoading} >
+                    {isDataLoading && <Loader2Icon className="mr-2 animate-spin" />}
                     Escribir a la base de datos
                 </Button>
             </div>
