@@ -14,7 +14,7 @@ export const cutsRouter = createTRPCRouter({
         lote: z.string().min(1).max(255),
         caja: z.string().min(1).max(255),
         location: z.string().min(1).max(255),
-        amount: z.number().int().nonnegative(),
+        amount: z.number().nonnegative(),
         measure: z.number().nonnegative(),
         units: z.enum(CutUnitsZEnum),
         stockPhys: z.number(),
