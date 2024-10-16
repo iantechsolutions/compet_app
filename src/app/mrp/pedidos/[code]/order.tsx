@@ -21,7 +21,7 @@ function useProductRef() {
 }
 
 export default function OrderPage(props: { user?: NavUserData }) {
-  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getEventsByProductCode.useQuery();
+  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery();
   const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
     data: {
       ordersByOrderNumber: true,

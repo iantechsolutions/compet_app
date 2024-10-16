@@ -63,67 +63,61 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const [showMore, setShowMore] = useState(false);
   const [showMore2, setShowMore2] = useState(false);
 
-  const { data: queryRes, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
-    data: {
-      providers: true,
-      products: {
-        suppliesOf: true,
-      },
-      assemblyById: true,
-      budget_products: true,
-      budgetsById: true,
-      crm_clients: true,
-      budgets: true,
-      sold: true,
-      clients: true,
-    },
-  });
-
-  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getEventsByProductCode.useQuery();
+  const { data: providers, isLoading: isLoadingProv } = api.db.getMProviders.useQuery();
+  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery();
+  const { data: products, isLoading: isLoadingProds } = api.db.getMProductsWSuppliesOf.useQuery();
+  const { data: assemblyById, isLoading: isLoadingAssemb } = api.db.getMAssemblyById.useQuery();
+  const { data: budget_products, isLoading: isLoadingBP } = api.db.getMBudgetProducts.useQuery();
+  const { data: budgetsById, isLoading: isLoadingBID } = api.db.getMBudgetsById.useQuery();
+  const { data: clients, isLoading: isLoadingClients } = api.db.getMClients.useQuery();
+  const { data: crm_clients, isLoading: isLoadingCRMC } = api.db.getMCrmClients.useQuery();
+  const { data: budgets, isLoading: isLoadingBudgets } = api.db.getMBudgets.useQuery();
+  const { data: sold, isLoading: isLoadingSold } = api.db.getMSold.useQuery();
+  const loading = isLoadingClients || isLoadingSold || isLoadingBudgets || isLoadingCRMC || isLoadingBID || isLoadingProv || isLoadingProds || isLoadingEvts || isLoadingAssemb || isLoadingBP;
 
   ring2.register();
   const productsByProvider = useMemo(() => {
-    if (isLoadingData || isLoadingEvts || !queryRes) {
+    if (loading || !products) {
       return null;
     }
 
     const map = new Map<string, number>();
 
-    for (const product of queryRes?.data.products ?? []) {
+    for (const product of products) {
       for (const provider of product.providers) {
         map.set(provider.provider_code, (map.get(provider.provider_code) ?? 0) + 1);
       }
     }
 
     return map;
-  }, [queryRes, isLoadingData, isLoadingEvts]);
+  }, [products, loading]);
 
   const filteredProviders = useMemo(() => {
-    if (isLoadingData || isLoadingEvts || !queryRes) {
+    if (loading || !providers) {
       return null;
     }
 
-    return queryRes?.data.providers!.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
-  }, [queryRes, productsByProvider, isLoadingData, isLoadingEvts]);
+    return providers.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
+  }, [providers, productsByProvider, loading]);
 
   const allProviersCodes = useMemo(() => {
-    if (isLoadingData || isLoadingEvts) {
+    if (loading) {
       return null;
     }
 
     return new Set<string>(filteredProviders?.map((p) => p.code));
-  }, [filteredProviders, isLoadingData, isLoadingEvts]);
+  }, [filteredProviders, loading]);
 
   const defaultValues = useMemo(() => {
-    if (isLoadingData || isLoadingEvts) {
+    if (loading) {
       return null;
     }
 
     return Array.from(allProviersCodes ?? new Set<string>()).filter((code) => !providersSelected.has(code));
-  }, [allProviersCodes, providersSelected, isLoadingData, isLoadingEvts]);
+  }, [allProviersCodes, providersSelected, loading]);
 
   useEffect(() => {
-    if (fromDate && toDate && !hasRun && !isLoadingData && !isLoadingEvts) {
+    if (fromDate && toDate && !hasRun && !isLoading) {
       const {
         list: consumptionStats,
         totalConsumedAmount: totalTemp,
@@ -167,7 +161,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       setHasRun(true);
       setIsLoading(false);
     }
-  }, [fromDate, toDate, defaultValues, isLoadingData, isLoadingEvts]);
+  }, [fromDate, toDate, defaultValues, isLoading]);
 
   useEffect(() => {
     if (handleFiltersStage === 1) {
@@ -179,7 +173,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
   }, [handleFiltersStage]);
 
-  if (isLoadingData || isLoadingEvts || !queryRes || eventsByProductCode === undefined) {
+  if (loading || eventsByProductCode === undefined) {
     return (
       <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
         <Button variant="secondary" disabled>
@@ -192,14 +186,13 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   // necesita budgetsById, crm_clients y budget_products del monolito data
   const crmMonolito = {
     data: {
-      budget_products: queryRes.data.budget_products!,
-      budgetsById: queryRes.data.budgetsById!,
-      crm_clients: queryRes.data.crm_clients!
+      budget_products: budget_products!,
+      budgetsById: budgetsById!,
+      crm_clients: crm_clients!
     }
   };
 
-  const data = queryRes.data;
-  const product = data.products!.find((p) => p.code === productCode) ?? null;
+  const product = products!.find((p) => p.code === productCode) ?? null;
 
   function handleUpdateFilters() {
     if (fromDate && toDate) {
@@ -267,7 +260,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const assembliesQuantities =
         event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
       if (event.assemblyId) {
-        const assembly = data?.assemblyById!.get(event.assemblyId);
+        const assembly = assemblyById!.get(event.assemblyId);
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
@@ -288,7 +281,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       motive: string;
       amount: number;
     }[] = [];
-    const sales = data.sold!.filter(
+    const sales = sold!.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -329,7 +322,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     productCode: string,
   ) {
     const fromDateCopy = new Date(fromDate);
-    const budgets = data?.budgets!.filter(
+    const budgetsFiltered = budgets!.filter(
       (budget) =>
         !clientExemptionList?.includes(budget.client_id) &&
         new Date(String(budget.date)) &&
@@ -337,7 +330,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         new Date(String(budget.date)) >= fromDateCopy &&
         budget.products.filter((product) => product.product_code === productCode).length > 0,
     );
-    const sales = data?.sold!.filter((order) => !clientExemptionList?.includes(order.client_code));
+    const sales = sold!.filter((order) => !clientExemptionList?.includes(order.client_code));
     const salesList = [];
     const budgetsList = [];
     while (fromDateCopy.getTime() <= toDate.getTime()) {
@@ -348,7 +341,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           !isNaN(new Date(String(sale.emission_date)).getTime()) &&
           new Date(String(sale.emission_date)).toISOString().slice(0, 10) === day,
       );
-      const budgetsOnDay = budgets?.filter(
+      const budgetsOnDay = budgetsFiltered?.filter(
         (budget) =>
           new Date(String(budget.date)) instanceof Date &&
           !isNaN(new Date(String(budget.date)).getTime()) &&
@@ -389,7 +382,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.sold!.filter(
+    const sales = sold!.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -410,7 +403,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const [totalSales, amountOfSales] = value;
 
       return {
-        name: data?.clients!.find((client) => client.code === key)?.name,
+        name: clients!.find((client) => client.code === key)?.name,
         totalSales,
         amountOfSales,
       };
@@ -426,7 +419,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.sold!.filter(
+    const sales = sold!.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -463,7 +456,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       if (event.assemblyId) {
         const assembliesQuantities =
           event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
-        const assembly = data?.assemblyById!.get(event.assemblyId);
+        const assembly = assemblyById!.get(event.assemblyId);
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         let day = "";
         if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
@@ -496,11 +489,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   }
 
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
-    const prod = data?.products!.find((p) => p.code === productCode);
+    const prod = products!.find((p) => p.code === productCode);
     const possibleSuppliesOf = prod?.suppliesOf!.map(x => x.product_code);
     const mapeoConsumo = new Map<string, number>();
     possibleSuppliesOf?.map((supplyOfCode) => {
-      const semielaborate = data?.products!.find((p) => p.code === supplyOfCode);
+      const semielaborate = products!.find((p) => p.code === supplyOfCode);
       const dataSemi = isSemiElaborate(semielaborate);
       // const longNecesaria = supply.quantity;
       if (dataSemi !== null) {
