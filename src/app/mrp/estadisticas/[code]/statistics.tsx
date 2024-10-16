@@ -63,7 +63,22 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const [showMore, setShowMore] = useState(false);
   const [showMore2, setShowMore2] = useState(false);
 
-  const { data: queryRes, isLoading: isLoadingData } = api.db.getEventsAndForecast.useQuery();
+  const { data: queryRes, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
+    data: {
+      providers: true,
+      products: {
+        suppliesOf: true,
+      },
+      assemblyById: true,
+      budget_products: true,
+      budgetsById: true,
+      crm_clients: true,
+      budgets: true,
+      sold: true,
+      clients: true,
+    },
+    eventsByProductCode: true
+  });
 
   ring2.register();
   const productsByProvider = useMemo(() => {
@@ -87,7 +102,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       return null;
     }
 
-    return queryRes?.data.providers.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
+    return queryRes?.data.providers!.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
   }, [queryRes, productsByProvider, isLoadingData]);
 
   const allProviersCodes = useMemo(() => {
@@ -175,14 +190,15 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   // necesita budgetsById, crm_clients y budget_products del monolito data
   const crmMonolito = {
     data: {
-      budget_products: queryRes.data.budget_products,
-      budgetsById: queryRes.data.budgetsById,
-      crm_clients: queryRes.data.crm_clients
+      budget_products: queryRes.data.budget_products!,
+      budgetsById: queryRes.data.budgetsById!,
+      crm_clients: queryRes.data.crm_clients!
     }
   };
 
-  const { data, eventsByProductCode } = queryRes;
-  const product = data.products.find((p) => p.code === productCode) ?? null;
+  const eventsByProductCode = queryRes.eventsByProductCode!;
+  const data = queryRes.data;
+  const product = data.products!.find((p) => p.code === productCode) ?? null;
 
   function handleUpdateFilters() {
     if (fromDate && toDate) {
@@ -250,7 +266,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const assembliesQuantities =
         event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
       if (event.assemblyId) {
-        const assembly = data?.assemblyById.get(event.assemblyId);
+        const assembly = data?.assemblyById!.get(event.assemblyId);
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
@@ -271,7 +287,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       motive: string;
       amount: number;
     }[] = [];
-    const sales = data?.sold.filter(
+    const sales = data.sold!.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -312,7 +328,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     productCode: string,
   ) {
     const fromDateCopy = new Date(fromDate);
-    const budgets = data?.budgets.filter(
+    const budgets = data?.budgets!.filter(
       (budget) =>
         !clientExemptionList?.includes(budget.client_id) &&
         new Date(String(budget.date)) &&
@@ -320,7 +336,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         new Date(String(budget.date)) >= fromDateCopy &&
         budget.products.filter((product) => product.product_code === productCode).length > 0,
     );
-    const sales = data?.sold.filter((order) => !clientExemptionList?.includes(order.client_code));
+    const sales = data?.sold!.filter((order) => !clientExemptionList?.includes(order.client_code));
     const salesList = [];
     const budgetsList = [];
     while (fromDateCopy.getTime() <= toDate.getTime()) {
@@ -372,7 +388,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.sold.filter(
+    const sales = data?.sold!.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -393,7 +409,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const [totalSales, amountOfSales] = value;
 
       return {
-        name: data?.clients.find((client) => client.code === key)?.name,
+        name: data?.clients!.find((client) => client.code === key)?.name,
         totalSales,
         amountOfSales,
       };
@@ -409,7 +425,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.sold.filter(
+    const sales = data?.sold!.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -446,7 +462,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       if (event.assemblyId) {
         const assembliesQuantities =
           event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
-        const assembly = data?.assemblyById.get(event.assemblyId);
+        const assembly = data?.assemblyById!.get(event.assemblyId);
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         let day = "";
         if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
@@ -479,11 +495,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   }
 
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
-    const prod = data?.products.find((p) => p.code === productCode);
-    const possibleSuppliesOf = prod?.suppliesOf.map(x => x.product_code);
+    const prod = data?.products!.find((p) => p.code === productCode);
+    const possibleSuppliesOf = prod?.suppliesOf!.map(x => x.product_code);
     const mapeoConsumo = new Map<string, number>();
     possibleSuppliesOf?.map((supplyOfCode) => {
-      const semielaborate = data?.products.find((p) => p.code === supplyOfCode);
+      const semielaborate = data?.products!.find((p) => p.code === supplyOfCode);
       const dataSemi = isSemiElaborate(semielaborate);
       // const longNecesaria = supply.quantity;
       if (dataSemi !== null) {

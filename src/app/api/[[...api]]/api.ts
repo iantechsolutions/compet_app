@@ -196,6 +196,7 @@ app.get("/individualMail", async (c) => {
         if (!forecastProfile) {
           forecastProfile = nullProfile;
         }
+
         const forecastData = await queryForecastData(forecastProfile, rawdata);
         const data = mapData(rawdata, forecastData);
         const events = listAllEventsWithSupplyEvents(data);

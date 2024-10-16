@@ -111,7 +111,7 @@ export function decodeData<T>(data: string) {
 //que devuelva longitud de corte
 export function isSemiElaborate(prod: Awaited<ReturnType<typeof queryBaseMRPData>>["products"][0] | undefined): {
   long: number;
-  supply: MRPData["products"][number]["supplies"][0];
+  supply: NonNullable<MRPData["products"][number]["supplies"]>[0];
 } | null {
   let long = null;
   let supply = null;

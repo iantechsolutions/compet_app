@@ -177,7 +177,9 @@ const listRowContext = createContext<{
 export function Table(props: { user?: NavUserData }) {
   const { data, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
     data: {
-      products: {},
+      products: {
+        supplies: true
+      },
       productsByCode: true,
       providers: true
     },
@@ -388,7 +390,7 @@ function useFiltered(monolito: RouterOutputs['db']['getMonolito'] | undefined, f
       if (!product) {
         return [];
       }
-      let supplies = product.supplies.map((p) => p.supply_product_code);
+      let supplies = product.supplies!.map((p) => p.supply_product_code);
       let index = 0;
 
       while (index < supplies.length) {

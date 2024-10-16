@@ -32,7 +32,7 @@ import { queryBaseMRPData } from "~/serverfunctions";
 import type { Session } from "next-auth";
 import { cachedAsyncFetch } from "~/lib/cache";
 import { defaultCacheTtl } from "~/scripts/lib/database";
-import { RouterOutputs } from "~/trpc/shared";
+import type { RouterOutputs } from "~/trpc/shared";
 
 export const maxDuration = 300;
 const getProductByCode = async () => {
@@ -588,6 +588,8 @@ export const dbRouter = createTRPCRouter({
                 .object({
                   events: z.boolean().default(false),
                   events_by_month: z.boolean().default(false),
+                  supplies: z.boolean().default(false),
+                  suppliesOf: z.boolean().default(false),
                 })
                 .optional(),
               forecastData: z.boolean().default(false),
@@ -609,6 +611,8 @@ export const dbRouter = createTRPCRouter({
               importsById: z.boolean().default(false),
               providers: z.boolean().default(false),
               budget_products: z.boolean().default(false),
+              clients: z.boolean().default(false),
+              sold: z.boolean().default(false),
             })
             .default({}),
           events: z.boolean().default(false),
@@ -632,6 +636,8 @@ export const dbRouter = createTRPCRouter({
           "data.eventsByProductCode",
           "data.eventsOfProductsByMonth",
           "data.events",
+          "data.sold",
+          "data.clients",
           "data.ordersByOrderNumber",
           "data.orderProductsByOrderNumber",
           "data.orderProductsByProductCode",
@@ -666,6 +672,14 @@ export const dbRouter = createTRPCRouter({
             prodShallow.events_by_month = undefined;
           }
 
+          if (!input.data.products?.supplies) {
+            prodShallow.supplies = undefined;
+          }
+
+          if (!input.data.products?.suppliesOf) {
+            prodShallow.suppliesOf = undefined;
+          }
+
           return prodShallow;
         });
       }
@@ -676,6 +690,14 @@ export const dbRouter = createTRPCRouter({
 
       if (!input.data.budgetsById) {
         monolitoShallow.data.budgetsById = undefined;
+      }
+
+      if (!input.data.sold) {
+        monolitoShallow.data.sold = undefined;
+      }
+
+      if (!input.data.clients) {
+        monolitoShallow.data.clients = undefined;
       }
 
       if (!input.data.budgets) {

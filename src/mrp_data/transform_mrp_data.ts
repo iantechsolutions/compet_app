@@ -251,6 +251,7 @@ export function listAllEvents(data: MappedData) {
 // Les agregamos eventos de suministro para poder calcular el stock de forma correcta
 // Esto sucita cuando se agotan los productos que son armados y se tienen que crear nuevos armados,
 // en estos casos se asocia al pedido la materia prima necesaria para armar el producto
+// debería usarse posteriormente a mapData (supplies!)
 export function listAllEventsWithSupplyEvents(data: MappedData) {
   let events: ProductEvent[] = [...listAllEvents(data)];
 
@@ -283,7 +284,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
 
       // Si estamos vendiendo más unidades de las que tenemos en stock y es un armado,
       // significa que podemos armar más unidades
-      if (newStockAmount < 0 && product.supplies.length > 0) {
+      if (newStockAmount < 0 && (product.supplies?.length ?? 0) > 0) {
         // Cantidad de unidades que tenemos que armar
         overflow = -newStockAmount;
         // Si ya había stock negativo
@@ -302,7 +303,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
         const newSupplyEvents: ProductEvent[] = [];
 
         // Por cada producto que se necesita para armar el producto
-        for (const supply of product.supplies) {
+        for (const supply of product.supplies ?? []) {
           newSupplyEvents.push({
             type: "supply",
             forecastType: event.forecastType,

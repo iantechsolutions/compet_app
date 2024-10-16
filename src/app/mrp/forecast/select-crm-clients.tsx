@@ -17,7 +17,6 @@ import type { CrmBudget } from "~/lib/types";
 import { formatStock } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/shared";
 
-// necesita budgetsById y crm_clients del monolito data
 export function SelectCRMClients(props: {
   setSelected: (selected: Set<string>) => void; unselected: Set<string>; monolito: {
     data: {
