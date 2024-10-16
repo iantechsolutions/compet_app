@@ -117,7 +117,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   }, [allProviersCodes, providersSelected, loading]);
 
   useEffect(() => {
-    if (fromDate && toDate && !hasRun && !isLoading) {
+    if (fromDate && toDate && !hasRun && !loading) {
       const {
         list: consumptionStats,
         totalConsumedAmount: totalTemp,
@@ -161,7 +161,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       setHasRun(true);
       setIsLoading(false);
     }
-  }, [fromDate, toDate, defaultValues, isLoading]);
+  }, [fromDate, toDate, defaultValues, loading]);
 
   useEffect(() => {
     if (handleFiltersStage === 1) {
