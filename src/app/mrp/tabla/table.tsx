@@ -175,20 +175,77 @@ const listRowContext = createContext<{
 });
 
 export function Table(props: { user?: NavUserData }) {
-  const { data, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
-    data: {
-      products: {
-        supplies: true
-      },
-      productsByCode: true,
-      providers: true
-    },
-    forecastData: true
-  });
+  const { data: months, isLoading: isLoadingMonths } = api.db.getMonths.useQuery();
+  const { data: providers, isLoading: isLoadingProv } = api.db.getMProviders.useQuery();
+  const { data: products, isLoading: isLoadingProds } = api.db.getMProductsWSupplies.useQuery();
+  const { data: productsByCode, isLoading: isLoadingProdCodes } = api.db.getMProductsByCode.useQuery();
+  const { data: forecastProfile, isLoading: isLoadingForeProf } = api.db.getMForecastProfile.useQuery();
+  const isLoadingData = isLoadingProv || isLoadingProds || isLoadingProdCodes || isLoadingForeProf || isLoadingMonths;
 
   const [filters, setFilters] = useFilters();
 
-  const filtered = useFiltered(data, filters);
+  const filtered = useMemo(() => {
+    if (isLoadingData) {
+      return null;
+    }
+
+    let list = products!;
+    if (filters.hideAllZero) {
+      list = list.filter((product) => {
+        if (product.stock != 0) return true;
+
+        for (const m of months!) {
+          const stock = product.stock_at.get(m);
+          if (stock != 0) return true;
+        }
+
+        return false;
+      });
+    }
+    if (filters.search) {
+      list = list.filter((product) => {
+        return (
+          product.code.toLowerCase().includes(filters.search.trim().toLowerCase()) ||
+          product.description.toLowerCase().includes(filters.search.trim().toLowerCase())
+        );
+      });
+    }
+    if (filters.hideProviders.size > 0 && !(filters.hideProviders.has("") && filters.hideProviders.size == 1)) {
+      list = list.filter((product) => {
+        for (const provider of product.providers) {
+          if (!filters.hideProviders.has(provider.provider_code)) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+    }
+    if (filters.suppliesOf) {
+      const product = productsByCode!.get(filters.suppliesOf);
+      if (!product) {
+        return [];
+      }
+      let supplies = product.supplies!.map((p) => p.supply_product_code);
+      let index = 0;
+
+      while (index < supplies.length) {
+        const prod = productsByCode!.get(supplies[index] ?? "");
+        console.log(prod);
+        if (prod?.supplies) {
+          supplies = supplies.concat(prod.supplies.map((p) => p.supply_product_code));
+        }
+        index += 1;
+      }
+      const productsIds = new Set(supplies);
+
+      list = list.filter((product) => {
+        return productsIds.has(product.code);
+      });
+    }
+    return list;
+  }, [isLoadingData, filters]);
+
   const size = useWindowSize();
 
   const h = (size.height ?? 1000) - 110;
@@ -232,7 +289,7 @@ export function Table(props: { user?: NavUserData }) {
     document.getElementsByClassName(scrollClassName)[0]?.scrollTo(0, (window as any).listScroll);
   }, []);
 
-  if (isLoadingData || !data || !filtered) {
+  if (isLoadingData || !filtered) {
     return (
       <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
         <Button variant="secondary" disabled>
@@ -250,7 +307,7 @@ export function Table(props: { user?: NavUserData }) {
       hideMenuOnDesktop
       noPadding
       noUserSection
-      actions={<FiltersDialog monolito={data} onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
+      actions={<FiltersDialog products={products!} providers={providers!} onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
     >
       {currentFocus && !closedOverlay && (
         <TargetOverlayInfoCard
@@ -258,14 +315,14 @@ export function Table(props: { user?: NavUserData }) {
           column={currentFocus.month}
           product={currentFocus.product}
           productHref={`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`}
-          forecastProfile={data.forecastData!.forecastProfile}
+          forecastProfile={forecastProfile!}
           onClose={() => {
             setClosedOverlay(true);
           }}
         />
       )}
 
-      <ListRowContainer id={headerId} months={data.data.months as string[]} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
+      <ListRowContainer id={headerId} months={months!} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
         <div className={cn(headerCellClassName, "flex justify-start md:sticky md:left-0")}>
           <p>Producto</p>
         </div>
@@ -275,14 +332,14 @@ export function Table(props: { user?: NavUserData }) {
         <div className={cn(headerCellClassName, "text-sm")}>
           <p>Comprometido</p>
         </div>
-        {(data.data.months as string[]).map((month) => (
+        {months!.map((month) => (
           <div key={month} className={cn(headerCellClassName, "text-sm")}>
             <p>{month}</p>
           </div>
         ))}
       </ListRowContainer>
       <div className="" style={{ height: h, width: w }}>
-        <listRowContext.Provider value={{ filteredProducts: filtered, months: data.data.months as string[] }}>
+        <listRowContext.Provider value={{ filteredProducts: filtered, months: months! }}>
           <List onScroll={handleListScroll} className={scrollClassName} height={h} width={w} itemCount={filtered.length} itemSize={57}>
             {ListRow}
           </List>
@@ -342,71 +399,4 @@ function useFilters() {
   }
 
   return [filters, setFilters] as const;
-}
-
-function useFiltered(monolito: RouterOutputs['db']['getMonolito'] | undefined, filters: Filters) {
-  return useMemo(() => {
-    if (!monolito) {
-      return null;
-    }
-
-    const data = monolito.data;
-
-    let list = data.products!;
-    const months = data.months;
-    if (filters.hideAllZero) {
-      list = list.filter((product) => {
-        if (product.stock != 0) return true;
-
-        for (const m of months) {
-          const stock = product.stock_at.get(m);
-          if (stock != 0) return true;
-        }
-
-        return false;
-      });
-    }
-    if (filters.search) {
-      list = list.filter((product) => {
-        return (
-          product.code.toLowerCase().includes(filters.search.trim().toLowerCase()) ||
-          product.description.toLowerCase().includes(filters.search.trim().toLowerCase())
-        );
-      });
-    }
-    if (filters.hideProviders.size > 0 && !(filters.hideProviders.has("") && filters.hideProviders.size == 1)) {
-      list = list.filter((product) => {
-        for (const provider of product.providers) {
-          if (!filters.hideProviders.has(provider.provider_code)) {
-            return true;
-          }
-        }
-
-        return false;
-      });
-    }
-    if (filters.suppliesOf) {
-      const product = data.productsByCode!.get(filters.suppliesOf);
-      if (!product) {
-        return [];
-      }
-      let supplies = product.supplies!.map((p) => p.supply_product_code);
-      let index = 0;
-
-      while (index < supplies.length) {
-        const prod = data.productsByCode!.get(supplies[index] ?? "");
-        console.log(prod);
-        if (prod?.supplies) {
-          supplies = supplies.concat(prod.supplies.map((p) => p.supply_product_code));
-        }
-        index += 1;
-      }
-      const productsIds = new Set(supplies);
-
-      list = list.filter((product) => {
-        return productsIds.has(product.code);
-      });
-    }
-    return list;
-  }, [monolito, filters]);
 }

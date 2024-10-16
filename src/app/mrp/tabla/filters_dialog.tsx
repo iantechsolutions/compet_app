@@ -22,10 +22,10 @@ export function FiltersDialog(props: {
   initialFilters: Filters;
   onApply: (filters: Filters) => void;
   number: number;
-  monolito: RouterOutputs['db']['getMonolito'],
+  products: NonNullable<RouterOutputs['db']['getMonolito']['data']['products']>;
+  providers: NonNullable<RouterOutputs['db']['getMonolito']['data']['providers']>;
 }) {
-  const data = props.monolito.data;
-  const products = data.products!;
+  const products = props.products;
   const [filters, setFilters] = useState<Filters>(props.initialFilters);
 
   const closeId = useId();
@@ -122,7 +122,7 @@ export function FiltersDialog(props: {
           </label>
         </div>
 
-        <ProvidersFilter onChange={setHideProviders} value={filters.hideProviders} monolito={props.monolito} />
+        <ProvidersFilter onChange={setHideProviders} value={filters.hideProviders} products={props.products} providers={props.providers} />
 
         <DialogFooter>
           <DialogPrimitive.Close id={closeId} asChild>
@@ -188,11 +188,11 @@ function ProviderRow(props: {
 function ProvidersFilter(props: {
   value: Set<string>;
   onChange: (providers: Set<string>) => void;
-  monolito: RouterOutputs['db']['getMonolito'];
+  products: NonNullable<RouterOutputs['db']['getMonolito']['data']['products']>;
+  providers: NonNullable<RouterOutputs['db']['getMonolito']['data']['providers']>;
 }) {
-  const data = props.monolito.data;
-  const providers = data.providers!;
-  const products = data.products!;
+  const providers = props.providers;
+  const products = props.products;
 
   const productsByProvider = useMemo(() => {
     const map = new Map<string, number>();

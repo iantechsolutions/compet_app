@@ -7,13 +7,11 @@ type Order = {
   quantity: number;
 };
 
-export default function ClientsOrdersQuantityPieChart({ orders, monolito }: { orders: Order[]; monolito: RouterOutputs['db']['getMonolito']; }) {
-  const mrpData = monolito.data;
-
+export default function ClientsOrdersQuantityPieChart({ orders, clientsByCode }: { orders: Order[]; clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['data']['clientsByCode']>; }) {
   const data: [string, string | number][] = [["Clientes", "Cantidad adquirida"]];
 
   for (const order of orders) {
-    const client = mrpData.clientsByCode!.get(order.client_code);
+    const client = clientsByCode.get(order.client_code);
     if (client) {
       data.push([client.name, order.quantity]);
     }

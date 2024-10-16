@@ -13,17 +13,18 @@ export function ProductEventRow(props: {
   nostate?: boolean;
   nodate?: boolean;
   nostock?: boolean;
-  monolito: RouterOutputs['db']['getMonolito'];
+  orderProductsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['orderProductsById']>;
+  ordersByOrderNumber: NonNullable<RouterOutputs['db']['getMonolito']['data']['ordersByOrderNumber']>;
+  productImportsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['productImportsById']>;
+  importsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['importsById']>;
 }) {
-  const data = props.monolito.data;
-
   const { event, productCode } = props;
 
-  const orderProducts = event.type === "order" ? data.orderProductsById!.get(event.referenceId) : undefined;
-  const order = orderProducts ? data.ordersByOrderNumber!.get(orderProducts.order_number) : undefined;
+  const orderProducts = event.type === "order" ? props.orderProductsById.get(event.referenceId) : undefined;
+  const order = orderProducts ? props.ordersByOrderNumber.get(orderProducts.order_number) : undefined;
 
-  const productImport = event.type === "import" ? data.productImportsById!.get(event.referenceId) : undefined;
-  const importation = productImport ? data.importsById!.get(productImport.import_id) : undefined;
+  const productImport = event.type === "import" ? props.productImportsById.get(event.referenceId) : undefined;
+  const importation = productImport ? props.importsById.get(productImport.import_id) : undefined;
 
   const hasChildren = (event.childEvents?.length ?? 0) > 0;
 
@@ -134,7 +135,7 @@ export function ProductEventRow(props: {
     orderNumber = order?.order_number;
   }
   if (event.type === "supply") {
-    orderNumber = data.orderProductsById!.get(event.referenceId)?.order_number;
+    orderNumber = props.orderProductsById.get(event.referenceId)?.order_number;
   }
   if (event.type === "forecast") {
     orderNumber = "forecast";
@@ -174,7 +175,7 @@ export function ProductEventRow(props: {
       <TableCell className="whitespace-nowrap">{typeName}</TableCell>
       {!props.nodate && <TableCell className="whitespace-nowrap">{dayjs(event.date).format("YYYY-MM-DD")}</TableCell>}
       <TableCell className="whitespace-nowrap">
-        <EventHoverCard data={data} event={event}>
+        <EventHoverCard event={event}>
           <div className="inline-block">
             <ReferenceComponent orderNumber={event.isForecast ? "forecast" : orderNumber} productCode={productCode} />
             {event.type === "import" && importation?.id}
@@ -223,10 +224,9 @@ export function ProductEventRow(props: {
   );
 }
 
-function EventHoverCard(props: { event: ProductEvent; data: RouterOutputs['db']['getMonolito']['data']; children: React.ReactNode }) {
+function EventHoverCard(props: { event: ProductEvent; children: React.ReactNode }) {
   const event = props.event;
   const childEvents = event.childEvents ?? [];
-
   const parentEvent = event.parentEvent;
 
   return (

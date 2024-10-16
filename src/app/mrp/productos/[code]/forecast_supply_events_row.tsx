@@ -9,7 +9,14 @@ import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { ProductEventRow } from "./event_row";
 import type { RouterOutputs } from "~/trpc/shared";
 
-export function ForecastSupplyEventsRow(props: { events: ProductEvent[]; month: string; monolito: RouterOutputs['db']['getMonolito']; }) {
+export function ForecastSupplyEventsRow(props: {
+  events: ProductEvent[];
+  month: string;
+  orderProductsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['orderProductsById']>;
+  ordersByOrderNumber: NonNullable<RouterOutputs['db']['getMonolito']['data']['ordersByOrderNumber']>;
+  productImportsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['productImportsById']>;
+  importsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['importsById']>;
+}) {
   const openId = useId();
 
   const sum = props.events.reduce((acc, event) => acc + event.quantity, 0);
@@ -76,7 +83,7 @@ export function ForecastSupplyEventsRow(props: { events: ProductEvent[]; month: 
               </TableHeader>
               <TableBody>
                 {props.events.map((event, index) => {
-                  return <ProductEventRow monolito={props.monolito} key={index} event={event} productCode={event.productCode} nobg nodate nostate />;
+                  return <ProductEventRow importsById={props.importsById} orderProductsById={props.orderProductsById} ordersByOrderNumber={props.ordersByOrderNumber} productImportsById={props.productImportsById} key={index} event={event} productCode={event.productCode} nobg nodate nostate />;
                 })}
               </TableBody>
             </Table>

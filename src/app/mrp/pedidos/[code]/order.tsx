@@ -22,21 +22,18 @@ function useProductRef() {
 
 export default function OrderPage(props: { user?: NavUserData }) {
   const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery();
-  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
-    data: {
-      ordersByOrderNumber: true,
-      orderProductsByOrderNumber: true,
-      clientsByCode: true,
-      productsByCode: true,
-      assemblyById: true
-    }
-  });
+  const { data: ordersByOrderNumber, isLoading: isLoadingOrdNum } = api.db.getMOrdersByOrderNumber.useQuery();
+  const { data: orderProductsByOrderNumber, isLoading: isLoadingOrdProd } = api.db.getMOrderProductsByOrderNumber.useQuery();
+  const { data: clientsByCode, isLoading: isLoadingClients } = api.db.getMClientsByCode.useQuery();
+  const { data: productsByCode, isLoading: isLoadingProd } = api.db.getMProductsByCode.useQuery();
+  const { data: assemblyById, isLoading: isLoadingAssembly } = api.db.getMAssemblyById.useQuery();
+  const isLoadingData = isLoadingAssembly || isLoadingProd || isLoadingClients || isLoadingOrdProd || isLoadingOrdNum || isLoadingEvts;
 
   const params = useParams<{ code: string }>();
   const orderNumber = decodeURIComponent(params?.code ?? "");
   const productRef = useProductRef();
 
-  if (isLoadingData || isLoadingEvts || !monolito || !eventsByProductCode) {
+  if (isLoadingData || !eventsByProductCode) {
     return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
       <Button variant="secondary" disabled>
         <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
@@ -44,7 +41,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
     </div>;
   }
 
-  const order = monolito.data.ordersByOrderNumber?.get(orderNumber);
+  const order = ordersByOrderNumber?.get(orderNumber);
   if (!order) {
     return (
       <AppLayout title={<h1>Error 404</h1>} user={props?.user} sidenav={<AppSidenav />}>
@@ -54,7 +51,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
     );
   }
 
-  const orderProducts = monolito.data.orderProductsByOrderNumber?.get(orderNumber) ?? [];
+  const orderProducts = orderProductsByOrderNumber?.get(orderNumber) ?? [];
 
   const eventsByOrderProductId = new Map<number, ProductEvent[]>();
 
@@ -68,7 +65,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
     }
   }
 
-  const client = monolito.data.clientsByCode?.get(order.client_code);
+  const client = clientsByCode?.get(order.client_code);
   console.log(eventsByOrderProductId);
 
   return (
@@ -82,7 +79,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
       </div>
       <Accordion type="single" collapsible className="w-full">
         {orderProducts.map((orderProduct) => {
-          const product = monolito.data.productsByCode?.get(orderProduct.product_code);
+          const product = productsByCode?.get(orderProduct.product_code);
 
           if (!product) return <></>;
 
@@ -104,7 +101,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
               </AccordionTrigger>
               <AccordionContent className="px-3">
                 {eventsByOrderProductId.get(orderProduct.id)?.map((event, i) => {
-                  return <EventRenderer key={i} event={event} top monolito={monolito} />;
+                  return <EventRenderer key={i} event={event} top assemblyById={assemblyById!} productsByCode={productsByCode!} />;
                 })}
               </AccordionContent>
             </AccordionItem>
@@ -115,16 +112,19 @@ export default function OrderPage(props: { user?: NavUserData }) {
   );
 }
 
-function EventRenderer(props: { event: ProductEvent | null; top: boolean; monolito: RouterOutputs['db']['getMonolito']; }) {
+function EventRenderer(props: {
+  event: ProductEvent | null;
+  top: boolean;
+  productsByCode: NonNullable<RouterOutputs['db']['getMonolito']['data']['productsByCode']>;
+  assemblyById: NonNullable<RouterOutputs['db']['getMonolito']['data']['assemblyById']>;
+}) {
   const event = props.event;
   if (!event) {
     return <></>;
   }
 
-  const data = props.monolito.data;
-
-  const product = data.productsByCode!.get(event.productCode);
-  const assembly = event.assemblyId && data.assemblyById!.get(event.assemblyId);
+  const product = props.productsByCode.get(event.productCode);
+  const assembly = event.assemblyId && props.assemblyById.get(event.assemblyId);
 
   if (!product) return <></>;
 
@@ -164,7 +164,7 @@ function EventRenderer(props: { event: ProductEvent | null; top: boolean; monoli
       {event.childEvents?.map((childEvent, i) => {
         return (
           <div className="m-3" key={i}>
-            <EventRenderer event={childEvent} top={false} monolito={props.monolito} />
+            <EventRenderer event={childEvent} top={false} assemblyById={props.assemblyById} productsByCode={props.productsByCode} />
           </div>
         );
       })}
