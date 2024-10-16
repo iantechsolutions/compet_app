@@ -179,7 +179,7 @@ export function Table(props: { user?: NavUserData }) {
   const { data: providers, isLoading: isLoadingProv } = api.db.getMProviders.useQuery();
   const { data: products, isLoading: isLoadingProds } = api.db.getMProductsWSupplies.useQuery();
   const { data: productsByCode, isLoading: isLoadingProdCodes } = api.db.getMProductsByCode.useQuery();
-  const { data: forecastProfile, isLoading: isLoadingForeProf } = api.db.getMForecastProfile.useQuery();
+  const { data: forecastProfile, isLoading: isLoadingForeProf } = api.db.getForecastProfile.useQuery();
   const isLoadingData = isLoadingProv || isLoadingProds || isLoadingProdCodes || isLoadingForeProf || isLoadingMonths;
 
   const [filters, setFilters] = useFilters();

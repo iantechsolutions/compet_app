@@ -11,6 +11,9 @@ const config = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    instrumentationHook: true
+  }
 };
 
 export default config;

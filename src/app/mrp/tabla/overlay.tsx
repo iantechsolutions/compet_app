@@ -17,7 +17,7 @@ export function TargetOverlayInfoCard(props: {
   onClose: () => void;
   productHref: string;
   trackElementId: string;
-  forecastProfile: NonNullable<RouterOutputs['db']['getMonolito']['forecastData']>['forecastProfile']
+  forecastProfile: RouterOutputs['db']['getForecastProfile']
 }) {
   const classNames = "fixed left-0 right-0 w-[350px] z-20";
 

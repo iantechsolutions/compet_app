@@ -22,7 +22,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
   const { data: budgetsById, isLoading: isLoadingBID } = api.db.getMBudgetsById.useQuery();
   const { data: crm_clients, isLoading: isLoadingCRMC } = api.db.getMCrmClients.useQuery();
   const { data: clientsByCode, isLoading: isLoadingClients } = api.db.getMClientsByCode.useQuery();
-  const { data: forecastProfile, isLoading: isLoadingFP } = api.db.getMForecastProfile.useQuery();
+  const { data: forecastProfile, isLoading: isLoadingFP } = api.db.getForecastProfile.useQuery();
   const isLoadingData = isLoadingBP || isLoadingBID || isLoadingCRMC || isLoadingClients || isLoadingFP;
 
   const isApplying = isApplyingProfile || isApplyingNullProfile;

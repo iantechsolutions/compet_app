@@ -38,7 +38,7 @@ export default async function Home() {
           </Button>
         </Link>
 
-       
+
       </div>
     </AppLayout>
   );
