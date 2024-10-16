@@ -13,16 +13,18 @@ export default function ForecastProfileCard(props: {
   handleDeleteProfile: (id: number) => void;
   handleApplyProfile: (id: number) => void;
   isLoading: boolean;
-  monolito: RouterOutputs['db']['getMonolito'];
+  budget_products: NonNullable<RouterOutputs['db']['getMonolito']['data']['budget_products']>;
+  budgetsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['budgetsById']>;
+  crm_clients: NonNullable<RouterOutputs['db']['getMonolito']['data']['crm_clients']>;
+  clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['data']['clientsByCode']>;
 }) {
   const profile = props.profile;
-  const data = props.monolito.data;
 
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
-  for (const budgetProduct of data.budget_products!) {
-    const budget = data.budgetsById!.get(budgetProduct.budget_id);
+  for (const budgetProduct of props.budget_products) {
+    const budget = props.budgetsById.get(budgetProduct.budget_id);
     if (!budget) continue;
 
     let qty = quantityByClient.get(budget.client_id) ?? 0;
@@ -34,13 +36,11 @@ export default function ForecastProfileCard(props: {
     budgetsByClient.set(budget.client_id, budgets);
   }
 
-  const crmClients = data.crm_clients!;
-
   const clientsWithBudgets = useMemo(() => {
-    return crmClients.filter(
-      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode!.has(client.tango_code)),
+    return props.crm_clients.filter(
+      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && props.clientsByCode.has(client.tango_code)),
     );
-  }, [crmClients, quantityByClient]);
+  }, [props.crm_clients, quantityByClient]);
 
   return (
     <li>

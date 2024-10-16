@@ -17,14 +17,13 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
   const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isApplyingProfile } = api.forecast.applyProfile.useMutation();
   const { mutateAsync: applyNullProfile, isLoading: isApplyingNullProfile } = api.forecast.applyNullProfile.useMutation();
-  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
-    data: {
-      budgetsById: true,
-      crm_clients: true,
-      clientsByCode: true,
-      budget_products: true
-    }
-  });
+
+  const { data: budget_products, isLoading: isLoadingBP } = api.db.getMBudgetProducts.useQuery();
+  const { data: budgetsById, isLoading: isLoadingBID } = api.db.getMBudgetsById.useQuery();
+  const { data: crm_clients, isLoading: isLoadingCRMC } = api.db.getMCrmClients.useQuery();
+  const { data: clientsByCode, isLoading: isLoadingClients } = api.db.getMClientsByCode.useQuery();
+  const { data: forecastProfile, isLoading: isLoadingFP } = api.db.getMForecastProfile.useQuery();
+  const isLoadingData = isLoadingBP || isLoadingBID || isLoadingCRMC || isLoadingClients || isLoadingFP;
 
   const isApplying = isApplyingProfile || isApplyingNullProfile;
   const router = useRouter();
@@ -57,7 +56,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
       });
   }
 
-  if (isLoadingData || !monolito) {
+  if (isLoadingData || !forecastProfile) {
     return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
       <Button variant="secondary" disabled>
         <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
@@ -65,8 +64,8 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
     </div>;
   }
 
-  let appliedProfile: ForecastProfile | undefined = monolito.data.forecastData?.forecastProfile;
-  if (!appliedProfile?.id)
+  let appliedProfile: ForecastProfile | undefined = forecastProfile;
+  if (!forecastProfile?.id)
     appliedProfile = undefined;
 
   const isUpdating = false;
@@ -91,7 +90,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
 
       <div className="flex justify-between">
         <Title>Perfiles de forecast</Title>
-        <ForecastDialogForm disabled={isUpdating} monolito={monolito}>
+        <ForecastDialogForm disabled={isUpdating} budget_products={budget_products!} budgetsById={budgetsById!} clientsByCode={clientsByCode!} crm_clients={crm_clients!}>
           <Button disabled={isApplying} type="button" className="ml-auto">
             <PlusIcon className="mr-2" />
             Crear perfil
@@ -121,7 +120,10 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
             return (
               <ForecastProfileCard
                 key={profile.id}
-                monolito={monolito}
+                budget_products={budget_products!}
+                budgetsById={budgetsById!}
+                clientsByCode={clientsByCode!}
+                crm_clients={crm_clients!}
                 profile={profile}
                 handleApplyProfile={handleApplyProfile}
                 handleDeleteProfile={handleDeleteProfile}

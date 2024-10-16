@@ -12,7 +12,14 @@ import { formatStock } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/shared";
 
-export default function ForecastDialogForm(props: { disabled?: boolean; children: React.ReactNode; monolito: RouterOutputs['db']['getMonolito']; }) {
+export default function ForecastDialogForm(props: {
+  disabled?: boolean;
+  children: React.ReactNode;
+  budget_products: NonNullable<RouterOutputs['db']['getMonolito']['data']['budget_products']>;
+  budgetsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['budgetsById']>;
+  crm_clients: NonNullable<RouterOutputs['db']['getMonolito']['data']['crm_clients']>;
+  clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['data']['clientsByCode']>;
+}) {
   const { mutateAsync: createProfile, isLoading: isLoading1 } = api.forecast.createProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isLoading2 } = api.forecast.applyProfile.useMutation();
 
@@ -29,13 +36,12 @@ export default function ForecastDialogForm(props: { disabled?: boolean; children
   const [clientInclusionList, setClientInclusionList] = useState<string[] | null>(null);
 
   const router = useRouter();
-  const data = props.monolito.data;
 
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
-  for (const budgetProduct of data.budget_products!) {
-    const budget = data.budgetsById!.get(budgetProduct.budget_id);
+  for (const budgetProduct of props.budget_products) {
+    const budget = props.budgetsById.get(budgetProduct.budget_id);
 
     if (!budget) continue;
 
@@ -48,13 +54,11 @@ export default function ForecastDialogForm(props: { disabled?: boolean; children
     budgetsByClient.set(budget.client_id, budgets);
   }
 
-  const crmClients = data.crm_clients!;
-
   const clientsWithBudgets = useMemo(() => {
-    return crmClients.filter(
-      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode!.has(client.tango_code)),
+    return props.crm_clients.filter(
+      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && props.clientsByCode.has(client.tango_code)),
     );
-  }, [crmClients, quantityByClient]);
+  }, [props.crm_clients, quantityByClient]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
