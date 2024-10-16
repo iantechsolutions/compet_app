@@ -8,16 +8,16 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useOnScroll } from "~/lib/hooks";
 import { cn, formatStock } from "~/lib/utils";
-import type { MRPProduct } from "~/mrp_data/transform_mrp_data";
 import type { RouterOutputs } from "~/trpc/shared";
+import type { MonolitoProduct } from "~/server/api/routers/db";
 
 export function TargetOverlayInfoCard(props: {
-  product: MRPProduct;
+  product: MonolitoProduct;
   column: string | undefined;
   onClose: () => void;
   productHref: string;
   trackElementId: string;
-  forecastProfile: RouterOutputs['db']['getMonolito']['forecastData']['forecastProfile']
+  forecastProfile: NonNullable<RouterOutputs['db']['getMonolito']['forecastData']>['forecastProfile']
 }) {
   const classNames = "fixed left-0 right-0 w-[350px] z-20";
 

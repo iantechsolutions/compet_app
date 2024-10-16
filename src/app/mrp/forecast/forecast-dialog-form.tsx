@@ -34,8 +34,8 @@ export default function ForecastDialogForm(props: { disabled?: boolean; children
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
-  for (const budgetProduct of data.budget_products) {
-    const budget = data.budgetsById.get(budgetProduct.budget_id);
+  for (const budgetProduct of data.budget_products!) {
+    const budget = data.budgetsById!.get(budgetProduct.budget_id);
 
     if (!budget) continue;
 
@@ -48,11 +48,11 @@ export default function ForecastDialogForm(props: { disabled?: boolean; children
     budgetsByClient.set(budget.client_id, budgets);
   }
 
-  const crmClients = data.crm_clients;
+  const crmClients = data.crm_clients!;
 
   const clientsWithBudgets = useMemo(() => {
     return crmClients.filter(
-      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode.has(client.tango_code)),
+      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode!.has(client.tango_code)),
     );
   }, [crmClients, quantityByClient]);
 
@@ -149,9 +149,8 @@ export default function ForecastDialogForm(props: { disabled?: boolean; children
                   value: client.client_id.toString(),
                   title: client.name || client.business_name,
                   subtitle: budgetsByClient.get(client.client_id)
-                    ? `Presupuestos: ${
-                        budgetsByClient.get(client.client_id)?.length
-                      }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`
+                    ? `Presupuestos: ${budgetsByClient.get(client.client_id)?.length
+                    }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`
                     : "(sin registros en CRM)",
                 }))}
                 onApply={(selected) => {

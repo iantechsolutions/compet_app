@@ -19,13 +19,23 @@ import AppSidenav from "~/components/app-sidenav";
 import { useSession } from "next-auth/react";
 
 export default function ProductPage() {
-  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
+  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
+    data: {
+      products: {},
+      providersByCode: true,
+      orderProductsById: true,
+      ordersByOrderNumber: true,
+      productImportsById: true,
+      importsById: true,
+    },
+    eventsByProductCode: true
+  });
 
   const params = useParams<{ code: string }>();
   const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
 
   const productCode = decodeURIComponent(params?.code ?? "");
-  const product = monolito?.data.products.find(v => v.code === productCode);
+  const product = monolito?.data.products?.find(v => v.code === productCode);
   const auth = useSession();
 
   const productData = useMemo(() => {
@@ -34,7 +44,7 @@ export default function ProductPage() {
     }
 
     const data = monolito.data;
-    const events = data.eventsByProductCode.get(product.code) ?? [];
+    const events = data.eventsByProductCode?.get(product.code) ?? [];
 
     const dataByMonth = new Map<string, { events: ProductEvent[]; supplyForecastEvents: ProductEvent[] }>();
 
@@ -88,7 +98,7 @@ export default function ProductPage() {
             {product?.providers.map((provider, i) => {
               return (
                 <Badge key={i} variant="secondary" className="mr-2">
-                  {monolito.data.providersByCode.get(provider.provider_code)?.name ?? provider.provider_code}
+                  {monolito.data.providersByCode?.get(provider.provider_code)?.name ?? provider.provider_code}
                 </Badge>
               );
             })}
@@ -98,7 +108,7 @@ export default function ProductPage() {
           <Button variant="outline">Ver estadisticas</Button>
         </Link>
       </div>
-      <ProductEventsChart key={product.code} product={product} months={monolito.data.months} />
+      <ProductEventsChart key={product.code} product={product} months={monolito.data.months as string[]} />
       <div className="max-w-full overflow-x-auto">
         <Table className="min-w-[600px]">
           {/* <TableCaption>Lista de importaciones pedidos y armados</TableCaption> */}

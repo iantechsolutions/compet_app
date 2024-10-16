@@ -10,7 +10,13 @@ import { api } from "~/trpc/react";
 export default function ProductInfoPage() {
   const product = useCurrentProduct();
 
-  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
+  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
+    data: {
+      orderProductsByProductCode: true,
+      ordersByOrderNumber: true,
+      clientsByCode: true
+    }
+  });
 
   const orders = useMemo(() => {
     if (!monolito) {
@@ -18,10 +24,10 @@ export default function ProductInfoPage() {
     }
 
     const data = monolito.data;
-    const orderProducts = data.orderProductsByProductCode.get(product.code) ?? [];
+    const orderProducts = data.orderProductsByProductCode?.get(product.code) ?? [];
 
     return orderProducts.map((orderProduct) => {
-      const order = data.ordersByOrderNumber.get(orderProduct.order_number)!;
+      const order = data.ordersByOrderNumber?.get(orderProduct.order_number);
       return {
         ...orderProduct,
         order,
@@ -43,7 +49,7 @@ export default function ProductInfoPage() {
         monolito={monolito}
         orders={orders.map((o) => ({
           quantity: o.ordered_quantity,
-          client_code: o.order.client_code,
+          client_code: o.order!.client_code,
         }))}
       />
     </>

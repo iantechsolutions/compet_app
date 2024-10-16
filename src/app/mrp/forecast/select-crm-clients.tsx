@@ -17,6 +17,7 @@ import type { CrmBudget } from "~/lib/types";
 import { formatStock } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/shared";
 
+// necesita budgetsById y crm_clients del monolito data
 export function SelectCRMClients(props: {
   setSelected: (selected: Set<string>) => void; unselected: Set<string>; monolito: {
     data: {
@@ -33,8 +34,8 @@ export function SelectCRMClients(props: {
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
-  for (const budgetProduct of data.budget_products) {
-    const budget = data.budgetsById.get(budgetProduct.budget_id);
+  for (const budgetProduct of data.budget_products!) {
+    const budget = data.budgetsById!.get(budgetProduct.budget_id);
     if (!budget) continue;
 
     let qty = quantityByClient.get(budget.client_id) ?? 0;
@@ -46,7 +47,7 @@ export function SelectCRMClients(props: {
     budgetsByClient.set(budget.client_id, budgets);
   }
 
-  const crmClients = data.crm_clients;
+  const crmClients = data.crm_clients!;
 
   const clientsWithBudgets = useMemo(() => {
     return crmClients.filter((client) => quantityByClient.has(client.client_id));

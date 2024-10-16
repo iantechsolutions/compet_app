@@ -172,6 +172,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       </div>
     );
 
+  // necesita budgetsById, crm_clients y budget_products del monolito data
   const crmMonolito = {
     data: {
       budget_products: queryRes.data.budget_products,

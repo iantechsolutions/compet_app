@@ -13,7 +13,7 @@ export default function ClientsOrdersQuantityPieChart({ orders, monolito }: { or
   const data: [string, string | number][] = [["Clientes", "Cantidad adquirida"]];
 
   for (const order of orders) {
-    const client = mrpData.clientsByCode.get(order.client_code);
+    const client = mrpData.clientsByCode!.get(order.client_code);
     if (client) {
       data.push([client.name, order.quantity]);
     }

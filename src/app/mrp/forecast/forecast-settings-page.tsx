@@ -17,7 +17,14 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
   const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isApplyingProfile } = api.forecast.applyProfile.useMutation();
   const { mutateAsync: applyNullProfile, isLoading: isApplyingNullProfile } = api.forecast.applyNullProfile.useMutation();
-  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
+  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
+    data: {
+      budgetsById: true,
+      crm_clients: true,
+      clientsByCode: true,
+      budget_products: true
+    }
+  });
 
   const isApplying = isApplyingProfile || isApplyingNullProfile;
   const router = useRouter();

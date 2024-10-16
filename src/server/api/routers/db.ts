@@ -32,6 +32,7 @@ import { queryBaseMRPData } from "~/serverfunctions";
 import type { Session } from "next-auth";
 import { cachedAsyncFetch } from "~/lib/cache";
 import { defaultCacheTtl } from "~/scripts/lib/database";
+import { RouterOutputs } from "~/trpc/shared";
 
 export const maxDuration = 300;
 const getProductByCode = async () => {
@@ -245,8 +246,8 @@ const getMonolitoBySession = async (session: Session | null) => {
       used_as_forecast_quantity_by_month: usedAsForecastQuantityOfProductsByMonth.get(product.code)!,
       used_as_forecast_type_sold_quantity_by_month: usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!,
       used_as_forecast_type_budget_quantity_by_month: usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!,
-      events_by_month: eventsOfProductsByMonth.get(product.code)!,
-      events: eventsByProductCode.get(product.code)!,
+      events_by_month: eventsOfProductsByMonth.get(product.code),
+      events: eventsByProductCode.get(product.code),
     };
   });
 
@@ -577,9 +578,198 @@ export const dbRouter = createTRPCRouter({
       forecastData,
     };
   }),
-  getMonolito: protectedProcedure.query(async () => {
-    const session = await getServerAuthSession();
-    const cacheKey = `monolito-${session?.user.id ?? ""}`;
-    return cachedAsyncFetch(cacheKey, defaultCacheTtl, async () => await getMonolitoBySession(session));
-  }),
+  getMonolito: protectedProcedure
+    .input(
+      z
+        .object({
+          data: z
+            .object({
+              products: z
+                .object({
+                  events: z.boolean().default(false),
+                  events_by_month: z.boolean().default(false),
+                })
+                .optional(),
+              forecastData: z.boolean().default(false),
+              budgetsById: z.boolean().default(false),
+              budgets: z.boolean().default(false),
+              events: z.boolean().default(false),
+              eventsByProductCode: z.boolean().default(false),
+              eventsOfProductsByMonth: z.boolean().default(false),
+              ordersByOrderNumber: z.boolean().default(false),
+              orderProductsByProductCode: z.boolean().default(false),
+              orderProductsByOrderNumber: z.boolean().default(false),
+              clientsByCode: z.boolean().default(false),
+              productsByCode: z.boolean().default(false),
+              assemblyById: z.boolean().default(false),
+              providersByCode: z.boolean().default(false),
+              crm_clients: z.boolean().default(false),
+              orderProductsById: z.boolean().default(false),
+              productImportsById: z.boolean().default(false),
+              importsById: z.boolean().default(false),
+              providers: z.boolean().default(false),
+              budget_products: z.boolean().default(false),
+            })
+            .default({}),
+          events: z.boolean().default(false),
+          eventsByProductCode: z.boolean().default(false),
+          forecastData: z.boolean().default(false),
+        })
+        .default({}),
+    )
+    .query(async ({ input }) => {
+      const session = await getServerAuthSession();
+      const cacheKey = `monolito-${session?.user.id ?? ""}`;
+      const monolito = await cachedAsyncFetch(cacheKey, defaultCacheTtl, async () => await getMonolitoBySession(session));
+      const monolitoShallow: PartialExcept<
+        typeof monolito,
+        [
+          "data.products",
+          "data.products.events",
+          "data.forecastData",
+          "data.budgets",
+          "data.budgetsById",
+          "data.eventsByProductCode",
+          "data.eventsOfProductsByMonth",
+          "data.events",
+          "data.ordersByOrderNumber",
+          "data.orderProductsByOrderNumber",
+          "data.orderProductsByProductCode",
+          "data.clientsByCode",
+          "data.assemblyById",
+          "data.productsByCode",
+          "data.providersByCode",
+          "data.crm_clients",
+          "data.productImportsById",
+          "data.orderProductsById",
+          "data.importsById",
+          "data.providers",
+          "data.budget_products",
+          "events",
+          "eventsByProductCode",
+          "forecastData",
+        ]
+      > = {
+        ...monolito,
+      };
+
+      if (input.data.products === undefined) {
+        monolitoShallow.data.products = undefined;
+      } else {
+        monolitoShallow.data.products = monolito.data.products.map((v) => {
+          const prodShallow = { ...v };
+          if (!input.data.products?.events) {
+            prodShallow.events = undefined;
+          }
+
+          if (!input.data.products?.events_by_month) {
+            prodShallow.events_by_month = undefined;
+          }
+
+          return prodShallow;
+        });
+      }
+
+      if (!input.data.forecastData) {
+        monolitoShallow.data.forecastData = undefined;
+      }
+
+      if (!input.data.budgetsById) {
+        monolitoShallow.data.budgetsById = undefined;
+      }
+
+      if (!input.data.budgets) {
+        monolitoShallow.data.budgets = undefined;
+      }
+
+      if (!input.data.events) {
+        monolitoShallow.data.events = undefined;
+      }
+
+      if (!input.data.orderProductsById) {
+        monolitoShallow.data.orderProductsById = undefined;
+      }
+
+      if (!input.data.productImportsById) {
+        monolitoShallow.data.productImportsById = undefined;
+      }
+
+      if (!input.data.budget_products) {
+        monolitoShallow.data.budget_products = undefined;
+      }
+
+      if (!input.data.providers) {
+        monolitoShallow.data.providers = undefined;
+      }
+
+      if (!input.data.clientsByCode) {
+        monolitoShallow.data.clientsByCode = undefined;
+      }
+
+      if (!input.data.importsById) {
+        monolitoShallow.data.importsById = undefined;
+      }
+
+      if (!input.data.assemblyById) {
+        monolitoShallow.data.assemblyById = undefined;
+      }
+
+      if (!input.data.productsByCode) {
+        monolitoShallow.data.productsByCode = undefined;
+      }
+
+      if (!input.data.eventsByProductCode) {
+        monolitoShallow.data.eventsByProductCode = undefined;
+      }
+
+      if (!input.data.crm_clients) {
+        monolitoShallow.data.crm_clients = undefined;
+      }
+
+      if (!input.data.eventsOfProductsByMonth) {
+        monolitoShallow.data.eventsOfProductsByMonth = undefined;
+      }
+
+      if (!input.data.ordersByOrderNumber) {
+        monolitoShallow.data.ordersByOrderNumber = undefined;
+      }
+
+      if (!input.data.orderProductsByProductCode) {
+        monolitoShallow.data.orderProductsByProductCode = undefined;
+      }
+
+      if (!input.data.providersByCode) {
+        monolitoShallow.data.providersByCode = undefined;
+      }
+
+      if (!input.data.orderProductsByOrderNumber) {
+        monolitoShallow.data.orderProductsByOrderNumber = undefined;
+      }
+
+      if (!input.events) {
+        monolitoShallow.events = undefined;
+      }
+
+      if (!input.eventsByProductCode) {
+        monolitoShallow.eventsByProductCode = undefined;
+      }
+
+      if (!input.forecastData) {
+        monolitoShallow.forecastData = undefined;
+      }
+
+      return monolitoShallow;
+    }),
 });
+
+type NestedKeys<T extends string, U extends string[]> = {
+  [K in keyof U]: U[K] extends `${T}.${infer V}` ? V : never;
+};
+
+type PartialExcept<T, U extends string[]> = {
+  [K in keyof T as K extends U[number] ? K : never]?: T[K];
+} & {
+  [K in keyof T as K extends U[number] ? never : K]: K extends string ? PartialExcept<T[K], NestedKeys<K, U>> : T[K];
+};
+
+export type MonolitoProduct = NonNullable<RouterOutputs["db"]["getMonolito"]["data"]["products"]>[0];

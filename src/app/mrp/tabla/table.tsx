@@ -11,7 +11,6 @@ import AppLayout from "~/components/applayout";
 import type { NavUserData } from "~/components/nav-user-section";
 import { useOnScroll } from "~/lib/hooks";
 import { cn, formatStock } from "~/lib/utils";
-import type { MRPProduct } from "~/mrp_data/transform_mrp_data";
 import { type Filters, FiltersDialog } from "./filters_dialog";
 import { useFocus } from "./focused_provider";
 import { TargetOverlayInfoCard } from "./overlay";
@@ -19,8 +18,9 @@ import { api } from "~/trpc/react";
 import { RouterOutputs } from "~/trpc/shared";
 import { Button } from "~/components/ui/button";
 import { Loader2Icon } from "lucide-react";
+import { MonolitoProduct } from "~/server/api/routers/db";
 
-function ProductInfoCell({ product }: { product: MRPProduct }) {
+function ProductInfoCell({ product }: { product: MonolitoProduct }) {
   const [currentFocus, setFocus] = useFocus();
   const id = `product-info-cell-${product.code}`;
 
@@ -45,7 +45,7 @@ function ProductInfoCell({ product }: { product: MRPProduct }) {
 
 const cellCenterBaseStyles = "border-b border-r flex items-center w-full justify-center";
 
-function StockCommitedCells({ product }: { product: MRPProduct }) {
+function StockCommitedCells({ product }: { product: MonolitoProduct }) {
   const [currentFocus, setFocus] = useFocus();
 
   const idStock = `stock-cell-${product.code}`;
@@ -80,7 +80,7 @@ function StockCommitedCells({ product }: { product: MRPProduct }) {
   );
 }
 
-function StockAtMonthCell({ product, month }: { product: MRPProduct; month: string }) {
+function StockAtMonthCell({ product, month }: { product: MonolitoProduct; month: string }) {
   const stock = product.stock_at.get(month) ?? 0;
 
   const [currentFocus, setFocus] = useFocus();
@@ -167,7 +167,7 @@ function ListRow({ index, style }: { index: number; style: React.CSSProperties }
 }
 
 const listRowContext = createContext<{
-  filteredProducts: MRPProduct[];
+  filteredProducts: NonNullable<RouterOutputs['db']['getMonolito']['data']['products']>;
   months: string[];
 }>({
   filteredProducts: [],
@@ -175,7 +175,14 @@ const listRowContext = createContext<{
 });
 
 export function Table(props: { user?: NavUserData }) {
-  const { data, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
+  const { data, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
+    data: {
+      products: {},
+      productsByCode: true,
+      providers: true
+    },
+    forecastData: true
+  });
 
   const [filters, setFilters] = useFilters();
 
@@ -249,14 +256,14 @@ export function Table(props: { user?: NavUserData }) {
           column={currentFocus.month}
           product={currentFocus.product}
           productHref={`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`}
-          forecastProfile={data.forecastData.forecastProfile}
+          forecastProfile={data.forecastData!.forecastProfile}
           onClose={() => {
             setClosedOverlay(true);
           }}
         />
       )}
 
-      <ListRowContainer id={headerId} months={data.data.months} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
+      <ListRowContainer id={headerId} months={data.data.months as string[]} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
         <div className={cn(headerCellClassName, "flex justify-start md:sticky md:left-0")}>
           <p>Producto</p>
         </div>
@@ -266,14 +273,14 @@ export function Table(props: { user?: NavUserData }) {
         <div className={cn(headerCellClassName, "text-sm")}>
           <p>Comprometido</p>
         </div>
-        {data.data.months.map((month) => (
+        {(data.data.months as string[]).map((month) => (
           <div key={month} className={cn(headerCellClassName, "text-sm")}>
             <p>{month}</p>
           </div>
         ))}
       </ListRowContainer>
       <div className="" style={{ height: h, width: w }}>
-        <listRowContext.Provider value={{ filteredProducts: filtered, months: data.data.months }}>
+        <listRowContext.Provider value={{ filteredProducts: filtered, months: data.data.months as string[] }}>
           <List onScroll={handleListScroll} className={scrollClassName} height={h} width={w} itemCount={filtered.length} itemSize={57}>
             {ListRow}
           </List>
@@ -343,10 +350,10 @@ function useFiltered(monolito: RouterOutputs['db']['getMonolito'] | undefined, f
 
     const data = monolito.data;
 
-    let list = data.products;
+    let list = data.products!;
     const months = data.months;
     if (filters.hideAllZero) {
-      list = data.products.filter((product) => {
+      list = list.filter((product) => {
         if (product.stock != 0) return true;
 
         for (const m of months) {
@@ -377,7 +384,7 @@ function useFiltered(monolito: RouterOutputs['db']['getMonolito'] | undefined, f
       });
     }
     if (filters.suppliesOf) {
-      const product = data.productsByCode.get(filters.suppliesOf);
+      const product = data.productsByCode!.get(filters.suppliesOf);
       if (!product) {
         return [];
       }
@@ -385,7 +392,7 @@ function useFiltered(monolito: RouterOutputs['db']['getMonolito'] | undefined, f
       let index = 0;
 
       while (index < supplies.length) {
-        const prod = data.productsByCode.get(supplies[index] ?? "");
+        const prod = data.productsByCode!.get(supplies[index] ?? "");
         console.log(prod);
         if (prod?.supplies) {
           supplies = supplies.concat(prod.supplies.map((p) => p.supply_product_code));

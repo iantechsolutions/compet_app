@@ -25,7 +25,7 @@ export function FiltersDialog(props: {
   monolito: RouterOutputs['db']['getMonolito'],
 }) {
   const data = props.monolito.data;
-  const products = data.products;
+  const products = data.products!;
   const [filters, setFilters] = useState<Filters>(props.initialFilters);
 
   const closeId = useId();
@@ -143,7 +143,7 @@ function ProviderRow(props: {
   onChange: (providers: Set<string>) => void;
   monolito: RouterOutputs['db']['getMonolito'];
 }) {
-  const providers = props.monolito.data.providers;
+  const providers = props.monolito.data.providers!;
   const provider = providers[props.index]!;
 
   const labelId = "label-" + provider.code;
@@ -191,8 +191,8 @@ function ProvidersFilter(props: {
   monolito: RouterOutputs['db']['getMonolito'];
 }) {
   const data = props.monolito.data;
-  const providers = data.providers;
-  const products = data.products;
+  const providers = data.providers!;
+  const products = data.products!;
 
   const productsByProvider = useMemo(() => {
     const map = new Map<string, number>();

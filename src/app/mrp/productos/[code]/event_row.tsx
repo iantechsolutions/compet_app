@@ -19,11 +19,11 @@ export function ProductEventRow(props: {
 
   const { event, productCode } = props;
 
-  const orderProducts = event.type === "order" ? data.orderProductsById.get(event.referenceId) : undefined;
-  const order = orderProducts ? data.ordersByOrderNumber.get(orderProducts.order_number) : undefined;
+  const orderProducts = event.type === "order" ? data.orderProductsById!.get(event.referenceId) : undefined;
+  const order = orderProducts ? data.ordersByOrderNumber!.get(orderProducts.order_number) : undefined;
 
-  const productImport = event.type === "import" ? data.productImportsById.get(event.referenceId) : undefined;
-  const importation = productImport ? data.importsById.get(productImport.import_id) : undefined;
+  const productImport = event.type === "import" ? data.productImportsById!.get(event.referenceId) : undefined;
+  const importation = productImport ? data.importsById!.get(productImport.import_id) : undefined;
 
   const hasChildren = (event.childEvents?.length ?? 0) > 0;
 
@@ -134,7 +134,7 @@ export function ProductEventRow(props: {
     orderNumber = order?.order_number;
   }
   if (event.type === "supply") {
-    orderNumber = data.orderProductsById.get(event.referenceId)?.order_number;
+    orderNumber = data.orderProductsById!.get(event.referenceId)?.order_number;
   }
   if (event.type === "forecast") {
     orderNumber = "forecast";

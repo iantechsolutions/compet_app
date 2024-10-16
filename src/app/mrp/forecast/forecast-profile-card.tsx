@@ -21,8 +21,8 @@ export default function ForecastProfileCard(props: {
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
-  for (const budgetProduct of data.budget_products) {
-    const budget = data.budgetsById.get(budgetProduct.budget_id);
+  for (const budgetProduct of data.budget_products!) {
+    const budget = data.budgetsById!.get(budgetProduct.budget_id);
     if (!budget) continue;
 
     let qty = quantityByClient.get(budget.client_id) ?? 0;
@@ -34,11 +34,11 @@ export default function ForecastProfileCard(props: {
     budgetsByClient.set(budget.client_id, budgets);
   }
 
-  const crmClients = data.crm_clients;
+  const crmClients = data.crm_clients!;
 
   const clientsWithBudgets = useMemo(() => {
     return crmClients.filter(
-      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode.has(client.tango_code)),
+      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode!.has(client.tango_code)),
     );
   }, [crmClients, quantityByClient]);
 
@@ -64,9 +64,8 @@ export default function ForecastProfileCard(props: {
                 options={clientsWithBudgets.map((client) => ({
                   value: client.client_id.toString(),
                   title: client.name || client.business_name,
-                  subtitle: `Presupuestos: ${
-                    budgetsByClient.get(client.client_id)?.length
-                  }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`,
+                  subtitle: `Presupuestos: ${budgetsByClient.get(client.client_id)?.length
+                    }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`,
                 }))}
                 title="Clientes incluidos"
                 onApply={() => void 0}

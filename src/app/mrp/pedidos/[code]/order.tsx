@@ -21,7 +21,16 @@ function useProductRef() {
 }
 
 export default function OrderPage(props: { user?: NavUserData }) {
-  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
+  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
+    data: {
+      ordersByOrderNumber: true,
+      orderProductsByOrderNumber: true,
+      eventsByProductCode: true,
+      clientsByCode: true,
+      productsByCode: true,
+      assemblyById: true
+    }
+  });
 
   const params = useParams<{ code: string }>();
   const orderNumber = decodeURIComponent(params?.code ?? "");
@@ -35,7 +44,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
     </div>;
   }
 
-  const order = monolito.data.ordersByOrderNumber.get(orderNumber);
+  const order = monolito.data.ordersByOrderNumber?.get(orderNumber);
   if (!order) {
     return (
       <AppLayout title={<h1>Error 404</h1>} user={props?.user} sidenav={<AppSidenav />}>
@@ -45,12 +54,12 @@ export default function OrderPage(props: { user?: NavUserData }) {
     );
   }
 
-  const orderProducts = monolito.data.orderProductsByOrderNumber.get(orderNumber) ?? [];
+  const orderProducts = monolito.data.orderProductsByOrderNumber?.get(orderNumber) ?? [];
 
   const eventsByOrderProductId = new Map<number, ProductEvent[]>();
 
   for (const orderProduct of orderProducts) {
-    let events = monolito.data.eventsByProductCode.get(orderProduct.product_code) ?? [];
+    let events = monolito.data.eventsByProductCode?.get(orderProduct.product_code) ?? [];
 
     events = events.filter((event) => event.referenceId === orderProduct.id);
 
@@ -59,7 +68,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
     }
   }
 
-  const client = monolito.data.clientsByCode.get(order.client_code);
+  const client = monolito.data.clientsByCode?.get(order.client_code);
   console.log(eventsByOrderProductId);
 
   return (
@@ -73,7 +82,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
       </div>
       <Accordion type="single" collapsible className="w-full">
         {orderProducts.map((orderProduct) => {
-          const product = monolito.data.productsByCode.get(orderProduct.product_code);
+          const product = monolito.data.productsByCode?.get(orderProduct.product_code);
 
           if (!product) return <></>;
 
@@ -114,9 +123,8 @@ function EventRenderer(props: { event: ProductEvent | null; top: boolean; monoli
 
   const data = props.monolito.data;
 
-  const product = data.productsByCode.get(event.productCode);
-
-  const assembly = event.assemblyId && data.assemblyById.get(event.assemblyId);
+  const product = data.productsByCode!.get(event.productCode);
+  const assembly = event.assemblyId && data.assemblyById!.get(event.assemblyId);
 
   if (!product) return <></>;
 
