@@ -782,6 +782,12 @@ export const dbRouter = createTRPCRouter({
 
       return monolitoShallow;
     }),
+  getEventsByProductCode: protectedProcedure.query(async () => {
+    const session = await getServerAuthSession();
+    const cacheKey = `monolito-${session?.user.id ?? ""}`;
+    const monolito = await cachedAsyncFetch(cacheKey, defaultCacheTtl, async () => await getMonolitoBySession(session));
+    return monolito.eventsByProductCode;
+  }),
 });
 
 type NestedKeys<T extends string, U extends string[]> = {

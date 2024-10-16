@@ -27,7 +27,7 @@ const defaultConnectionQuery =
   process.env.CONNECTION_QUERY ??
   `Server=COMPET01\\AXSQLEXPRESS;DSN=Axoft;Description=Axoft;UID=Axoft;PWD=Axoft;APP=Microsoft Office XP;WSID=GERNOTE;DATABASE=Compet_SA;Network=DBNM;Encrypt=false;Connection Timeout=60`;
 export type DataExport = Awaited<ReturnType<InstanceType<typeof Database>["readAllDataDirect"]>>;
-export const defaultCacheTtl = 180000;
+export const defaultCacheTtl = 1000 * 60 * 5;
 
 export class Database {
   private SQL_CONNECTION_POOL: sql.ConnectionPool | null = null;

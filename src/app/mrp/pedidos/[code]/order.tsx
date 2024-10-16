@@ -21,11 +21,11 @@ function useProductRef() {
 }
 
 export default function OrderPage(props: { user?: NavUserData }) {
+  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getEventsByProductCode.useQuery();
   const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
     data: {
       ordersByOrderNumber: true,
       orderProductsByOrderNumber: true,
-      eventsByProductCode: true,
       clientsByCode: true,
       productsByCode: true,
       assemblyById: true
@@ -36,7 +36,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
   const orderNumber = decodeURIComponent(params?.code ?? "");
   const productRef = useProductRef();
 
-  if (isLoadingData || !monolito) {
+  if (isLoadingData || isLoadingEvts || !monolito || !eventsByProductCode) {
     return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
       <Button variant="secondary" disabled>
         <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
@@ -59,7 +59,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
   const eventsByOrderProductId = new Map<number, ProductEvent[]>();
 
   for (const orderProduct of orderProducts) {
-    let events = monolito.data.eventsByProductCode?.get(orderProduct.product_code) ?? [];
+    let events = eventsByProductCode?.get(orderProduct.product_code) ?? [];
 
     events = events.filter((event) => event.referenceId === orderProduct.id);
 

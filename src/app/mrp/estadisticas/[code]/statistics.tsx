@@ -77,12 +77,13 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       sold: true,
       clients: true,
     },
-    eventsByProductCode: true
   });
+
+  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getEventsByProductCode.useQuery();
 
   ring2.register();
   const productsByProvider = useMemo(() => {
-    if (isLoadingData) {
+    if (isLoadingData || isLoadingEvts || !queryRes) {
       return null;
     }
 
@@ -95,34 +96,34 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
 
     return map;
-  }, [queryRes, isLoadingData]);
+  }, [queryRes, isLoadingData, isLoadingEvts]);
 
   const filteredProviders = useMemo(() => {
-    if (isLoadingData) {
+    if (isLoadingData || isLoadingEvts || !queryRes) {
       return null;
     }
 
     return queryRes?.data.providers!.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
-  }, [queryRes, productsByProvider, isLoadingData]);
+  }, [queryRes, productsByProvider, isLoadingData, isLoadingEvts]);
 
   const allProviersCodes = useMemo(() => {
-    if (isLoadingData) {
+    if (isLoadingData || isLoadingEvts) {
       return null;
     }
 
     return new Set<string>(filteredProviders?.map((p) => p.code));
-  }, [filteredProviders, isLoadingData]);
+  }, [filteredProviders, isLoadingData, isLoadingEvts]);
 
   const defaultValues = useMemo(() => {
-    if (isLoadingData) {
+    if (isLoadingData || isLoadingEvts) {
       return null;
     }
 
     return Array.from(allProviersCodes ?? new Set<string>()).filter((code) => !providersSelected.has(code));
-  }, [allProviersCodes, providersSelected, isLoadingData]);
+  }, [allProviersCodes, providersSelected, isLoadingData, isLoadingEvts]);
 
   useEffect(() => {
-    if (fromDate && toDate && !hasRun && !isLoadingData) {
+    if (fromDate && toDate && !hasRun && !isLoadingData && !isLoadingEvts) {
       const {
         list: consumptionStats,
         totalConsumedAmount: totalTemp,
@@ -166,7 +167,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       setHasRun(true);
       setIsLoading(false);
     }
-  }, [fromDate, toDate, defaultValues, isLoadingData]);
+  }, [fromDate, toDate, defaultValues, isLoadingData, isLoadingEvts]);
 
   useEffect(() => {
     if (handleFiltersStage === 1) {
@@ -178,7 +179,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
   }, [handleFiltersStage]);
 
-  if (isLoadingData || !queryRes)
+  if (isLoadingData || isLoadingEvts || !queryRes || eventsByProductCode === undefined) {
     return (
       <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
         <Button variant="secondary" disabled>
@@ -186,6 +187,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         </Button>
       </div>
     );
+  }
 
   // necesita budgetsById, crm_clients y budget_products del monolito data
   const crmMonolito = {
@@ -196,7 +198,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
   };
 
-  const eventsByProductCode = queryRes.eventsByProductCode!;
   const data = queryRes.data;
   const product = data.products!.find((p) => p.code === productCode) ?? null;
 
@@ -255,7 +256,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    let events = eventsByProductCode.get(productCode) ?? [];
+    let events = eventsByProductCode?.get(productCode) ?? [];
     let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
     events = events.filter(
@@ -452,7 +453,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       }
     });
 
-    let events = eventsByProductCode.get(productCode) ?? [];
+    let events = eventsByProductCode?.get(productCode) ?? [];
     events = events.filter(
       (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
@@ -504,7 +505,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       // const longNecesaria = supply.quantity;
       if (dataSemi !== null) {
         const clave = dataSemi.long + " mm";
-        let events = eventsByProductCode.get(supplyOfCode) ?? [];
+        let events = eventsByProductCode?.get(supplyOfCode) ?? [];
         events = events.filter(
           (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
         );

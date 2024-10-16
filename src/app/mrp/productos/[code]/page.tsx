@@ -19,6 +19,7 @@ import AppSidenav from "~/components/app-sidenav";
 import { useSession } from "next-auth/react";
 
 export default function ProductPage() {
+  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getEventsByProductCode.useQuery()
   const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery({
     data: {
       products: {},
@@ -28,7 +29,6 @@ export default function ProductPage() {
       productImportsById: true,
       importsById: true,
     },
-    eventsByProductCode: true
   });
 
   const params = useParams<{ code: string }>();
@@ -43,8 +43,7 @@ export default function ProductPage() {
       return null;
     }
 
-    const data = monolito.data;
-    const events = data.eventsByProductCode?.get(product.code) ?? [];
+    const events = eventsByProductCode?.get(product.code) ?? [];
 
     const dataByMonth = new Map<string, { events: ProductEvent[]; supplyForecastEvents: ProductEvent[] }>();
 
@@ -68,7 +67,7 @@ export default function ProductPage() {
     return dataByMonth;
   }, [product, monolito]);
 
-  if (isLoadingStats || isLoadingData || !monolito) {
+  if (isLoadingStats || isLoadingData || isLoadingEvts || !monolito || !eventsByProductCode) {
     return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
       <Button variant="secondary" disabled>
         <Loader2Icon className="mr-2 animate-spin" /> {isLoadingStats ? 'Cargando estadísticas' : 'Cargando datos'}
