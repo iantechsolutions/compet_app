@@ -13,7 +13,7 @@ type GlobalCache = {
   cache: Record<string, CacheEntry>;
 };
 
-export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallback: () => Promise<T>): Promise<T> {
+export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallback: () => Promise<T>, forceCache = false): Promise<T> {
   if (process.env.NEXT_RUNTIME !== "nodejs") {
     console.error("cachedAsyncFetch called from NEXT_RUNTIME", process.env.NEXT_RUNTIME);
   }
@@ -25,11 +25,11 @@ export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallb
 
   const Cache = (global as unknown as GlobalCache).cache;
 
-  if (typeof Cache[key]?.expiresAt === "number" && Cache[key].expiresAt > Date.now()) {
+  if (typeof Cache[key]?.expiresAt === "number" && Cache[key].expiresAt > Date.now() && !forceCache) {
     console.log("cachedAsyncFetch: Cache hit at key", key);
     return Cache[key].value as T;
   } else if (typeof Cache[key]?.expiresAt === "number") {
-    console.log("cachedAsyncFetch: Cache miss at key", key);
+    console.log("cachedAsyncFetch: Cache miss or forced at key", key);
     await Cache[key].fetchMutex.runExclusive(async () => {
       if (Cache[key] !== undefined) {
         Cache[key].value = await fetchCallback();
@@ -83,5 +83,5 @@ export async function cacheTask() {
 
   const Cache = (global as unknown as GlobalCache).cache;
   await cacheTaskKey("monolito-base", Cache, async () => await getMonolitoBase());
-  void (await (await getDbInstance()).readAllData());
+  void (await (await getDbInstance()).readAllData(true));
 }

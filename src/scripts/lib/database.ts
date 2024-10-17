@@ -67,12 +67,12 @@ export class Database {
     return arraySchema.parse(rows);
   }
 
-  public async readAllData(opts?: { log: (...args: unknown[]) => unknown }) {
+  public async readAllData(forceCache = false) {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data;
     } else {
-      return await this.readAllDataDirect(opts);
+      return await this.readAllDataDirect(forceCache);
     }
   }
 
@@ -80,7 +80,7 @@ export class Database {
     return cachedAsyncFetch("db-readAllDataUT", defaultCacheTtl, async () => await queryBaseMRPDataUT());
   }
 
-  public async readAllDataDirect(opts?: { log: (...args: unknown[]) => unknown }) {
+  public async readAllDataDirect(forceCache = false) {
     const start = Date.now();
     const [
       products,
@@ -99,27 +99,27 @@ export class Database {
       budget_products,
       crm_clients,
     ] = await Promise.all([
-      this.getProducts(),
-      this.getCommitedStock(),
-      this.getProviders(),
-      this.getProductProviders(),
-      this.getAssemblies(),
-      this.getImports(),
-      this.getProductImports(),
-      this.getOrders(),
-      this.getProductsOrders(),
-      this.getClients(),
-      this.getSold(),
-      this.getProductsSold(),
-      this.getBudgets(),
-      this.getBudgetProducts(),
-      this.getCrmClients(),
+      this.getProducts(forceCache),
+      this.getCommitedStock(forceCache),
+      this.getProviders(forceCache),
+      this.getProductProviders(forceCache),
+      this.getAssemblies(forceCache),
+      this.getImports(forceCache),
+      this.getProductImports(forceCache),
+      this.getOrders(forceCache),
+      this.getProductsOrders(forceCache),
+      this.getClients(forceCache),
+      this.getSold(forceCache),
+      this.getProductsSold(forceCache),
+      this.getBudgets(forceCache),
+      this.getBudgetProducts(forceCache),
+      this.getCrmClients(forceCache),
     ]);
 
     //const productsFiltered = products.filter((product) => product.code.startsWith("A000") || product.code.startsWith("Z000"));
     const end = Date.now();
 
-    (opts?.log ?? console.log)(`Database.readAllData elapsed ${end - start}ms`);
+    console.log(`Database.readAllData elapsed ${end - start}ms`);
 
     return {
       products /* : productsFiltered */,
@@ -140,7 +140,7 @@ export class Database {
     };
   }
 
-  public async getProducts(): Promise<(typeof productSchema)["_output"][]> {
+  public async getProducts(forceCache = false): Promise<(typeof productSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products;
@@ -155,7 +155,7 @@ export class Database {
                 FROM STA11`,
         productSchema,
       );
-    });
+    }, forceCache);
   }
 
   public async getProductByCode(code: string): Promise<(typeof productSchema)["_output"]> {
@@ -175,7 +175,7 @@ export class Database {
     return productSchema.parse(records);
   }
 
-  public async getCommitedStock(): Promise<(typeof productStockCommitedSchema)["_output"][]> {
+  public async getCommitedStock(forceCache = false): Promise<(typeof productStockCommitedSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_stock_commited;
@@ -192,10 +192,10 @@ export class Database {
                 FROM STA19`,
         productStockCommitedSchema,
       );
-    });
+    }, forceCache);
   }
 
-  public async getProviders(): Promise<(typeof providerSchema)["_output"][]> {
+  public async getProviders(forceCache = false): Promise<(typeof providerSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.providers;
@@ -208,10 +208,10 @@ export class Database {
                 LOCALIDAD as city, C_POSTAL as zip_code, DOMICILIO as address FROM CPA01`,
         providerSchema,
       );
-    });
+    }, forceCache);
   }
 
-  public async getProductProviders(): Promise<(typeof productProviderSchema)["_output"][]> {
+  public async getProductProviders(forceCache = false): Promise<(typeof productProviderSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.product_providers;
@@ -222,10 +222,10 @@ export class Database {
         `SELECT COD_ARTICU product_code, COD_PROVEE as provider_code, COD_SINONI as provider_product_code FROM CPA15`,
         productProviderSchema,
       );
-    });
+    }, forceCache);
   }
 
-  public async getAssemblies(): Promise<(typeof productAssemblySchema)["_output"][]> {
+  public async getAssemblies(forceCache = false): Promise<(typeof productAssemblySchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_assemblies;
@@ -237,10 +237,10 @@ export class Database {
         productAssemblySchema,
         true,
       );
-    });
+    }, forceCache);
   }
 
-  public async getImports(): Promise<(typeof importSchema)["_output"][]> {
+  public async getImports(forceCache = false): Promise<(typeof importSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.imports;
@@ -264,10 +264,10 @@ export class Database {
                 FROM CPA65`,
         importSchema,
       );
-    });
+    }, forceCache);
   }
 
-  public async getProductImports(): Promise<(typeof productImportSchema)["_output"][]> {
+  public async getProductImports(forceCache = false): Promise<(typeof productImportSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_imports;
@@ -288,10 +288,10 @@ export class Database {
         productImportSchema,
         true,
       );
-    });
+    }, forceCache);
   }
 
-  public async getOrders(): Promise<(typeof orderSchema)["_output"][]> {
+  public async getOrders(forceCache = false): Promise<(typeof orderSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.orders;
@@ -312,10 +312,10 @@ export class Database {
                 FROM GVA21`,
         orderSchema,
       );
-    });
+    }, forceCache);
   }
 
-  public async getProductsOrders(): Promise<(typeof orderProductSchema)["_output"][]> {
+  public async getProductsOrders(forceCache = false): Promise<(typeof orderProductSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_orders;
@@ -331,10 +331,10 @@ export class Database {
         orderProductSchema,
         true,
       );
-    });
+    }, forceCache);
   }
 
-  public async getClients(): Promise<(typeof clientSchema)["_output"][]> {
+  public async getClients(forceCache = false): Promise<(typeof clientSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.clients;
@@ -357,10 +357,10 @@ export class Database {
                 FROM GVA14`,
         clientSchema,
       );
-    });
+    }, forceCache);
   }
 
-  public async getSold(): Promise<(typeof orderSoldSchema)["_output"][]> {
+  public async getSold(forceCache = false): Promise<(typeof orderSoldSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.sold;
@@ -368,10 +368,10 @@ export class Database {
 
     return await cachedAsyncFetch("db-getSold", defaultCacheTtl, async () => {
       return await this.fetchTableWithQuery(soldQuery, orderSoldSchema);
-    });
+    }, forceCache);
   }
 
-  public async getProductsSold(): Promise<(typeof orderProductSoldSchema)["_output"][]> {
+  public async getProductsSold(forceCache = false): Promise<(typeof orderProductSoldSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_sold;
@@ -379,10 +379,10 @@ export class Database {
 
     return await cachedAsyncFetch("db-getProductsSold", defaultCacheTtl, async () => {
       return await this.fetchTableWithQuery(soldProductsQuery, orderProductSoldSchema);
-    });
+    }, forceCache);
   }
 
-  public async getBudgets(): Promise<(typeof crmBudgetSchema)["_output"][]> {
+  public async getBudgets(forceCache = false): Promise<(typeof crmBudgetSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.budgets;
@@ -403,7 +403,7 @@ export class Database {
                 FROM CRM_PRESUPUESTOS`,
         crmBudgetSchema,
       );
-    });
+    }, forceCache);
   }
 
   public async getBudgetById(id: number): Promise<(typeof crmBudgetSchema)["_output"]> {
@@ -429,7 +429,7 @@ export class Database {
     return crmBudgetSchema.parse(records);
   }
 
-  public async getBudgetProducts(): Promise<(typeof crmBudgetProductSchema)["_output"][]> {
+  public async getBudgetProducts(forceCache = false): Promise<(typeof crmBudgetProductSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.budget_products;
@@ -448,10 +448,10 @@ export class Database {
                 FROM CRM_PresupuestosDetalles`,
         crmBudgetProductSchema,
       );
-    });
+    }, forceCache);
   }
 
-  public async getCrmClients(): Promise<(typeof crmClientSchema)["_output"][]> {
+  public async getCrmClients(forceCache = false): Promise<(typeof crmClientSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.crm_clients;
@@ -479,6 +479,6 @@ export class Database {
                 FROM CRM_CLIENTES`,
         crmClientSchema,
       );
-    });
+    }, forceCache);
   }
 }
