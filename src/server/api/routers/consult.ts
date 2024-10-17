@@ -52,10 +52,9 @@ async function getConsumoForProductList(
   // const yaConsumidoLoop = new Map<string, number>();
 
   listadoCopy = listado.filter((product) => !excludeProducts.some((excludedProduct) => product.productCode.startsWith(excludedProduct)));
+  // console.log(listadoCopy.map((v) => v.productCode));
 
-  console.log(listadoCopy.map((v) => v.productCode));
-
-  const promises = listado.map(async (prod, index) => {
+  const promises = listadoCopy.map(async (prod, index) => {
     const pcKey = prod.productCode;
     const pcValue = prod.consumed;
     const product = curatedProducts.find((product) => product.code === prod.productCode);
@@ -141,6 +140,7 @@ async function getConsumoForProductList(
               productCuts,
             );
 
+            // console.log("recortes entra aca 3", product.code);
             listadoCopy[index] = {
               arrivalDate: null,
               consumed: pcValue,
@@ -157,6 +157,7 @@ async function getConsumoForProductList(
               .filter((impor) => new Date(String(impor.arrival_date)).getTime() > new Date().getTime())
               .forEach((impor) => {
                 if (pcValueFaltante < impor.ordered_quantity && !validAmount) {
+                  // console.log("recortes entra aca 2", product.code);
                   listadoCopy[index] = {
                     arrivalDate: new Date(String(impor.arrival_date)),
                     consumed: pcValue,
@@ -166,20 +167,13 @@ async function getConsumoForProductList(
                     cuts: cutsUsed,
                   };
 
-                  // productData.set(product.code, {
-                  //   arrivalDate: new Date(String(impor.arrival_date)),
-                  //   consumed: String(pcValue),
-                  //   productDescription: product.description,
-                  //   stock: String(product.stock - consumedTotal),
-                  // });
-                  // productData.set
-
                   validAmount = true;
                   yaConsumidoLoop.set(pcKey, (yaConsumidoLoop.get(pcKey) ?? 0) + pcValue);
                 }
               });
 
             if (!validAmount) {
+              // console.log("recortes entra aca 1", product.code);
               listadoCopy[index] = {
                 arrivalDate: null,
                 consumed: pcValue,
@@ -192,6 +186,7 @@ async function getConsumoForProductList(
           }
         } else {
           yaConsumidoLoop.set(pcKey, (yaConsumidoLoop.get(pcKey) ?? 0) + pcValue);
+          // console.log("recortes entra aca 0", product.code);
           listadoCopy[index] = {
             arrivalDate: null,
             consumed: pcValue,
@@ -232,8 +227,7 @@ async function getConsumoForProductList(
               productCuts,
             );
 
-            console.log("entra aca");
-
+            // console.log("!recortes entra aca 3", product.code);
             listadoCopy[index] = {
               arrivalDate: null,
               consumed: pcValue,
@@ -251,7 +245,7 @@ async function getConsumoForProductList(
               .filter((impor) => new Date(String(impor.arrival_date)).getTime() > new Date().getTime())
               .forEach((impor) => {
                 if (pcValue < product.stock - consumedTotal + impor.ordered_quantity && !validAmount) {
-                  console.log("entra aca 2");
+                  console.log("!recortes entra aca 2", product.code);
                   listadoCopy[index] = {
                     arrivalDate: new Date(String(impor.arrival_date)),
                     consumed: pcValue,
@@ -261,21 +255,13 @@ async function getConsumoForProductList(
                     cuts: null,
                   };
 
-                  // productData.set(product.code, {
-                  //   arrivalDate: new Date(String(impor.arrival_date)),
-                  //   consumed: String(pcValue),
-                  //   productDescription: product.description,
-                  //   stock: String(product.stock - consumedTotal),
-                  // });
-                  // productData.set
-
                   validAmount = true;
                   yaConsumidoLoop.set(pcKey, (yaConsumidoLoop.get(pcKey) ?? 0) + pcValue);
                 }
               });
 
             if (!validAmount) {
-              console.log("entra aca 3");
+              console.log("!recortes entra aca 1", product.code);
               listadoCopy[index] = {
                 arrivalDate: null,
                 consumed: pcValue,
@@ -289,7 +275,7 @@ async function getConsumoForProductList(
         } else {
           // alcanza y se consume
           yaConsumidoLoop.set(pcKey, (yaConsumidoLoop.get(pcKey) ?? 0) + pcValue);
-          console.log("entra aca 4");
+          // console.log("!recortes entra aca 0", product.code);
           listadoCopy[index] = {
             arrivalDate: null,
             consumed: pcValue,
@@ -300,7 +286,9 @@ async function getConsumoForProductList(
           };
         }
       }
-    }
+    } /* else {
+      console.error("getConsumoForProductList product is undefined from curatedProducts", prod.productCode);
+    } */
   });
 
   await Promise.all(promises);
@@ -370,7 +358,7 @@ export const consultRouter = createTRPCRouter({
         (product) => !excludeProducts.some((excludedProduct) => product.code.startsWith(excludedProduct)),
       );
 
-      const coso = await getConsumoForProductList(
+      const res = await getConsumoForProductList(
         array,
         new Map<string, number>(),
         new Map<number, number>(),
@@ -379,7 +367,8 @@ export const consultRouter = createTRPCRouter({
         productCuts,
       );
 
-      return coso;
+      // console.dir(res, { depth: 50 });
+      return res;
     }),
   mailNotificacion: protectedProcedure
     .input(
