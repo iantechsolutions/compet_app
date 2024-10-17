@@ -14,14 +14,13 @@ import type {
 } from "~/lib/types";
 import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { getUserSetting } from "~/lib/settings";
-import { type ForecastProfile, listAllEventsWithSupplyEvents, listProductsEvents } from "~/mrp_data/transform_mrp_data";
+import { type ForecastProfile } from "~/mrp_data/transform_mrp_data";
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { forecastProfiles } from "~/server/db/schema";
 import { getServerAuthSession } from "~/server/auth";
 import { nullProfile } from "~/lib/nullForecastProfile";
 import { getMonths } from "~/lib/utils";
-import { queryBaseMRPData } from "~/serverfunctions";
 import { cachedAsyncFetch } from "~/lib/cache";
 import { defaultCacheTtl } from "~/scripts/lib/database";
 import type { RouterOutputs } from "~/trpc/shared";
@@ -228,7 +227,9 @@ export const dbRouter = createTRPCRouter({
       forecastProfile = nullProfile;
     }
 
-    return await queryForecastData(forecastProfile);
+    const data = (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data;
+    const forecastData = await queryForecastData(forecastProfile, data);
+    return forecastData;
   }),
   getForecastProfile: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -262,81 +263,12 @@ export const dbRouter = createTRPCRouter({
       forecastProfile = nullProfile;
     }
 
-    const data = await queryBaseMRPData();
+    const data = (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data;
     const forecastData = await queryForecastData(forecastProfile, data);
 
-    const productsByCode = new Map(data.products.map((product) => [product.code, product]));
-    const providersByCode = new Map(data.providers.map((provider) => [provider.code, provider]));
-
-    // Imports por su identificador
-    const importsById = new Map(data.imports.map((imported) => [imported.id, imported]));
-
-    // Importaciones de productos por su identificador y código de producto
-    const productImportsById = new Map(data.productImports.map((productImport) => [productImport.id, productImport]));
-    const productImportsByProductCode = new Map(data.productImports.map((productImport) => [productImport.product_code, productImport]));
-
-    // Ordenes por su número de orden
-    const ordersByOrderNumber = new Map(data.orders.map((order) => [order.order_number, order]));
-
-    // Ordenes de productos por su número de orden y código de producto
-    const orderProductsByOrderNumber = new Map<
-      string,
-      {
-        id: number;
-        order_number: string;
-        product_code: string;
-        ordered_quantity: number;
-      }[]
-    >();
-    data.orderProducts.forEach((order) => {
-      orderProductsByOrderNumber.set(order.order_number, [...(orderProductsByOrderNumber.get(order.order_number) ?? []), order]);
-    });
-    const orderProductsByProductCode = new Map<
-      string,
-      {
-        id: number;
-        order_number: string;
-        product_code: string;
-        ordered_quantity: number;
-      }[]
-    >();
-    data.orderProducts.forEach((order) => {
-      orderProductsByProductCode.set(order.product_code, [...(orderProductsByProductCode.get(order.product_code) ?? []), order]);
-    });
-
-    const orderProductsById = new Map(data.orderProducts.map((order) => [order.id, order]));
-    const clientsByCode = new Map(data.clients.map((client) => [client.code, client]));
-    const assemblyById = new Map(data.assemblies.map((assembly) => [assembly.id, assembly]));
-
-    const evolvedData = {
-      ...data,
-      forecastData,
-
-      productsByCode,
-      providersByCode,
-
-      importsById,
-
-      productImportsById,
-      productImportsByProductCode,
-
-      ordersByOrderNumber,
-
-      orderProductsByOrderNumber,
-      orderProductsByProductCode,
-      orderProductsById,
-      clientsByCode,
-      assemblyById,
-    };
-
-    const events = listAllEventsWithSupplyEvents(evolvedData);
-    const eventsByProductCode = listProductsEvents(evolvedData, events);
-
     return {
-      data: evolvedData,
-      events,
-      eventsByProductCode,
       forecastData,
+      eventsByProductCode: data.eventsByProductCode,
     };
   }),
   getMonolito: protectedProcedure

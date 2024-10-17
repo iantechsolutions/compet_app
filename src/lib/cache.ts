@@ -33,6 +33,7 @@ export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallb
     await Cache[key].fetchMutex.runExclusive(async () => {
       if (Cache[key] !== undefined) {
         Cache[key].value = await fetchCallback();
+        Cache[key].expiresAt = Date.now() + ttlMs;
       }
     });
   } else {
@@ -65,6 +66,7 @@ async function cacheTaskKey<T>(key: string, Cache: GlobalCache["cache"], callbac
     await Cache[key].fetchMutex.runExclusive(async () => {
       if (Cache[key] !== undefined) {
         Cache[key].value = await callback();
+        Cache[key].expiresAt = Date.now() + defaultCacheTtl;
       }
     });
 
