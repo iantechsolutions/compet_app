@@ -99,7 +99,7 @@ export class Database {
       budget_products,
       crm_clients,
     ] = await Promise.all([
-      this.getProducts(forceCache),
+      this.getProductsFiltered(forceCache),
       this.getCommitedStock(forceCache),
       this.getProviders(forceCache),
       this.getProductProviders(forceCache),
@@ -116,9 +116,7 @@ export class Database {
       this.getCrmClients(forceCache),
     ]);
 
-    //const productsFiltered = products.filter((product) => product.code.startsWith("A000") || product.code.startsWith("Z000"));
     const end = Date.now();
-
     console.log(`Database.readAllData elapsed ${end - start}ms`);
 
     return {
@@ -140,13 +138,13 @@ export class Database {
     };
   }
 
-  public async getProducts(forceCache = false): Promise<(typeof productSchema)["_output"][]> {
+  public async getProductsFiltered(forceCache = false): Promise<(typeof productSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products;
     }
 
-    return await cachedAsyncFetch(
+    const products = await cachedAsyncFetch(
       "db-getProducts",
       defaultCacheTtl,
       async () => {
@@ -161,6 +159,8 @@ export class Database {
       },
       forceCache,
     );
+
+    return products.filter((product) => !product.code.startsWith("A000") && !product.code.startsWith("Z000"));
   }
 
   public async getProductByCode(code: string): Promise<(typeof productSchema)["_output"] | undefined> {

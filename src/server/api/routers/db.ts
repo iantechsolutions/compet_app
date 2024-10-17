@@ -30,7 +30,7 @@ export const maxDuration = 300;
 
 export const dbRouter = createTRPCRouter({
   getProducts: protectedProcedure.query(async () => {
-    return await (await getDbInstance()).getProducts();
+    return await (await getDbInstance()).getProductsFiltered();
   }),
   getProductsByCode: protectedProcedure.query(async () => {
     return await getProductByCode();
