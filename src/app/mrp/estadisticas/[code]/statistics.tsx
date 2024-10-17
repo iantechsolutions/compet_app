@@ -490,7 +490,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
     const prod = products!.find((p) => p.code === productCode);
-    const possibleSuppliesOf = prod?.suppliesOf!.map(x => x.product_code);
+    const possibleSuppliesOf = prod?.suppliesOf?.map(x => x.product_code);
     const mapeoConsumo = new Map<string, number>();
     possibleSuppliesOf?.map((supplyOfCode) => {
       const semielaborate = products!.find((p) => p.code === supplyOfCode);

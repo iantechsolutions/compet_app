@@ -226,7 +226,7 @@ export function Table(props: { user?: NavUserData }) {
       if (!product) {
         return [];
       }
-      let supplies = product.supplies!.map((p) => p.supply_product_code);
+      let supplies = product.supplies?.map((p) => p.supply_product_code) ?? [];
       let index = 0;
 
       while (index < supplies.length) {
