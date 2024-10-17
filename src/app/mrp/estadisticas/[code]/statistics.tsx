@@ -345,56 +345,59 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     productCode: string,
   ) {
     const fromDateCopy = new Date(fromDate);
-    const budgetsFiltered = budgets!.filter(
-      (budget) =>
-        !clientExemptionList?.includes(budget.client_id) &&
-        new Date(String(budget.date)) &&
-        new Date(String(budget.date)) <= toDate &&
-        new Date(String(budget.date)) >= fromDateCopy &&
-        budget.products.filter((product) => product.product_code === productCode).length > 0,
-    );
-    const sales = sold!.filter((order) => !clientExemptionList?.includes(order.client_code));
-    const salesList = [];
-    const budgetsList = [];
-    while (fromDateCopy.getTime() <= toDate.getTime()) {
-      const day = fromDateCopy.toISOString().slice(0, 10);
-      const salesOnDay = sales?.filter(
-        (sale) =>
-          new Date(String(sale?.emission_date)) instanceof Date &&
-          !isNaN(new Date(String(sale.emission_date)).getTime()) &&
-          new Date(String(sale.emission_date)).toISOString().slice(0, 10) === day,
-      );
-      const budgetsOnDay = budgetsFiltered?.filter(
-        (budget) =>
-          new Date(String(budget.date)) instanceof Date &&
-          !isNaN(new Date(String(budget.date)).getTime()) &&
-          new Date(String(budget.date)).toISOString().slice(0, 10) === day,
-      );
-      let totalSales = 0;
-      salesOnDay?.forEach((sale) => {
-        const order_products = sale.products;
-        if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
-          const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
-          totalSales += order_product?.CANTIDAD ?? 0;
-        }
-      });
-      if (totalSales > 0) {
-        salesList.push({ date: day, totalSales });
+    const salesMap = new Map<number, number>();
+    const budgetsMap = new Map<number, number>();
+
+    sold!.forEach((sale) => {
+      const emDate = new Date(String(sale?.emission_date));
+      if (!(emDate instanceof Date) || isNaN(emDate.getTime()) || clientExemptionList?.includes(sale.client_code)) {
+        return;
       }
-      let totalBudgets = 0;
-      budgetsOnDay?.forEach((budget) => {
-        const product = budget.products.find((product) => product.product_code === productCode);
-        if (product) {
-          totalBudgets += product.quantity;
-        }
-      });
-      if (totalBudgets > 0) {
-        budgetsList.push({ date: day, totalBudgets });
+
+      const isValidDate = fromDateCopy <= emDate && emDate <= toDate;
+      if (!isValidDate) {
+        return;
+      }
+
+      const order_products = sale.products;
+      if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
+        const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
+        salesMap.set(emDate.getTime(), (salesMap.get(emDate.getTime()) ?? 0) + (order_product?.CANTIDAD ?? 0));
+      }
+    });
+
+    budgets!.forEach((budget) => {
+      const bDate = new Date(String(budget.date));
+      if (!(bDate instanceof Date) || isNaN(bDate.getTime()) || clientExemptionList?.includes(budget.client_id)) {
+        return;
+      }
+
+      const isValidDate = fromDateCopy <= bDate && bDate <= toDate;
+      if (!isValidDate) {
+        return;
       }
 
 
-      fromDateCopy.setDate(fromDateCopy.getDate() + 1);
-    }
+      const product = budget.products.find((product) => product.product_code === productCode);
+      if (product) {
+        budgetsMap.set(bDate.getTime(), (budgetsMap.get(bDate.getTime()) ?? 0) + product.quantity);
+      }
+    });
+
+    const salesList = [...salesMap.entries()].sort().map(v => {
+      return {
+        date: (new Date(v[0])).toISOString().slice(0, 10),
+        totalSales: v[1]
+      }
+    });
+
+    const budgetsList = [...budgetsMap.entries()].sort().map(v => {
+      return {
+        date: (new Date(v[0])).toISOString().slice(0, 10),
+        totalBudgets: v[1]
+      }
+    });
+
     return { salesList, budgetsList };
   }
 
