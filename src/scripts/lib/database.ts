@@ -146,19 +146,24 @@ export class Database {
       return r.data.products;
     }
 
-    return await cachedAsyncFetch("db-getProducts", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT
+    return await cachedAsyncFetch(
+      "db-getProducts",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
                 COD_ARTICU as code,
                 DESCRIPCIO as description,
                 DESC_ADIC as additional_description
                 FROM STA11`,
-        productSchema,
-      );
-    }, forceCache);
+          productSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
-  public async getProductByCode(code: string): Promise<(typeof productSchema)["_output"]> {
+  public async getProductByCode(code: string): Promise<(typeof productSchema)["_output"] | undefined> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products.find((v) => v.code === code)!;
@@ -172,7 +177,8 @@ export class Database {
                 WHERE COD_ARTICU = @code`);
 
     const records = rows.recordset.map((k) => Database.trimAllProperties(k as Record<string, unknown>));
-    return productSchema.parse(records);
+    const arraySchema = z.array(productSchema);
+    return arraySchema.parse(records)[0];
   }
 
   public async getCommitedStock(forceCache = false): Promise<(typeof productStockCommitedSchema)["_output"][]> {
@@ -181,18 +187,23 @@ export class Database {
       return r.data.products_stock_commited;
     }
 
-    return await cachedAsyncFetch("db-getCommitedStock", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT
+    return await cachedAsyncFetch(
+      "db-getCommitedStock",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
                 COD_ARTICU as product_code,
                 CANT_STOCK as stock_quantity,
                 CANT_COMP as commited_quantity,
                 CANT_PEND as pending_quantity,
                 FECHA_ANT as last_update
                 FROM STA19`,
-        productStockCommitedSchema,
-      );
-    }, forceCache);
+          productStockCommitedSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getProviders(forceCache = false): Promise<(typeof providerSchema)["_output"][]> {
@@ -201,14 +212,19 @@ export class Database {
       return r.data.providers;
     }
 
-    return await cachedAsyncFetch("db-getProviders", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT
+    return await cachedAsyncFetch(
+      "db-getProviders",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
                 COD_PROVEE as code, NOM_PROVEE as name, TELEFONO_1 as phone, 
                 LOCALIDAD as city, C_POSTAL as zip_code, DOMICILIO as address FROM CPA01`,
-        providerSchema,
-      );
-    }, forceCache);
+          providerSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getProductProviders(forceCache = false): Promise<(typeof productProviderSchema)["_output"][]> {
@@ -217,12 +233,17 @@ export class Database {
       return r.data.product_providers;
     }
 
-    return await cachedAsyncFetch("db-getProductProviders", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT COD_ARTICU product_code, COD_PROVEE as provider_code, COD_SINONI as provider_product_code FROM CPA15`,
-        productProviderSchema,
-      );
-    }, forceCache);
+    return await cachedAsyncFetch(
+      "db-getProductProviders",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT COD_ARTICU product_code, COD_PROVEE as provider_code, COD_SINONI as provider_product_code FROM CPA15`,
+          productProviderSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getAssemblies(forceCache = false): Promise<(typeof productAssemblySchema)["_output"][]> {
@@ -231,13 +252,18 @@ export class Database {
       return r.data.products_assemblies;
     }
 
-    return await cachedAsyncFetch("db-getAssemblies", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT COD_ARTICU as product_code, COD_INSUMO as supply_product_code, CANT_NETA as quantity FROM STA03`,
-        productAssemblySchema,
-        true,
-      );
-    }, forceCache);
+    return await cachedAsyncFetch(
+      "db-getAssemblies",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT COD_ARTICU as product_code, COD_INSUMO as supply_product_code, CANT_NETA as quantity FROM STA03`,
+          productAssemblySchema,
+          true,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getImports(forceCache = false): Promise<(typeof importSchema)["_output"][]> {
@@ -246,9 +272,12 @@ export class Database {
       return r.data.imports;
     }
 
-    return await cachedAsyncFetch("db-getImports", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT 
+    return await cachedAsyncFetch(
+      "db-getImports",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT 
                 ID_CARPETA as id,
                 COD_PROVEE as provider_code,
                 HABILITADA as enabled,
@@ -262,9 +291,11 @@ export class Database {
                 LEYENDA2 as legend2,
                 LEYENDA3 as legend3
                 FROM CPA65`,
-        importSchema,
-      );
-    }, forceCache);
+          importSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getProductImports(forceCache = false): Promise<(typeof productImportSchema)["_output"][]> {
@@ -273,9 +304,12 @@ export class Database {
       return r.data.products_imports;
     }
 
-    return await cachedAsyncFetch("db-getProductImports", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT 
+    return await cachedAsyncFetch(
+      "db-getProductImports",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT 
                 ID_CARPETA as import_id,
                 COD_ARTICU as product_code,
                 CANT_PEDID as ordered_quantity,
@@ -285,10 +319,12 @@ export class Database {
                 FEC_P_PUER as arrival_date,
                 CANT_NACIO as national_quantity
                 FROM CPA66 WHERE CANT_NACIO = 0 AND CERRADO = 0 AND COD_ARTICU <> ''`,
-        productImportSchema,
-        true,
-      );
-    }, forceCache);
+          productImportSchema,
+          true,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getOrders(forceCache = false): Promise<(typeof orderSchema)["_output"][]> {
@@ -297,9 +333,12 @@ export class Database {
       return r.data.orders;
     }
 
-    return await cachedAsyncFetch("db-getOrders", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT
+    return await cachedAsyncFetch(
+      "db-getOrders",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
                 NRO_PEDIDO as order_number,
                 APRUEBA as approved_by,
                 COD_CLIENT as client_code,
@@ -310,9 +349,11 @@ export class Database {
                 N_REMITO as remito_number,
                 ESTADO as state
                 FROM GVA21`,
-        orderSchema,
-      );
-    }, forceCache);
+          orderSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getProductsOrders(forceCache = false): Promise<(typeof orderProductSchema)["_output"][]> {
@@ -321,17 +362,22 @@ export class Database {
       return r.data.products_orders;
     }
 
-    return await cachedAsyncFetch("db-getProductsOrders", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT
+    return await cachedAsyncFetch(
+      "db-getProductsOrders",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
                 NRO_PEDIDO as order_number,
                 COD_ARTICU as product_code,
                 CANT_PEN_D as ordered_quantity
                 FROM GVA03`,
-        orderProductSchema,
-        true,
-      );
-    }, forceCache);
+          orderProductSchema,
+          true,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getClients(forceCache = false): Promise<(typeof clientSchema)["_output"][]> {
@@ -340,9 +386,12 @@ export class Database {
       return r.data.clients;
     }
 
-    return await cachedAsyncFetch("db-getClients", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT
+    return await cachedAsyncFetch(
+      "db-getClients",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
                 COD_CLIENT as code,
                 CUIT as cuit,
                 NOM_COM as name,
@@ -355,9 +404,11 @@ export class Database {
                 LOCALIDAD as city,
                 DOMICILIO as address
                 FROM GVA14`,
-        clientSchema,
-      );
-    }, forceCache);
+          clientSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getSold(forceCache = false): Promise<(typeof orderSoldSchema)["_output"][]> {
@@ -366,9 +417,14 @@ export class Database {
       return r.data.sold;
     }
 
-    return await cachedAsyncFetch("db-getSold", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(soldQuery, orderSoldSchema);
-    }, forceCache);
+    return await cachedAsyncFetch(
+      "db-getSold",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(soldQuery, orderSoldSchema);
+      },
+      forceCache,
+    );
   }
 
   public async getProductsSold(forceCache = false): Promise<(typeof orderProductSoldSchema)["_output"][]> {
@@ -377,9 +433,14 @@ export class Database {
       return r.data.products_sold;
     }
 
-    return await cachedAsyncFetch("db-getProductsSold", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(soldProductsQuery, orderProductSoldSchema);
-    }, forceCache);
+    return await cachedAsyncFetch(
+      "db-getProductsSold",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(soldProductsQuery, orderProductSoldSchema);
+      },
+      forceCache,
+    );
   }
 
   public async getBudgets(forceCache = false): Promise<(typeof crmBudgetSchema)["_output"][]> {
@@ -388,9 +449,12 @@ export class Database {
       return r.data.budgets;
     }
 
-    return await cachedAsyncFetch("db-getBudgets", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT
+    return await cachedAsyncFetch(
+      "db-getBudgets",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
                 ID_Presupuesto as budget_id,
                 ID_Cliente as client_id,
                 ID_Categoria as category_id,
@@ -401,12 +465,14 @@ export class Database {
                 FechaUltimoCambio as last_update,
                 Comentarios as comments
                 FROM CRM_PRESUPUESTOS`,
-        crmBudgetSchema,
-      );
-    }, forceCache);
+          crmBudgetSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
-  public async getBudgetById(id: number): Promise<(typeof crmBudgetSchema)["_output"]> {
+  public async getBudgetById(id: number): Promise<(typeof crmBudgetSchema)["_output"] | undefined> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.budgets.find((v) => v.budget_id === id)!;
@@ -426,7 +492,8 @@ export class Database {
                 WHERE ID_Presupuesto = @code`);
 
     const records = rows.recordset.map((k) => Database.trimAllProperties(k as Record<string, unknown>));
-    return crmBudgetSchema.parse(records);
+    const arraySchema = z.array(crmBudgetSchema);
+    return arraySchema.parse(records)[0];
   }
 
   public async getBudgetProducts(forceCache = false): Promise<(typeof crmBudgetProductSchema)["_output"][]> {
@@ -435,9 +502,12 @@ export class Database {
       return r.data.budget_products;
     }
 
-    return await cachedAsyncFetch("db-getBudgetProducts", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT 
+    return await cachedAsyncFetch(
+      "db-getBudgetProducts",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT 
                 ID_PresupuestoDetalle as budget_products_id,
                 ID_Presupuesto as budget_id,
                 Cod_Articu as product_code,
@@ -446,9 +516,11 @@ export class Database {
                 CantidadPendiente as pending_quantity,
                 FechaAltaRenglon as creation_date
                 FROM CRM_PresupuestosDetalles`,
-        crmBudgetProductSchema,
-      );
-    }, forceCache);
+          crmBudgetProductSchema,
+        );
+      },
+      forceCache,
+    );
   }
 
   public async getCrmClients(forceCache = false): Promise<(typeof crmClientSchema)["_output"][]> {
@@ -457,9 +529,12 @@ export class Database {
       return r.data.crm_clients;
     }
 
-    return await cachedAsyncFetch("db-getCrmClients", defaultCacheTtl, async () => {
-      return await this.fetchTableWithQuery(
-        `SELECT
+    return await cachedAsyncFetch(
+      "db-getCrmClients",
+      defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
                 ID_Cliente as client_id,
                 RazonSocial as business_name,
                 NombreFantasia as name,
@@ -477,8 +552,10 @@ export class Database {
                 HorarioAten as attention_schedule,
                 Estado as state
                 FROM CRM_CLIENTES`,
-        crmClientSchema,
-      );
-    }, forceCache);
+          crmClientSchema,
+        );
+      },
+      forceCache,
+    );
   }
 }
