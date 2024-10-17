@@ -3,11 +3,18 @@ import type { Product } from "./types";
 import { queryBaseMRPData } from "~/serverfunctions";
 import {
   eventsOfProductByMonth,
+  type ForecastProfile,
   listAllEventsWithSupplyEvents,
   listProductsEvents,
   type ProductEvent,
   stockOfProductByMonth,
 } from "~/mrp_data/transform_mrp_data";
+import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
+import { getUserSetting } from "./settings";
+import { db } from "~/server/db";
+import { eq } from "drizzle-orm";
+import { forecastProfiles } from "~/server/db/schema";
+import { nullProfile } from "./nullForecastProfile";
 
 export const getProductByCode = async () => {
   const products = await (await getDbInstance()).getProducts();
@@ -19,8 +26,21 @@ export const getProductByCode = async () => {
   return { products, productByCode };
 };
 
-export const getMonolitoBase = async () => {
+export const getMonolitoBase = async (userId: string) => {
   const data = await queryBaseMRPData();
+
+  const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", userId);
+
+  let forecastProfile: ForecastProfile | null =
+    forecastProfileId != null
+      ? ((await db.query.forecastProfiles.findFirst({
+          where: eq(forecastProfiles.id, forecastProfileId),
+        })) ?? null)
+      : null;
+
+  if (!forecastProfile) {
+    forecastProfile = nullProfile;
+  }
 
   const productsByCode = new Map(data.products.map((product) => [product.code, product]));
   const providersByCode = new Map(data.providers.map((provider) => [provider.code, provider]));
@@ -67,9 +87,11 @@ export const getMonolitoBase = async () => {
   const orderProductsById = new Map(data.orderProducts.map((order) => [order.id, order]));
   const clientsByCode = new Map(data.clients.map((client) => [client.code, client]));
   const assemblyById = new Map(data.assemblies.map((assembly) => [assembly.id, assembly]));
+  const forecastData = await queryForecastData(forecastProfile, data);
 
   const evolvedData = {
     ...data,
+    forecastData,
 
     productsByCode,
     providersByCode,

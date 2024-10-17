@@ -249,7 +249,7 @@ export function Table(props: { user?: NavUserData }) {
   const size = useWindowSize();
 
   const h = (size.height ?? 1000) - 110;
-  const w = size.width ?? window.innerWidth;
+  const w = size.width ?? window?.innerWidth ?? 0;
 
   const headerId = useId();
   const scrollClassName = "scroll-list-div";

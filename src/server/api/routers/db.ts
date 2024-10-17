@@ -227,7 +227,13 @@ export const dbRouter = createTRPCRouter({
       forecastProfile = nullProfile;
     }
 
-    const data = (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data;
+    const data = (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data;
     const forecastData = await queryForecastData(forecastProfile, data);
     return forecastData;
   }),
@@ -263,7 +269,13 @@ export const dbRouter = createTRPCRouter({
       forecastProfile = nullProfile;
     }
 
-    const data = (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data;
+    const data = (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data;
     const forecastData = await queryForecastData(forecastProfile, data);
 
     return {
@@ -313,7 +325,12 @@ export const dbRouter = createTRPCRouter({
         .default({}),
     )
     .query(async ({ input }) => {
-      const monolito = await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase());
+      const session = await getServerAuthSession();
+      const monolito = await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      );
       const monolitoShallow: PartialExcept<
         typeof monolito,
         [
@@ -464,34 +481,104 @@ export const dbRouter = createTRPCRouter({
       return monolitoShallow;
     }),
   getMEventsByProductCode: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).eventsByProductCode;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).eventsByProductCode;
   }),
   getMProviders: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.providers;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.providers;
   }),
   getMAssemblyById: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.assemblyById;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.assemblyById;
   }),
   getMBudgetProducts: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.budget_products;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.budget_products;
   }),
   getMBudgetsById: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.budgetsById;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.budgetsById;
   }),
   getMCrmClients: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.crm_clients;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.crm_clients;
   }),
   getMBudgets: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.budgets;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.budgets;
   }),
   getMSold: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.sold;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.sold;
   }),
   getMClients: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.clients;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.clients;
   }),
   getMProductsDefault: protectedProcedure.query(async () => {
-    const res = (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.products;
+    const session = await getServerAuthSession();
+    const res = (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.products;
     return res.map((v) => {
       const k = { ...v };
       k.supplies = undefined;
@@ -502,7 +589,14 @@ export const dbRouter = createTRPCRouter({
     });
   }),
   getMProductsWSuppliesOf: protectedProcedure.query(async () => {
-    const res = (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.products;
+    const session = await getServerAuthSession();
+    const res = (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.products;
     return res.map((v) => {
       const k = { ...v };
       k.supplies = undefined;
@@ -512,7 +606,14 @@ export const dbRouter = createTRPCRouter({
     });
   }),
   getMProductsWSupplies: protectedProcedure.query(async () => {
-    const res = (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.products;
+    const session = await getServerAuthSession();
+    const res = (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.products;
     return res.map((v) => {
       const k = { ...v };
       k.suppliesOf = undefined;
@@ -522,31 +623,94 @@ export const dbRouter = createTRPCRouter({
     });
   }),
   getMProvidersByCode: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.providersByCode;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.providersByCode;
   }),
   getMOrderProductsById: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.orderProductsById;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.orderProductsById;
   }),
   getMOrdersByOrderNumber: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.ordersByOrderNumber;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.ordersByOrderNumber;
   }),
   getMOrderProductsByProductCode: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.orderProductsByProductCode;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.orderProductsByProductCode;
   }),
   getMOrderProductsByOrderNumber: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.orderProductsByOrderNumber;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.orderProductsByOrderNumber;
   }),
   getMProductImportsById: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.productImportsById;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.productImportsById;
   }),
   getMImportsById: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.importsById;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.importsById;
   }),
   getMClientsByCode: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.clientsByCode;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.clientsByCode;
   }),
   getMProductsByCode: protectedProcedure.query(async () => {
-    return (await cachedAsyncFetch("monolito-base", defaultCacheTtl, async () => await getMonolitoBase())).data.productsByCode;
+    const session = await getServerAuthSession();
+    return (
+      await cachedAsyncFetch(
+        `monolito-base-${session?.user.id ?? ""}`,
+        defaultCacheTtl,
+        async () => await getMonolitoBase(session?.user.id ?? ""),
+      )
+    ).data.productsByCode;
   }),
 });
 

@@ -137,7 +137,7 @@ export function SelectCRMClients(props: { setSelected: (selected: Set<string>) =
         <AlertDialogHeader>
           <AlertDialogDescription>Seleccione que clientes deben tomarse en cuenta para el calculo de estadisticas</AlertDialogDescription>
         </AlertDialogHeader>
-        <List height={window.innerHeight - 200} itemCount={clientsWithBudgets.length} itemSize={70} width={"100%"}>
+        <List height={(window?.innerHeight ?? 200) - 200} itemCount={clientsWithBudgets.length} itemSize={70} width={"100%"}>
           {Row}
         </List>
         <AlertDialogFooter>

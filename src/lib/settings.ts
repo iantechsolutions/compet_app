@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { settings, userSettings } from "~/server/db/schema";
+import { cacheInvalidate } from "./cache";
 
 export async function getSetting<T>(key: string): Promise<T | null> {
   const setting = await db.query.settings.findFirst({
@@ -55,6 +56,8 @@ export async function setUserSetting<T>(key: string, userId: string, value: T) {
       })
       .where(and(eq(userSettings.key, key), eq(userSettings.userId, userId)));
   }
+
+  cacheInvalidate(userId);
 }
 
 export async function deleteUserSetting(key: string, userId: string) {

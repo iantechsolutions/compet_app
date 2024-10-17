@@ -10,7 +10,7 @@ type CacheEntry = {
 };
 
 type GlobalCache = {
-  cache: Record<string, CacheEntry>;
+  cache: Record<string, CacheEntry | null>;
 };
 
 export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallback: () => Promise<T>, forceCache = false): Promise<T> {
@@ -31,7 +31,7 @@ export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallb
   } else if (typeof Cache[key]?.expiresAt === "number") {
     console.log("cachedAsyncFetch: Cache miss or forced at key", key);
     await Cache[key].fetchMutex.runExclusive(async () => {
-      if (Cache[key] !== undefined) {
+      if (Cache[key]) {
         Cache[key].value = await fetchCallback();
         Cache[key].expiresAt = Date.now() + ttlMs;
       }
@@ -64,13 +64,22 @@ async function cacheTaskKey<T>(key: string, Cache: GlobalCache["cache"], callbac
     console.log(`cacheTask: first loaded ${key} in ${Date.now() - start}ms`, process.env.NEXT_RUNTIME);
   } else if (typeof Cache[key]?.expiresAt === "number" && Date.now() >= Cache[key].expiresAt) {
     await Cache[key].fetchMutex.runExclusive(async () => {
-      if (Cache[key] !== undefined) {
+      if (Cache[key]) {
         Cache[key].value = await callback();
         Cache[key].expiresAt = Date.now() + defaultCacheTtl;
       }
     });
 
     console.log(`cacheTask: reloaded ${key} in ${Date.now() - start}ms`);
+  }
+}
+
+export function cacheInvalidate(userId: string) {
+  const Cache = (global as unknown as GlobalCache).cache;
+  for (const key of Object.keys(Cache)) {
+    if (key.endsWith(userId)) {
+      Cache[key] = null;
+    }
   }
 }
 
@@ -84,6 +93,13 @@ export async function cacheTask() {
   }
 
   const Cache = (global as unknown as GlobalCache).cache;
-  await cacheTaskKey("monolito-base", Cache, async () => await getMonolitoBase());
+  for (const key of Object.keys(Cache)) {
+    if (key.startsWith("monolito-base-")) {
+      const id = key.replace("monolito-base-", "");
+      await cacheTaskKey(key, Cache, async () => await getMonolitoBase(id));
+    }
+  }
+
+  // await cacheTaskKey(, Cache, async () => await getMonolitoBase());
   void (await (await getDbInstance()).readAllData(true));
 }

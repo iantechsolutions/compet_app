@@ -194,23 +194,23 @@ export function listAllEvents(data: MappedData) {
   const today = dayjs().startOf("day").toDate();
 
   // Take forecast data and transform it into events that the MRP can understand
-  if (data.forecastData) {
-    for (const event of data.forecastData.events) {
-      // Transform ForecastDataEvent to ProductEvent
-      events.push({
-        type: "forecast", // It indicates that it is a forecast event (not a real life event)
-        forecastType: event.type,
-        referenceId: -1,
-        date: event.date,
-        quantity: event.quantity,
-        productCode: event.product_code,
-        expired: new Date(event.date) < today,
-        productAccumulativeStock: 0,
-        originalQuantity: event.originalQuantity,
-        isForecast: true,
-      });
-    }
+  // if (data.forecastData) {
+  for (const event of data.forecastData!.events) {
+    // Transform ForecastDataEvent to ProductEvent
+    events.push({
+      type: "forecast", // It indicates that it is a forecast event (not a real life event)
+      forecastType: event.type,
+      referenceId: -1,
+      date: event.date,
+      quantity: event.quantity,
+      productCode: event.product_code,
+      expired: new Date(event.date) < today,
+      productAccumulativeStock: 0,
+      originalQuantity: event.originalQuantity,
+      isForecast: true,
+    });
   }
+  // }
 
   // Events from imports
   for (const productImport of data.productImports) {
