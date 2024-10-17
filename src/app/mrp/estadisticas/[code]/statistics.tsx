@@ -81,6 +81,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       return null;
     }
 
+    const start = Date.now();
     const map = new Map<string, number>();
 
     for (const product of products) {
@@ -88,6 +89,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         map.set(provider.provider_code, (map.get(provider.provider_code) ?? 0) + 1);
       }
     }
+
+    console.log('productsByProvider elapsed', Date.now() - start);
 
     return map;
   }, [products, loading]);
@@ -97,7 +100,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       return null;
     }
 
-    return providers.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
+    const start = Date.now();
+    const res = providers.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
+    console.log('filteredProviders elapsed', Date.now() - start);
+
+    return res;
   }, [providers, productsByProvider, loading]);
 
   const allProviersCodes = useMemo(() => {
@@ -105,7 +112,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       return null;
     }
 
-    return new Set<string>(filteredProviders?.map((p) => p.code));
+    const start = Date.now();
+    const res = new Set<string>(filteredProviders?.map((p) => p.code));
+    console.log('allProviersCodes elapsed', Date.now() - start);
+    return res;
   }, [filteredProviders, loading]);
 
   const defaultValues = useMemo(() => {
@@ -113,11 +123,15 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       return null;
     }
 
-    return Array.from(allProviersCodes ?? new Set<string>()).filter((code) => !providersSelected.has(code));
+    const start = Date.now();
+    const res = Array.from(allProviersCodes ?? new Set<string>()).filter((code) => !providersSelected.has(code));
+    console.log('defaultValues elapsed', Date.now() - start);
+    return res;
   }, [allProviersCodes, providersSelected, loading]);
 
   useEffect(() => {
     if (fromDate && toDate && !hasRun && !loading) {
+      let start = Date.now();
       const {
         list: consumptionStats,
         totalConsumedAmount: totalTemp,
@@ -129,6 +143,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      console.log('useEffect getConsumptionStats elapsed', Date.now() - start);
+      start = Date.now();
       const tempSales = getSalesAndBudgets(
         fromDate ?? new Date("2023-09-04"),
         toDate ?? new Date("2024-09-04"),
@@ -136,6 +152,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      console.log('useEffect getSalesAndBudgets elapsed', Date.now() - start);
+      start = Date.now();
       const tempSoldProportions = getSoldProportions(
         fromDate ?? new Date("2023-09-04"),
         toDate ?? new Date("2024-09-04"),
@@ -143,6 +161,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      console.log('useEffect getSoldProportions elapsed', Date.now() - start);
+      start = Date.now();
       const tempGeneral = getGeneralStatistics(
         fromDate ?? new Date("2023-09-04"),
         toDate ?? new Date("2024-09-04"),
@@ -150,7 +170,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      console.log('useEffect getGeneralStatistics elapsed', Date.now() - start);
+      start = Date.now();
       const tempCuts = getCuts(productCode, fromDate ?? new Date("2023-09-04"), toDate ?? new Date("2024-09-04"));
+      console.log('useEffect getCuts elapsed', Date.now() - start);
       setConsumption(consumptionStats);
       setTotalConsumedAmount(totalTemp);
       setTotalMotiveConsumption(totalMotiveTemp);
