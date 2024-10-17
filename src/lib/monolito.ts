@@ -10,7 +10,7 @@ import {
 } from "~/mrp_data/transform_mrp_data";
 
 export const getProductByCode = async () => {
-  const products = await (await getDbInstance()).getProductsFiltered();
+  const products = await (await getDbInstance()).getProducts();
   const productByCode = new Map<string, Product>();
   for (const product of products) {
     productByCode.set(product.code, product);
