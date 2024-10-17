@@ -14,21 +14,29 @@ type GlobalCache = {
 };
 
 export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallback: () => Promise<T>): Promise<T> {
+  if (process.env.NEXT_RUNTIME !== "nodejs") {
+    console.error("cachedAsyncFetch called from NEXT_RUNTIME", process.env.NEXT_RUNTIME);
+  }
+
   if (!(global as unknown as GlobalCache).cache) {
+    console.error("cachedAsyncFetch: recreating cache");
     (global as unknown as GlobalCache).cache = {} as Record<string, CacheEntry>;
   }
 
   const Cache = (global as unknown as GlobalCache).cache;
 
   if (typeof Cache[key]?.expiresAt === "number" && Cache[key].expiresAt > Date.now()) {
+    console.log("cachedAsyncFetch: Cache hit at key", key);
     return Cache[key].value as T;
   } else if (typeof Cache[key]?.expiresAt === "number") {
+    console.log("cachedAsyncFetch: Cache miss at key", key);
     await Cache[key].fetchMutex.runExclusive(async () => {
       if (Cache[key] !== undefined) {
         Cache[key].value = await fetchCallback();
       }
     });
   } else {
+    console.log("cachedAsyncFetch: Cache missing key", key);
     Cache[key] = {
       expiresAt: Date.now() + ttlMs,
       value: await fetchCallback(),
@@ -40,6 +48,10 @@ export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallb
 }
 
 async function cacheTaskKey<T>(key: string, Cache: GlobalCache["cache"], callback: () => Promise<T>) {
+  if (process.env.NEXT_RUNTIME !== "nodejs") {
+    console.error("cacheTaskKey called from NEXT_RUNTIME", process.env.NEXT_RUNTIME);
+  }
+
   const start = Date.now();
   if (Cache[key] === undefined) {
     Cache[key] = {
@@ -61,6 +73,10 @@ async function cacheTaskKey<T>(key: string, Cache: GlobalCache["cache"], callbac
 }
 
 export async function cacheTask() {
+  if (process.env.NEXT_RUNTIME !== "nodejs") {
+    console.error("cacheTask called from NEXT_RUNTIME", process.env.NEXT_RUNTIME);
+  }
+
   if (!(global as unknown as GlobalCache).cache) {
     (global as unknown as GlobalCache).cache = {} as Record<string, CacheEntry>;
   }
