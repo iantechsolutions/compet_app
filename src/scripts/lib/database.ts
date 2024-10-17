@@ -116,13 +116,13 @@ export class Database {
       this.getCrmClients(),
     ]);
 
-    const productsFiltered = products.filter((product) => product.code.startsWith("A000") || product.code.startsWith("Z000"));
+    //const productsFiltered = products.filter((product) => product.code.startsWith("A000") || product.code.startsWith("Z000"));
     const end = Date.now();
 
     (opts?.log ?? console.log)(`Database.readAllData elapsed ${end - start}ms`);
 
     return {
-      products: productsFiltered,
+      products /* : productsFiltered */,
       products_stock_commited,
       providers,
       product_providers,
