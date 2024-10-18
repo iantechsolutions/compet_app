@@ -77,12 +77,7 @@ export class Database {
   }
 
   public async readAllDataUT(cacheTtl?: number, forceCache = false) {
-    return cachedAsyncFetch(
-      "db-readAllDataUT",
-      cacheTtl ?? cacheTtl ?? defaultCacheTtl,
-      async () => await queryBaseMRPDataUT(),
-      forceCache,
-    );
+    return cachedAsyncFetch("db-readAllDataUT", cacheTtl ?? defaultCacheTtl, async () => await queryBaseMRPDataUT(), forceCache);
   }
 
   public async readAllDataDirect(cacheTtl?: number, forceCache = false) {

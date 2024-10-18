@@ -25,7 +25,12 @@ export async function cachedAsyncFetch<T>(key: string, ttlMs: number, fetchCallb
 
   const Cache = (global as unknown as GlobalCache).cache;
 
-  if (typeof Cache[key]?.expiresAt === "number" && Cache[key].expiresAt > Date.now() && !forceCache) {
+  if (
+    typeof Cache[key]?.expiresAt === "number" &&
+    Cache[key].expiresAt > Date.now() &&
+    Date.now() - Cache[key].expiresAt <= ttlMs &&
+    !forceCache
+  ) {
     console.log("cachedAsyncFetch: Cache hit at key", key);
     return Cache[key].value as T;
   } else if (typeof Cache[key]?.expiresAt === "number") {
