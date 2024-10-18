@@ -337,9 +337,9 @@ export class Database {
       SELECT
       STA03.COD_ARTICU as product_code,
       STA03.COD_INSUMO as supply_product_code,
-      STA03.CANT_NETA as quantity
-      STA11.DESC_ADIC as additional_description
-      STA11.DESCRIPCIO as description
+      STA03.CANT_NETA as quantity,
+      STA11.DESC_ADIC as additional_description,
+      STA11.DESCRIPCIO as description,
       STA11.COD_ARTICU as code
       FROM STA03
       LEFT JOIN STA11
@@ -495,7 +495,7 @@ export class Database {
       GVA21.FECHA_PEDI as order_date,
       GVA21.FECHA_INGRESO as entry_date,
       GVA21.N_REMITO as remito_number,
-      GVA21.ESTADO as state
+      GVA21.ESTADO as state,
       GVA03.COD_ARTICU as product_code,
       GVA03.CANT_PEN_D as ordered_quantity
       FROM GVA21
@@ -539,7 +539,7 @@ export class Database {
           GVA21.FECHA_PEDI as order_date,
           GVA21.FECHA_INGRESO as entry_date,
           GVA21.N_REMITO as remito_number,
-          GVA21.ESTADO as state
+          GVA21.ESTADO as state,
           GVA03.COD_ARTICU as product_code,
           GVA03.CANT_PEN_D as ordered_quantity
           FROM GVA21
