@@ -179,7 +179,7 @@ export class Database {
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
-            COD_ARTICU as code,
+            COD_ARTICU as code
             FROM STA11`,
           productCodeSchema,
         );
