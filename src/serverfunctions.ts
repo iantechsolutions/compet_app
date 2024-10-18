@@ -30,7 +30,7 @@ export async function queryBaseMRPDataUT() {
   const exportURL = dataInfo.exportURL;
 
   const dataEncoded = await fetch(exportURL).then((res) => res.text());
-  const data = decodeData(dataEncoded) as DataExport;
+  const data = decodeData<DataExport>(dataEncoded);
 
   return {
     dataInfo,
@@ -40,14 +40,14 @@ export async function queryBaseMRPDataUT() {
 }
 
 // esto vs el otro?? queryBaseMRPData
-export async function queryBaseMRPData() {
+export async function queryBaseMRPData(cacheTtl?: number) {
   let data;
   let exportURL: string;
   let dataInfo;
 
   if (env.DB_DIRECT_CONNECTION) {
     const db = await getDbInstance();
-    data = await db.readAllDataDirect();
+    data = await db.readAllDataDirect(cacheTtl);
     exportURL = "null";
     dataInfo = {
       exportDate: Date.now(),

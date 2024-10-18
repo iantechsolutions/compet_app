@@ -712,6 +712,10 @@ export const dbRouter = createTRPCRouter({
       )
     ).data.productsByCode;
   }),
+  getMonolitoUncached: protectedProcedure.mutation(async () => {
+    const session = await getServerAuthSession();
+    return await getMonolitoBase(session?.user.id ?? "");
+  }),
 });
 
 type NestedKeys<T extends string, U extends string[]> = {
@@ -725,3 +729,4 @@ type PartialExcept<T, U extends string[]> = {
 };
 
 export type MonolitoProduct = NonNullable<RouterOutputs["db"]["getMonolito"]["data"]["products"]>[0];
+export type Monolito = RouterOutputs["db"]["getMonolitoUncached"];

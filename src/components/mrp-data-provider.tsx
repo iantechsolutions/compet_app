@@ -1,58 +1,66 @@
 "use client";
 /* eslint-disable */
 
-/* import { Loader2Icon } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 import { createContext, useContext, useState } from "react";
 import { readFromCache, saveToCache } from "~/lib/cache-store";
 import { useOnMounted } from "~/lib/hooks";
 import { decodeData } from "~/lib/utils";
-import type { MRPData } from "~/mrp_data/transform_mrp_data";
 import { api } from "~/trpc/react";
 import { Button } from "./ui/button";
+import { Mutex } from 'async-mutex';
 
 import dayjs from "dayjs";
 import "dayjs/locale/es";
+import { Monolito } from "~/server/api/routers/db";
 dayjs.locale("es");
 
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 type CTXType = {
-  data: MRPData;
+  data: Monolito;
   invalidateAndReloadData: () => void;
   isUpdating: boolean;
   loadingMessage: string;
 };
 
 export const dataProviderContext = createContext<CTXType | null>(null);
+const cacheKey = "monolito-data";
 
 let gloabalMRPChannel: BroadcastChannel | null = null;
+let isInitializingData = false;
 
 // BroadcastChannel is not supported in server side (edge runtime)
 if (typeof window !== "undefined") {
-  gloabalMRPChannel = new BroadcastChannel("mrp-data");
+  gloabalMRPChannel = new BroadcastChannel(cacheKey);
 }
 
 export default function MRPDataProvider(props: { children: React.ReactNode }) {
-  const [data, setData] = useState<MRPData | null>(null);
+  const [data, setData] = useState<Monolito | null>(null);
   const [loadingMessage, setLoadingMessage] = useState<string>("Buscando información");
   const { mutateAsync: obtainCurrentProfile } = api.forecast.obtainCurrentProfile.useMutation();
   const { mutateAsync: obtainDataExportInfo } = api.mrpData.obtainDataExportInfo.useMutation();
+  const { mutateAsync: getMonolito } = api.db.getMonolitoUncached.useMutation();
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   const channel = gloabalMRPChannel!;
 
-  async function dataIsUpToDate(data: MRPData): Promise<boolean> {
+  async function dataIsUpToDate(data: Monolito): Promise<boolean> {
     const currentProfile = await obtainCurrentProfile();
     const dataExportInfo = await obtainDataExportInfo();
 
-    const forecastProfileMismatch = data?.forecastData?.forecastProfile?.id != currentProfile?.id;
-    const dataExportMismatch = dayjs(data.dataExportDate) != dayjs(dataExportInfo.exportDate);
+    const forecastProfileMismatch = data.data.forecastData?.forecastProfile?.id != currentProfile?.id;
+    const dataExportMismatch = dayjs(data.data.dataExportDate) != dayjs(dataExportInfo.exportDate);
 
     return !forecastProfileMismatch && !dataExportMismatch;
   }
 
-  function dataReady(data: MRPData) {
+  function dataReady(data: Monolito) {
     setData(data);
 
-    saveToCache("mrp-data", data).then(() => console.log("Data saved to cache!"));
+    saveToCache(cacheKey, data).then(() => console.log("Data saved to cache!"));
 
     console.log("Data ready!", data);
     console.log("Ready to receive requests!");
@@ -60,7 +68,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
       if (!message.data?.type) return;
 
       const messageData = message.data;
-      // MRPData response, here we don't need to do anything
+      // Monolito response, here we don't need to do anything
       if (messageData.type === "response") return;
 
       // Used to find if is there some channel ready
@@ -94,7 +102,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     setLoadingMessage("Datos listos");
   }
 
-  function broadcastUpdate(data: MRPData) {
+  function broadcastUpdate(data: Monolito) {
     channel.postMessage({
       action: "broadcast",
       type: "update",
@@ -116,7 +124,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   }
 
   function tryRequestData() {
-    return new Promise<MRPData | null>((resolve, reject) => {
+    return new Promise<Monolito | null>((resolve, reject) => {
       let timer: any = -1;
       console.log("Waiting for status");
 
@@ -156,9 +164,10 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     });
   }
 
-  async function initializeData(opts?: { revalidateMode: boolean }): Promise<MRPData | null> {
+  async function initializeData(opts?: { revalidateMode: boolean }): Promise<Monolito | null> {
+    isInitializingData = true;
     try {
-      let data: MRPData | null = null;
+      let data: Monolito | null = null;
       // Si no se fuerza a buscar los datos en el servidor
       if (!opts?.revalidateMode) {
         // Ver si hay otra pestaña abierta con los datos ya cargados
@@ -167,15 +176,16 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         if (data) {
           console.log("Data found in another tab!");
           dataReady(data);
+          isInitializingData = false;
           return data;
         }
 
         setLoadingMessage("Buscando datos en caché");
 
         console.log("Data not found in another tab, searching in cache...");
-        
+
         // Buscar si existe en cache
-        data = await readFromCache<MRPData>("mrp-data");
+        data = await readFromCache<Monolito>(cacheKey);
         if (data) {
           setLoadingMessage("Datos encontrados en caché, comprobando validez");
 
@@ -191,6 +201,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
           console.log("Data found in cache!");
           setLoadingMessage("Datos encontrados en caché validados");
           dataReady(data);
+          isInitializingData = false;
           return data;
         }
       }
@@ -200,17 +211,18 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
       }
 
       setLoadingMessage("Esperando al servidor");
-      const res = await fetch("/api/data/mrp");
+      const res = await fetch("/api/data/monolito");
       setLoadingMessage("Descargando datos");
       const raw = await res.text();
       setLoadingMessage("Decodificando datos");
-      const serverData = decodeData(raw);
+      const serverData = decodeData<Monolito>(raw);
       dataReady(serverData);
 
       if (opts?.revalidateMode) {
         broadcastUpdate(serverData);
       }
 
+      isInitializingData = false;
       return data;
     } catch (error) {
       console.error(error);
@@ -218,24 +230,28 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
       window.location.reload();
     }
 
+    isInitializingData = false;
     return null;
   }
 
   useOnMounted(() => {
     void initializeData();
-    setInterval(
-      async () => {
-        console.log("Checking if data is still valid...");
+    (async () => {
+      const expectedWait = 1000 * 60;
+      while (true) {
+        const start = Date.now();
+        console.log("Data is not valid anymore, reinitializing...");
 
-        const dataStillValid = data && (await dataIsUpToDate(data));
-
-        if (!dataStillValid) {
-          console.log("Data is not valid anymore, reinitializing...");
+        if (!isInitializingData) {
           await initializeData({ revalidateMode: true });
         }
-      },
-      1000 * 60 * 5,
-    );
+
+        const timeDif = Date.now() - start;
+        if (timeDif < expectedWait) {
+          await sleep(timeDif);
+        }
+      }
+    })();
   });
 
   if (!data)
@@ -264,7 +280,7 @@ export function useMRPContext() {
 
 export function useMRPData() {
   const ctx = useMRPContext();
-  return ctx.data;
+  return ctx.data.data;
 }
 
 export function useMRPInvalidateAndReloadData() {
@@ -281,4 +297,3 @@ export function useMRPLoadingMessage() {
   const ctx = useMRPContext();
   return ctx.loadingMessage;
 }
-*/

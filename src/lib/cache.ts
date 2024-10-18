@@ -101,5 +101,5 @@ export async function cacheTask() {
   }
 
   // await cacheTaskKey(, Cache, async () => await getMonolitoBase());
-  void (await (await getDbInstance()).readAllData(true));
+  void (await (await getDbInstance()).readAllData(undefined, true));
 }

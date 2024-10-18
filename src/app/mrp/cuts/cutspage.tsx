@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Loader2Icon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import CutsTable from "./cust-table";
+import { useMRPData } from "~/components/mrp-data-provider";
 interface Props {
   cuts: RouterOutputs["cuts"]["list"];
 }
@@ -23,7 +24,8 @@ interface Props {
 export default function CutsPage({ cuts }: Props) {
   const router = useRouter();
 
-  const { data: products, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
+  // const { data: products, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
+  const { products } = useMRPData();
 
   const { mutateAsync: getCutByProd, isLoading: loadingGetByProd } = api.cuts.getByProdId.useMutation();
   const { mutateAsync: addCut, isLoading: loadingCreate } = api.cuts.create.useMutation();
@@ -37,16 +39,6 @@ export default function CutsPage({ cuts }: Props) {
   const [selectedProd, setSelectedProd] = useState<string>("")
   const [selectedCut, setSelectedCut] = useState<string | null>(null)
   const [cutsOptions, setCutsOptions] = useState<JSX.Element[]>([])
-
-  if (isLoadingProducts || !products) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-        <Button variant="secondary" disabled>
-          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
-        </Button>
-      </div>
-    );
-  }
 
   async function getCutsOptions(prodId: string) {
     const cutsProd = await getCutByProd({ prodId })

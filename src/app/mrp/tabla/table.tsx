@@ -19,6 +19,7 @@ import { RouterOutputs } from "~/trpc/shared";
 import { Button } from "~/components/ui/button";
 import { Loader2Icon } from "lucide-react";
 import { MonolitoProduct } from "~/server/api/routers/db";
+import { useMRPContext, useMRPData } from "~/components/mrp-data-provider";
 
 function ProductInfoCell({ product }: { product: MonolitoProduct }) {
   const [currentFocus, setFocus] = useFocus();
@@ -175,21 +176,19 @@ const listRowContext = createContext<{
 });
 
 export function Table(props: { user?: NavUserData }) {
-  const { data: months, isLoading: isLoadingMonths } = api.db.getMonths.useQuery();
+  /* const { data: months, isLoading: isLoadingMonths } = api.db.getMonths.useQuery();
   const { data: providers, isLoading: isLoadingProv } = api.db.getMProviders.useQuery();
   const { data: products, isLoading: isLoadingProds } = api.db.getMProductsWSupplies.useQuery();
   const { data: productsByCode, isLoading: isLoadingProdCodes } = api.db.getMProductsByCode.useQuery();
   const { data: forecastProfile, isLoading: isLoadingForeProf } = api.db.getForecastProfile.useQuery();
-  const isLoadingData = isLoadingProv || isLoadingProds || isLoadingProdCodes || isLoadingForeProf || isLoadingMonths;
+  const isLoading = isLoadingProv || isLoadingProds || isLoadingProdCodes || isLoadingForeProf || isLoadingMonths; */
+  const { months, providers, products, productsByCode, forecastData } = useMRPData();
+  const forecastProfile = forecastData.forecastProfile;
 
   const [filters, setFilters] = useFilters();
 
   const filtered = useMemo(() => {
-    if (isLoadingData) {
-      return null;
-    }
-
-    let list = products!;
+    let list = products;
     if (filters.hideAllZero) {
       list = list.filter((product) => {
         if (product.stock != 0) return true;
@@ -244,7 +243,7 @@ export function Table(props: { user?: NavUserData }) {
       });
     }
     return list;
-  }, [isLoadingData, filters]);
+  }, [filters]);
 
   const size = useWindowSize();
 
@@ -289,16 +288,6 @@ export function Table(props: { user?: NavUserData }) {
     document.getElementsByClassName(scrollClassName)[0]?.scrollTo(0, (window as any).listScroll);
   }, []);
 
-  if (isLoadingData || !filtered) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-        <Button variant="secondary" disabled>
-          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <AppLayout
       title={<h1>COMPET MRP</h1>}
@@ -307,7 +296,7 @@ export function Table(props: { user?: NavUserData }) {
       hideMenuOnDesktop
       noPadding
       noUserSection
-      actions={<FiltersDialog products={products!} providers={providers!} onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
+      actions={<FiltersDialog products={products} providers={providers} onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
     >
       {currentFocus && !closedOverlay && (
         <TargetOverlayInfoCard
@@ -322,7 +311,7 @@ export function Table(props: { user?: NavUserData }) {
         />
       )}
 
-      <ListRowContainer id={headerId} months={months!} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
+      <ListRowContainer id={headerId} months={months} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
         <div className={cn(headerCellClassName, "flex justify-start md:sticky md:left-0")}>
           <p>Producto</p>
         </div>
@@ -339,7 +328,7 @@ export function Table(props: { user?: NavUserData }) {
         ))}
       </ListRowContainer>
       <div className="" style={{ height: h, width: w }}>
-        <listRowContext.Provider value={{ filteredProducts: filtered, months: months! }}>
+        <listRowContext.Provider value={{ filteredProducts: filtered, months }}>
           <List onScroll={handleListScroll} className={scrollClassName} height={h} width={w} itemCount={filtered.length} itemSize={57}>
             {ListRow}
           </List>

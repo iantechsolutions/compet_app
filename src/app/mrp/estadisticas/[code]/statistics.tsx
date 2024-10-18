@@ -21,6 +21,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/comp
 import ListSelectionDialog from "~/components/list-selection-dialog";
 import SimpleBartChartRecuts from "~/components/estadisticas/simpleBartChartRecuts";
 import { api } from "~/trpc/react";
+import { useMRPData } from "~/components/mrp-data-provider";
 
 export default function StatisticsPage(props: { user?: NavUserData }) {
   const temporaryDate = new Date();
@@ -63,7 +64,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const [showMore, setShowMore] = useState(false);
   const [showMore2, setShowMore2] = useState(false);
 
-  const { data: providers, isLoading: isLoadingProv } = api.db.getMProviders.useQuery();
+  /* const { data: providers, isLoading: isLoadingProv } = api.db.getMProviders.useQuery();
   const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery();
   const { data: products, isLoading: isLoadingProds } = api.db.getMProductsWSuppliesOf.useQuery();
   const { data: assemblyById, isLoading: isLoadingAssemb } = api.db.getMAssemblyById.useQuery();
@@ -73,14 +74,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const { data: crm_clients, isLoading: isLoadingCRMC } = api.db.getMCrmClients.useQuery();
   const { data: budgets, isLoading: isLoadingBudgets } = api.db.getMBudgets.useQuery();
   const { data: sold, isLoading: isLoadingSold } = api.db.getMSold.useQuery();
-  const loading = isLoadingClients || isLoadingSold || isLoadingBudgets || isLoadingCRMC || isLoadingBID || isLoadingProv || isLoadingProds || isLoadingEvts || isLoadingAssemb || isLoadingBP;
+  const loading = isLoadingClients || isLoadingSold || isLoadingBudgets || isLoadingCRMC || isLoadingBID || isLoadingProv || isLoadingProds || isLoadingEvts || isLoadingAssemb || isLoadingBP; */
+  const { providers, eventsByProductCode, products, assemblyById, budget_products, budgetsById, clients, crm_clients, budgets, sold } = useMRPData();
 
   ring2.register();
   const productsByProvider = useMemo(() => {
-    if (loading || !products) {
-      return null;
-    }
-
     const start = Date.now();
     const map = new Map<string, number>();
 
@@ -93,44 +91,32 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     console.log('productsByProvider elapsed', Date.now() - start);
 
     return map;
-  }, [products, loading]);
+  }, [products]);
 
   const filteredProviders = useMemo(() => {
-    if (loading || !providers) {
-      return null;
-    }
-
     const start = Date.now();
     const res = providers.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
     console.log('filteredProviders elapsed', Date.now() - start);
 
     return res;
-  }, [providers, productsByProvider, loading]);
+  }, [providers, productsByProvider]);
 
   const allProviersCodes = useMemo(() => {
-    if (loading) {
-      return null;
-    }
-
     const start = Date.now();
     const res = new Set<string>(filteredProviders?.map((p) => p.code));
     console.log('allProviersCodes elapsed', Date.now() - start);
     return res;
-  }, [filteredProviders, loading]);
+  }, [filteredProviders]);
 
   const defaultValues = useMemo(() => {
-    if (loading) {
-      return null;
-    }
-
     const start = Date.now();
     const res = Array.from(allProviersCodes ?? new Set<string>()).filter((code) => !providersSelected.has(code));
     console.log('defaultValues elapsed', Date.now() - start);
     return res;
-  }, [allProviersCodes, providersSelected, loading]);
+  }, [allProviersCodes, providersSelected]);
 
   useEffect(() => {
-    if (fromDate && toDate && !hasRun && !loading) {
+    if (fromDate && toDate && !hasRun) {
       let start = Date.now();
       const {
         list: consumptionStats,
@@ -184,7 +170,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       setHasRun(true);
       setIsLoading(false);
     }
-  }, [fromDate, toDate, defaultValues, loading]);
+  }, [fromDate, toDate, defaultValues]);
 
   useEffect(() => {
     if (handleFiltersStage === 1) {
@@ -196,26 +182,16 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
   }, [handleFiltersStage]);
 
-  if (loading || eventsByProductCode === undefined) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-        <Button variant="secondary" disabled>
-          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
-        </Button>
-      </div>
-    );
-  }
-
   // necesita budgetsById, crm_clients y budget_products del monolito data
   const crmMonolito = {
     data: {
-      budget_products: budget_products!,
-      budgetsById: budgetsById!,
-      crm_clients: crm_clients!
+      budget_products: budget_products,
+      budgetsById: budgetsById,
+      crm_clients: crm_clients
     }
   };
 
-  const product = products!.find((p) => p.code === productCode) ?? null;
+  const product = products.find((p) => p.code === productCode) ?? null;
 
   function handleUpdateFilters() {
     if (fromDate && toDate) {
@@ -283,7 +259,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const assembliesQuantities =
         event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
       if (event.assemblyId) {
-        const assembly = assemblyById!.get(event.assemblyId);
+        const assembly = assemblyById.get(event.assemblyId);
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
@@ -304,7 +280,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       motive: string;
       amount: number;
     }[] = [];
-    const sales = sold!.filter(
+    const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -348,7 +324,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const salesMap = new Map<number, number>();
     const budgetsMap = new Map<number, number>();
 
-    sold!.forEach((sale) => {
+    sold.forEach((sale) => {
       const emDate = new Date(String(sale?.emission_date));
       if (!(emDate instanceof Date) || isNaN(emDate.getTime()) || clientExemptionList?.includes(sale.client_code)) {
         return;
@@ -366,7 +342,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       }
     });
 
-    budgets!.forEach((budget) => {
+    budgets.forEach((budget) => {
       const bDate = new Date(String(budget.date));
       if (!(bDate instanceof Date) || isNaN(bDate.getTime()) || clientExemptionList?.includes(budget.client_id)) {
         return;
@@ -408,7 +384,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = sold!.filter(
+    const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -429,7 +405,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const [totalSales, amountOfSales] = value;
 
       return {
-        name: clients!.find((client) => client.code === key)?.name,
+        name: clients.find((client) => client.code === key)?.name,
         totalSales,
         amountOfSales,
       };
@@ -445,7 +421,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = sold!.filter(
+    const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(String(order.emission_date)) >= fromDate &&
@@ -482,7 +458,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       if (event.assemblyId) {
         const assembliesQuantities =
           event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
-        const assembly = assemblyById!.get(event.assemblyId);
+        const assembly = assemblyById.get(event.assemblyId);
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         let day = "";
         if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
@@ -515,11 +491,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   }
 
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
-    const prod = products!.find((p) => p.code === productCode);
+    const prod = products.find((p) => p.code === productCode);
     const possibleSuppliesOf = prod?.suppliesOf?.map(x => x.product_code);
     const mapeoConsumo = new Map<string, number>();
     possibleSuppliesOf?.map((supplyOfCode) => {
-      const semielaborate = products!.find((p) => p.code === supplyOfCode);
+      const semielaborate = products.find((p) => p.code === supplyOfCode);
       const dataSemi = isSemiElaborate(semielaborate);
       // const longNecesaria = supply.quantity;
       if (dataSemi !== null) {

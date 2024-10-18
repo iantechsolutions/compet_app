@@ -81,27 +81,32 @@ export function encodeData<T>(data: T) {
         $: "Map",
         value: [...value.entries()],
       };
-    }
-
-    if (value instanceof Date) {
+    } else if (value instanceof Set) {
+      return {
+        $: "Set",
+        value: [...value.values()],
+      };
+    } else if (value instanceof Date) {
       return {
         $: "Date",
         value: value.getTime(),
       };
+    } else {
+      return value;
     }
-
-    return value;
   });
 }
 
-export function decodeData<T>(data: string) {
+export function decodeData<T>(data: string): T {
   return parse(data, (key, value) => {
-    if (value && value.$ === "Map") {
-      return new Map(value.value);
-    }
-
-    if (value && value.$ === "Date") {
-      return new Date(value.value);
+    if (value && typeof value.$ === "string") {
+      if (value.$ === "Map") {
+        return new Map(value.value);
+      } else if (value.$ === "Date") {
+        return new Date(value.value);
+      } else if (value.$ === "Set") {
+        return new Set(value.value);
+      }
     }
 
     return value;

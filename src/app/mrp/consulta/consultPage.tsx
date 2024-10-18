@@ -16,6 +16,8 @@ import { api } from "~/trpc/react";
 import type { ProductWithDependencies } from "~/server/api/routers/consult";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import type { RouterOutputs } from "~/trpc/shared";
+import { useMRPData } from "~/components/mrp-data-provider";
+import { CrmBudgetProduct } from "~/lib/types";
 const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white";
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
@@ -36,8 +38,15 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     imports: { arrival_date: Date; ordered_quantity: number }[];
   }
 
-  const { data, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
-  const { data: budgets, isLoading: isLoadingBudgets } = api.db.getBudgetProductsByBudgetId.useQuery();
+  // const { data, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
+  // const { data: budgetProductByBudgetId, isLoading: isLoadingBudgets } = api.db.getBudgetProductsByBudgetId.useQuery();
+  const { products: data, budget_products } = useMRPData();
+  const budgetProductByBudgetId = new Map<number, CrmBudgetProduct[]>();
+  for (const budgetProduct of budget_products) {
+    const budgetProducts = budgetProductByBudgetId.get(budgetProduct.budget_id) ?? [];
+    budgetProducts.push(budgetProduct);
+    budgetProductByBudgetId.set(budgetProduct.budget_id, budgetProducts);
+  }
 
   const [products, setProducts] = useState<RouterOutputs['db']['getProducts']>([]);
   const [budgetSelected, setBudgetSelected] = useState<null | string>(null);
@@ -76,17 +85,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   const size = useWindowSize();
   const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
 
-  if (isLoadingProducts || !products || isLoadingBudgets || !budgets) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-        <Button variant="secondary" disabled>
-          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
-        </Button>
-      </div>
-    );
-  }
-
-  console.log(budgets);
+  console.log(budgetProductByBudgetId);
 
   async function handleImportEmail() {
     // if (availabilityResult?.arrivalDatesNull) {
@@ -163,7 +162,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                     setBudgetSelected(value);
                   }
                 }}
-                options={Array.from(budgets.keys()).map((v) => ({
+                options={Array.from(budgetProductByBudgetId.keys()).map((v) => ({
                   value: v.toString(),
                   label: v.toString(),
                 }))}
@@ -171,9 +170,9 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
             </div>
             <Button onClick={() => {
               if (typeof budgetSelected === 'string' && budgetSelected.length > 0) {
-                const budget = budgets?.get(Number(budgetSelected));
+                const budget = budgetProductByBudgetId?.get(Number(budgetSelected));
                 if (budget === undefined) {
-                  console.error(`budgetSelected ${budgetSelected} undefined`, budgets);
+                  console.error(`budgetSelected ${budgetSelected} undefined`, budgetProductByBudgetId);
                 } else {
                   setProductList(budget.map(v => {
                     return {
@@ -183,7 +182,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                   }));
                 }
               }
-            }} disabled={budgets?.get(Number(budgetSelected)) === undefined}>Importar presupuesto</Button>
+            }} disabled={budgetProductByBudgetId?.get(Number(budgetSelected)) === undefined}>Importar presupuesto</Button>
           </div>
         </div>
 

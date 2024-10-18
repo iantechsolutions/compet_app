@@ -67,20 +67,25 @@ export class Database {
     return arraySchema.parse(rows);
   }
 
-  public async readAllData(forceCache = false) {
+  public async readAllData(cacheTtl?: number, forceCache = false) {
     if (!env.DB_DIRECT_CONNECTION) {
-      const r = await this.readAllDataUT();
+      const r = await this.readAllDataUT(cacheTtl, forceCache);
       return r.data;
     } else {
-      return await this.readAllDataDirect(forceCache);
+      return await this.readAllDataDirect(cacheTtl, forceCache);
     }
   }
 
-  public async readAllDataUT() {
-    return cachedAsyncFetch("db-readAllDataUT", defaultCacheTtl, async () => await queryBaseMRPDataUT());
+  public async readAllDataUT(cacheTtl?: number, forceCache = false) {
+    return cachedAsyncFetch(
+      "db-readAllDataUT",
+      cacheTtl ?? cacheTtl ?? defaultCacheTtl,
+      async () => await queryBaseMRPDataUT(),
+      forceCache,
+    );
   }
 
-  public async readAllDataDirect(forceCache = false) {
+  public async readAllDataDirect(cacheTtl?: number, forceCache = false) {
     const start = Date.now();
     const [
       products,
@@ -99,21 +104,21 @@ export class Database {
       budget_products,
       crm_clients,
     ] = await Promise.all([
-      this.getProducts(forceCache),
-      this.getCommitedStock(forceCache),
-      this.getProviders(forceCache),
-      this.getProductProviders(forceCache),
-      this.getAssemblies(forceCache),
-      this.getImports(forceCache),
-      this.getProductImports(forceCache),
-      this.getOrders(forceCache),
-      this.getProductsOrders(forceCache),
-      this.getClients(forceCache),
-      this.getSold(forceCache),
-      this.getProductsSold(forceCache),
-      this.getBudgets(forceCache),
-      this.getBudgetProducts(forceCache),
-      this.getCrmClients(forceCache),
+      this.getProducts(cacheTtl, forceCache),
+      this.getCommitedStock(cacheTtl, forceCache),
+      this.getProviders(cacheTtl, forceCache),
+      this.getProductProviders(cacheTtl, forceCache),
+      this.getAssemblies(cacheTtl, forceCache),
+      this.getImports(cacheTtl, forceCache),
+      this.getProductImports(cacheTtl, forceCache),
+      this.getOrders(cacheTtl, forceCache),
+      this.getProductsOrders(cacheTtl, forceCache),
+      this.getClients(cacheTtl, forceCache),
+      this.getSold(cacheTtl, forceCache),
+      this.getProductsSold(cacheTtl, forceCache),
+      this.getBudgets(cacheTtl, forceCache),
+      this.getBudgetProducts(cacheTtl, forceCache),
+      this.getCrmClients(cacheTtl, forceCache),
     ]);
 
     const productsFiltered = products.filter((product) => !(product.code.startsWith("A000") || product.code.startsWith("Z000")));
@@ -140,7 +145,7 @@ export class Database {
     };
   }
 
-  public async getProducts(forceCache = false): Promise<(typeof productSchema)["_output"][]> {
+  public async getProducts(cacheTtl?: number, forceCache = false): Promise<(typeof productSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products;
@@ -148,7 +153,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getProducts",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
@@ -181,7 +186,7 @@ export class Database {
     return arraySchema.parse(records)[0];
   }
 
-  public async getCommitedStock(forceCache = false): Promise<(typeof productStockCommitedSchema)["_output"][]> {
+  public async getCommitedStock(cacheTtl?: number, forceCache = false): Promise<(typeof productStockCommitedSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_stock_commited;
@@ -189,7 +194,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getCommitedStock",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
@@ -206,7 +211,7 @@ export class Database {
     );
   }
 
-  public async getProviders(forceCache = false): Promise<(typeof providerSchema)["_output"][]> {
+  public async getProviders(cacheTtl?: number, forceCache = false): Promise<(typeof providerSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.providers;
@@ -214,7 +219,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getProviders",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
@@ -227,7 +232,7 @@ export class Database {
     );
   }
 
-  public async getProductProviders(forceCache = false): Promise<(typeof productProviderSchema)["_output"][]> {
+  public async getProductProviders(cacheTtl?: number, forceCache = false): Promise<(typeof productProviderSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.product_providers;
@@ -235,7 +240,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getProductProviders",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT COD_ARTICU product_code, COD_PROVEE as provider_code, COD_SINONI as provider_product_code FROM CPA15`,
@@ -246,7 +251,7 @@ export class Database {
     );
   }
 
-  public async getAssemblies(forceCache = false): Promise<(typeof productAssemblySchema)["_output"][]> {
+  public async getAssemblies(cacheTtl?: number, forceCache = false): Promise<(typeof productAssemblySchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_assemblies;
@@ -254,7 +259,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getAssemblies",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT COD_ARTICU as product_code, COD_INSUMO as supply_product_code, CANT_NETA as quantity FROM STA03`,
@@ -266,7 +271,7 @@ export class Database {
     );
   }
 
-  public async getImports(forceCache = false): Promise<(typeof importSchema)["_output"][]> {
+  public async getImports(cacheTtl?: number, forceCache = false): Promise<(typeof importSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.imports;
@@ -274,7 +279,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getImports",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT 
@@ -298,7 +303,7 @@ export class Database {
     );
   }
 
-  public async getProductImports(forceCache = false): Promise<(typeof productImportSchema)["_output"][]> {
+  public async getProductImports(cacheTtl?: number, forceCache = false): Promise<(typeof productImportSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_imports;
@@ -306,7 +311,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getProductImports",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT 
@@ -327,7 +332,7 @@ export class Database {
     );
   }
 
-  public async getOrders(forceCache = false): Promise<(typeof orderSchema)["_output"][]> {
+  public async getOrders(cacheTtl?: number, forceCache = false): Promise<(typeof orderSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.orders;
@@ -335,7 +340,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getOrders",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
@@ -356,7 +361,7 @@ export class Database {
     );
   }
 
-  public async getProductsOrders(forceCache = false): Promise<(typeof orderProductSchema)["_output"][]> {
+  public async getProductsOrders(cacheTtl?: number, forceCache = false): Promise<(typeof orderProductSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_orders;
@@ -364,7 +369,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getProductsOrders",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
@@ -380,7 +385,7 @@ export class Database {
     );
   }
 
-  public async getClients(forceCache = false): Promise<(typeof clientSchema)["_output"][]> {
+  public async getClients(cacheTtl?: number, forceCache = false): Promise<(typeof clientSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.clients;
@@ -388,7 +393,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getClients",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
@@ -411,7 +416,7 @@ export class Database {
     );
   }
 
-  public async getSold(forceCache = false): Promise<(typeof orderSoldSchema)["_output"][]> {
+  public async getSold(cacheTtl?: number, forceCache = false): Promise<(typeof orderSoldSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.sold;
@@ -419,7 +424,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getSold",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(soldQuery, orderSoldSchema);
       },
@@ -427,7 +432,7 @@ export class Database {
     );
   }
 
-  public async getProductsSold(forceCache = false): Promise<(typeof orderProductSoldSchema)["_output"][]> {
+  public async getProductsSold(cacheTtl?: number, forceCache = false): Promise<(typeof orderProductSoldSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.products_sold;
@@ -435,7 +440,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getProductsSold",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(soldProductsQuery, orderProductSoldSchema);
       },
@@ -443,7 +448,7 @@ export class Database {
     );
   }
 
-  public async getBudgets(forceCache = false): Promise<(typeof crmBudgetSchema)["_output"][]> {
+  public async getBudgets(cacheTtl?: number, forceCache = false): Promise<(typeof crmBudgetSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.budgets;
@@ -451,7 +456,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getBudgets",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
@@ -496,7 +501,7 @@ export class Database {
     return arraySchema.parse(records)[0];
   }
 
-  public async getBudgetProducts(forceCache = false): Promise<(typeof crmBudgetProductSchema)["_output"][]> {
+  public async getBudgetProducts(cacheTtl?: number, forceCache = false): Promise<(typeof crmBudgetProductSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.budget_products;
@@ -504,7 +509,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getBudgetProducts",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT 
@@ -523,7 +528,7 @@ export class Database {
     );
   }
 
-  public async getCrmClients(forceCache = false): Promise<(typeof crmClientSchema)["_output"][]> {
+  public async getCrmClients(cacheTtl?: number, forceCache = false): Promise<(typeof crmClientSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.crm_clients;
@@ -531,7 +536,7 @@ export class Database {
 
     return await cachedAsyncFetch(
       "db-getCrmClients",
-      defaultCacheTtl,
+      cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT

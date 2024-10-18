@@ -3,23 +3,18 @@
 import { useMemo } from "react";
 import { useCurrentProduct } from "../product_provider";
 import ClientsOrdersQuantityPieChart from "./clients-orders-pie-chart";
-import { Button } from "~/components/ui/button";
-import { Loader2Icon } from "lucide-react";
-import { api } from "~/trpc/react";
+import { useMRPData } from "~/components/mrp-data-provider";
 
 export default function ProductInfoPage() {
   const product = useCurrentProduct();
 
-  const { data: orderProductsByProductCode, isLoading: isLoadingOrdProd } = api.db.getMOrderProductsByProductCode.useQuery()
+  const { orderProductsByProductCode, ordersByOrderNumber, clientsByCode } = useMRPData();
+  /* const { data: orderProductsByProductCode, isLoading: isLoadingOrdProd } = api.db.getMOrderProductsByProductCode.useQuery()
   const { data: ordersByOrderNumber, isLoading: isLoadingOrdNum } = api.db.getMOrdersByOrderNumber.useQuery();
   const { data: clientsByCode, isLoading: isLoadingClients } = api.db.getMClientsByCode.useQuery();
-  const isLoading = isLoadingClients || isLoadingOrdNum || isLoadingOrdProd;
+  const isLoading = isLoadingClients || isLoadingOrdNum || isLoadingOrdProd; */
 
   const orders = useMemo(() => {
-    if (!orderProductsByProductCode || !ordersByOrderNumber) {
-      return null;
-    }
-
     const orderProducts = orderProductsByProductCode?.get(product.code) ?? [];
 
     return orderProducts.map((orderProduct) => {
@@ -31,18 +26,10 @@ export default function ProductInfoPage() {
     });
   }, [ordersByOrderNumber, orderProductsByProductCode]);
 
-  if (isLoading || !orders) {
-    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-      <Button variant="secondary" disabled>
-        <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
-      </Button>
-    </div>;
-  }
-
   return (
     <>
       <ClientsOrdersQuantityPieChart
-        clientsByCode={clientsByCode!}
+        clientsByCode={clientsByCode}
         orders={orders.map((o) => ({
           quantity: o.ordered_quantity,
           client_code: o.order!.client_code,

@@ -26,8 +26,8 @@ export const getProductByCode = async () => {
   return { products, productByCode };
 };
 
-export const getMonolitoBase = async (userId: string) => {
-  const data = await queryBaseMRPData();
+export const getMonolitoBase = async (userId: string, cacheTtl?: number) => {
+  const data = await queryBaseMRPData(cacheTtl);
 
   const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", userId);
 

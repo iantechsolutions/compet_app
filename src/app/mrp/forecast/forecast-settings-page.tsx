@@ -12,18 +12,20 @@ import type { RouterOutputs } from "~/trpc/shared";
 import ForecastDialogForm from "./forecast-dialog-form";
 import ForecastProfileCard from "./forecast-profile-card";
 import type { ForecastProfile } from "~/mrp_data/transform_mrp_data";
+import { useMRPData } from "~/components/mrp-data-provider";
 
 export default function ForecastSettingsPage(props: { user?: NavUserData; forecastProfiles: RouterOutputs["forecast"]["listProfiles"] }) {
   const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isApplyingProfile } = api.forecast.applyProfile.useMutation();
   const { mutateAsync: applyNullProfile, isLoading: isApplyingNullProfile } = api.forecast.applyNullProfile.useMutation();
 
-  const { data: budget_products, isLoading: isLoadingBP } = api.db.getMBudgetProducts.useQuery();
+  /* const { data: budget_products, isLoading: isLoadingBP } = api.db.getMBudgetProducts.useQuery();
   const { data: budgetsById, isLoading: isLoadingBID } = api.db.getMBudgetsById.useQuery();
   const { data: crm_clients, isLoading: isLoadingCRMC } = api.db.getMCrmClients.useQuery();
   const { data: clientsByCode, isLoading: isLoadingClients } = api.db.getMClientsByCode.useQuery();
   const { data: forecastProfile, isLoading: isLoadingFP } = api.db.getForecastProfile.useQuery();
-  const isLoadingData = isLoadingBP || isLoadingBID || isLoadingCRMC || isLoadingClients || isLoadingFP;
+  const isLoadingData = isLoadingBP || isLoadingBID || isLoadingCRMC || isLoadingClients || isLoadingFP; */
+  const { forecastData, clientsByCode, crm_clients, budgetsById, budget_products } = useMRPData();
 
   const isApplying = isApplyingProfile || isApplyingNullProfile;
   const router = useRouter();
@@ -56,16 +58,8 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
       });
   }
 
-  if (isLoadingData || !forecastProfile) {
-    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-      <Button variant="secondary" disabled>
-        <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
-      </Button>
-    </div>;
-  }
-
-  let appliedProfile: ForecastProfile | undefined = forecastProfile;
-  if (!forecastProfile?.id)
+  let appliedProfile: ForecastProfile | undefined = forecastData.forecastProfile;
+  if (!forecastData.forecastProfile?.id)
     appliedProfile = undefined;
 
   const isUpdating = false;
@@ -90,7 +84,12 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
 
       <div className="flex justify-between">
         <Title>Perfiles de forecast</Title>
-        <ForecastDialogForm disabled={isUpdating} budget_products={budget_products!} budgetsById={budgetsById!} clientsByCode={clientsByCode!} crm_clients={crm_clients!}>
+        <ForecastDialogForm
+          disabled={isUpdating}
+          budget_products={budget_products}
+          budgetsById={budgetsById}
+          clientsByCode={clientsByCode}
+          crm_clients={crm_clients}>
           <Button disabled={isApplying} type="button" className="ml-auto">
             <PlusIcon className="mr-2" />
             Crear perfil
@@ -120,10 +119,10 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
             return (
               <ForecastProfileCard
                 key={profile.id}
-                budget_products={budget_products!}
-                budgetsById={budgetsById!}
-                clientsByCode={clientsByCode!}
-                crm_clients={crm_clients!}
+                budget_products={budget_products}
+                budgetsById={budgetsById}
+                clientsByCode={clientsByCode}
+                crm_clients={crm_clients}
                 profile={profile}
                 handleApplyProfile={handleApplyProfile}
                 handleDeleteProfile={handleDeleteProfile}

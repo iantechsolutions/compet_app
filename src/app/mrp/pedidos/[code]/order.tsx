@@ -1,18 +1,16 @@
 "use client";
 import dayjs from "dayjs";
-import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
+import { useMRPData } from "~/components/mrp-data-provider";
 import type { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
-import { Button } from "~/components/ui/button";
 import { cn, formatStockWithDecimals } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
-import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/shared";
 
 function useProductRef() {
@@ -21,25 +19,18 @@ function useProductRef() {
 }
 
 export default function OrderPage(props: { user?: NavUserData }) {
-  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery();
+  /* const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery();
   const { data: ordersByOrderNumber, isLoading: isLoadingOrdNum } = api.db.getMOrdersByOrderNumber.useQuery();
   const { data: orderProductsByOrderNumber, isLoading: isLoadingOrdProd } = api.db.getMOrderProductsByOrderNumber.useQuery();
   const { data: clientsByCode, isLoading: isLoadingClients } = api.db.getMClientsByCode.useQuery();
   const { data: productsByCode, isLoading: isLoadingProd } = api.db.getMProductsByCode.useQuery();
   const { data: assemblyById, isLoading: isLoadingAssembly } = api.db.getMAssemblyById.useQuery();
-  const isLoadingData = isLoadingAssembly || isLoadingProd || isLoadingClients || isLoadingOrdProd || isLoadingOrdNum || isLoadingEvts;
+  const isLoadingData = isLoadingAssembly || isLoadingProd || isLoadingClients || isLoadingOrdProd || isLoadingOrdNum || isLoadingEvts; */
+  const { assemblyById, productsByCode, clientsByCode, orderProductsByOrderNumber, ordersByOrderNumber, eventsByProductCode } = useMRPData();
 
   const params = useParams<{ code: string }>();
   const orderNumber = decodeURIComponent(params?.code ?? "");
   const productRef = useProductRef();
-
-  if (isLoadingData || !eventsByProductCode) {
-    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-      <Button variant="secondary" disabled>
-        <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
-      </Button>
-    </div>;
-  }
 
   const order = ordersByOrderNumber?.get(orderNumber);
   if (!order) {
@@ -101,7 +92,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
               </AccordionTrigger>
               <AccordionContent className="px-3">
                 {eventsByOrderProductId.get(orderProduct.id)?.map((event, i) => {
-                  return <EventRenderer key={i} event={event} top assemblyById={assemblyById!} productsByCode={productsByCode!} />;
+                  return <EventRenderer key={i} event={event} top assemblyById={assemblyById} productsByCode={productsByCode} />;
                 })}
               </AccordionContent>
             </AccordionItem>
