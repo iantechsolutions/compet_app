@@ -13,6 +13,7 @@ import { Mutex } from 'async-mutex';
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import { Monolito } from "~/server/api/routers/db";
+import { usePathname } from "next/navigation";
 dayjs.locale("es");
 
 async function sleep(ms: number): Promise<void> {
@@ -20,7 +21,7 @@ async function sleep(ms: number): Promise<void> {
 }
 
 type CTXType = {
-  data: Monolito;
+  data: Monolito | null;
   invalidateAndReloadData: () => void;
   isUpdating: boolean;
   loadingMessage: string;
@@ -44,7 +45,9 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   const { mutateAsync: obtainDataExportInfo } = api.mrpData.obtainDataExportInfo.useMutation();
   const { mutateAsync: getMonolito } = api.db.getMonolitoUncached.useMutation();
   const [isUpdating, setIsUpdating] = useState(false);
+  const pathname = usePathname();
 
+  const mustCache = !(pathname.includes("/mrp/productos/") || pathname.includes("/mrp/pedidos/"));
   const channel = gloabalMRPChannel!;
 
   async function dataIsUpToDate(data: Monolito): Promise<boolean> {
@@ -237,26 +240,28 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   }
 
   useOnMounted(() => {
-    void initializeData();
-    (async () => {
-      const expectedWait = 1000 * 60;
-      while (true) {
-        const start = Date.now();
-        console.log("Data is not valid anymore, reinitializing...");
+    if (mustCache) {
+      void initializeData();
+      (async () => {
+        const expectedWait = 1000 * 60 * 2;
+        while (true) {
+          const start = Date.now();
+          console.log("Data is not valid anymore, reinitializing...");
 
-        if (!isInitializingData) {
-          await initializeData({ revalidateMode: true });
-        }
+          if (!isInitializingData) {
+            await initializeData({ revalidateMode: true });
+          }
 
-        const timeDif = Date.now() - start;
-        if (timeDif < expectedWait) {
-          await sleep(timeDif);
+          const timeDif = Date.now() - start;
+          if (timeDif < expectedWait) {
+            await sleep(timeDif);
+          }
         }
-      }
-    })();
+      })();
+    }
   });
 
-  if (!data)
+  if (!data && mustCache)
     return (
       <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
         <Button variant="secondary" disabled>
@@ -282,7 +287,7 @@ export function useMRPContext() {
 
 export function useMRPData() {
   const ctx = useMRPContext();
-  return ctx.data;
+  return ctx.data!;
 }
 
 export function useMRPInvalidateAndReloadData() {

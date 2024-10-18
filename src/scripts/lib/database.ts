@@ -6,11 +6,15 @@ import {
   crmBudgetSchema,
   crmClientSchema,
   importSchema,
+  orderAndOrderProdSchema,
   orderProductSchema,
   orderProductSoldSchema,
+  orderProductWProductSchema,
   orderSchema,
   orderSoldSchema,
+  productAssemblyAndProductSchema,
   productAssemblySchema,
+  productCodeSchema,
   productImportSchema,
   productProviderSchema,
   productSchema,
@@ -18,7 +22,7 @@ import {
   providerSchema,
 } from "~/lib/types";
 import { z } from "zod";
-import { soldProductsQuery, soldQuery } from "./large-queries";
+import { soldProductsQuery, soldProductsQueryByCode, soldQuery } from "./large-queries";
 import { cachedAsyncFetch } from "~/lib/cache";
 import { env } from "~/env";
 import { queryBaseMRPDataUT } from "~/serverfunctions";
@@ -152,11 +156,32 @@ export class Database {
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
-                COD_ARTICU as code,
-                DESCRIPCIO as description,
-                DESC_ADIC as additional_description
-                FROM STA11`,
+            COD_ARTICU as code,
+            DESCRIPCIO as description,
+            DESC_ADIC as additional_description
+            FROM STA11`,
           productSchema,
+        );
+      },
+      forceCache,
+    );
+  }
+
+  public async getProductCodes(cacheTtl?: number, forceCache = false): Promise<(typeof productCodeSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.products;
+    }
+
+    return await cachedAsyncFetch(
+      "db-getProducts",
+      cacheTtl ?? defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
+            COD_ARTICU as code,
+            FROM STA11`,
+            productCodeSchema,
         );
       },
       forceCache,
@@ -193,17 +218,38 @@ export class Database {
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
-                COD_ARTICU as product_code,
-                CANT_STOCK as stock_quantity,
-                CANT_COMP as commited_quantity,
-                CANT_PEND as pending_quantity,
-                FECHA_ANT as last_update
-                FROM STA19`,
+          COD_ARTICU as product_code,
+          CANT_STOCK as stock_quantity,
+          CANT_COMP as commited_quantity,
+          CANT_PEND as pending_quantity,
+          FECHA_ANT as last_update
+          FROM STA19`,
           productStockCommitedSchema,
         );
       },
       forceCache,
     );
+  }
+
+  public async getCommitedStockByCode(code: string): Promise<(typeof productStockCommitedSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.products_stock_commited.filter((v) => v.product_code === code);
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+      SELECT
+      COD_ARTICU as product_code,
+      CANT_STOCK as stock_quantity,
+      CANT_COMP as commited_quantity,
+      CANT_PEND as pending_quantity,
+      FECHA_ANT as last_update
+      FROM STA19
+      WHERE COD_ARTICU = @code`);
+
+    const records = rows.recordset.map((k) => Database.trimAllProperties(k as Record<string, unknown>));
+    const arraySchema = z.array(productStockCommitedSchema);
+    return arraySchema.parse(records);
   }
 
   public async getProviders(cacheTtl?: number, forceCache = false): Promise<(typeof providerSchema)["_output"][]> {
@@ -257,13 +303,55 @@ export class Database {
       cacheTtl ?? defaultCacheTtl,
       async () => {
         return await this.fetchTableWithQuery(
-          `SELECT COD_ARTICU as product_code, COD_INSUMO as supply_product_code, CANT_NETA as quantity FROM STA03`,
+          `SELECT COD_ARTICU as product_code,
+          COD_INSUMO as supply_product_code,
+          CANT_NETA as quantity FROM STA03`,
           productAssemblySchema,
           true,
         );
       },
       forceCache,
     );
+  }
+
+  public async getAssembliesAndSuppliesByCode(code: string): Promise<(typeof productAssemblyAndProductSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.products_assemblies
+        .filter((v) => v.product_code === code)
+        .map((k) => {
+          const prod = r.data.products.find((p) => p.code === k.supply_product_code)!;
+          return {
+            additional_description: prod.additional_description,
+            code: prod.code,
+            description: prod.description,
+            id: k.id,
+            product_code: k.product_code,
+            quantity: k.quantity,
+            supply_product_code: k.supply_product_code,
+          };
+        });
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+      SELECT
+      STA03.COD_ARTICU as product_code,
+      STA03.COD_INSUMO as supply_product_code,
+      STA03.CANT_NETA as quantity
+      STA11.DESC_ADIC as additional_description
+      STA11.DESCRIPCIO as description
+      STA11.COD_ARTICU as code
+      FROM STA03
+      LEFT JOIN STA11
+      ON STA11.COD_INSUMO = STA03.COD_ARTICU
+      WHERE STA03.COD_ARTICU = @code`);
+
+    const records = rows.recordset
+      .map((k) => Database.trimAllProperties(k as Record<string, unknown>))
+      .map((row, index) => ({ ...row, id: index + 1 }));
+
+    const arraySchema = z.array(productAssemblyAndProductSchema);
+    return arraySchema.parse(records);
   }
 
   public async getImports(cacheTtl?: number, forceCache = false): Promise<(typeof importSchema)["_output"][]> {
@@ -310,15 +398,15 @@ export class Database {
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT 
-                ID_CARPETA as import_id,
-                COD_ARTICU as product_code,
-                CANT_PEDID as ordered_quantity,
-                CERRADO as closed,
-                FEC_EMBARC as shipping_date,
-                FEC_NACION as national_date,
-                FEC_P_PUER as arrival_date,
-                CANT_NACIO as national_quantity
-                FROM CPA66 WHERE CANT_NACIO = 0 AND CERRADO = 0 AND COD_ARTICU <> ''`,
+          ID_CARPETA as import_id,
+          COD_ARTICU as product_code,
+          CANT_PEDID as ordered_quantity,
+          CERRADO as closed,
+          FEC_EMBARC as shipping_date,
+          FEC_NACION as national_date,
+          FEC_P_PUER as arrival_date,
+          CANT_NACIO as national_quantity
+          FROM CPA66 WHERE CANT_NACIO = 0 AND CERRADO = 0 AND COD_ARTICU <> ''`,
           productImportSchema,
           true,
         );
@@ -327,7 +415,168 @@ export class Database {
     );
   }
 
+  public async getProductImportsByCode(code: string): Promise<(typeof productImportSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.products_imports.filter((k) => k.product_code === code);
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+      SELECT 
+      ID_CARPETA as import_id,
+      COD_ARTICU as product_code,
+      CANT_PEDID as ordered_quantity,
+      CERRADO as closed,
+      FEC_EMBARC as shipping_date,
+      FEC_NACION as national_date,
+      FEC_P_PUER as arrival_date,
+      CANT_NACIO as national_quantity
+      FROM CPA66 WHERE CANT_NACIO = 0 AND CERRADO = 0 AND COD_ARTICU = @code`);
+
+    const records = rows.recordset
+      .map((k) => Database.trimAllProperties(k as Record<string, unknown>))
+      .map((row, index) => ({ ...row, id: index + 1 }));
+    const arraySchema = z.array(productImportSchema);
+    return arraySchema.parse(records);
+  }
+
   public async getOrders(cacheTtl?: number, forceCache = false): Promise<(typeof orderSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.orders;
+    }
+
+    return await cachedAsyncFetch(
+      "db-getOrders",
+      cacheTtl ?? defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
+                NRO_PEDIDO as order_number,
+                APRUEBA as approved_by,
+                COD_CLIENT as client_code,
+                FECHA_APRU as approval_date,
+                FECHA_ENTR as delivery_date,
+                FECHA_PEDI as order_date,
+                FECHA_INGRESO as entry_date,
+                N_REMITO as remito_number,
+                ESTADO as state
+                FROM GVA21`,
+          orderSchema,
+        );
+      },
+      forceCache,
+    );
+  }
+
+  public async getOrdersAndProdOrdersByCode(code: string): Promise<(typeof orderAndOrderProdSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.orders
+        .map((k) => {
+          const prod_order = r.data.products_orders.find((v) => v.order_number === k.order_number)!;
+          return {
+            ...k,
+            product_code: prod_order.product_code,
+            ordered_quantity: prod_order.ordered_quantity,
+            id: prod_order.id,
+          };
+        })
+        .filter((a) => a.product_code === code);
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+      SELECT
+      GVA21.NRO_PEDIDO as order_number,
+      GVA21.APRUEBA as approved_by,
+      GVA21.COD_CLIENT as client_code,
+      GVA21.FECHA_APRU as approval_date,
+      GVA21.FECHA_ENTR as delivery_date,
+      GVA21.FECHA_PEDI as order_date,
+      GVA21.FECHA_INGRESO as entry_date,
+      GVA21.N_REMITO as remito_number,
+      GVA21.ESTADO as state
+      GVA03.COD_ARTICU as product_code,
+      GVA03.CANT_PEN_D as ordered_quantity
+      FROM GVA21
+      INNER JOIN GVA03
+      ON GVA21.NRO_PEDIDO = GVA03.NRO_PEDIDO
+      WHERE GVA21.COD_ARTICU = @code`);
+
+    const records = rows.recordset
+      .map((k) => Database.trimAllProperties(k as Record<string, unknown>))
+      .map((row, index) => ({ ...row, id: index + 1 }));
+
+    const arraySchema = z.array(orderAndOrderProdSchema);
+    return arraySchema.parse(records);
+  }
+
+  public async getOrdersAndProdOrders(cacheTtl?: number, forceCache = false): Promise<(typeof orderAndOrderProdSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.orders.map((k) => {
+        const prod_order = r.data.products_orders.find((v) => v.order_number === k.order_number)!;
+        return {
+          ...k,
+          product_code: prod_order.product_code,
+          ordered_quantity: prod_order.ordered_quantity,
+          id: prod_order.id,
+        };
+      });
+    }
+
+    return await cachedAsyncFetch(
+      "db-getOrdersAndProdOrders",
+      cacheTtl ?? defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
+          GVA21.NRO_PEDIDO as order_number,
+          GVA21.APRUEBA as approved_by,
+          GVA21.COD_CLIENT as client_code,
+          GVA21.FECHA_APRU as approval_date,
+          GVA21.FECHA_ENTR as delivery_date,
+          GVA21.FECHA_PEDI as order_date,
+          GVA21.FECHA_INGRESO as entry_date,
+          GVA21.N_REMITO as remito_number,
+          GVA21.ESTADO as state
+          GVA03.COD_ARTICU as product_code,
+          GVA03.CANT_PEN_D as ordered_quantity
+          FROM GVA21
+          INNER JOIN GVA03
+          ON GVA21.NRO_PEDIDO = GVA03.NRO_PEDIDO`,
+          orderAndOrderProdSchema,
+        );
+      },
+      forceCache,
+    );
+  }
+
+  public async getOrderByNumber(ord: string): Promise<(typeof orderSchema)["_output"] | undefined> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.orders.find((v) => v.order_number === ord);
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, ord).query(`SELECT
+                NRO_PEDIDO as order_number,
+                APRUEBA as approved_by,
+                COD_CLIENT as client_code,
+                FECHA_APRU as approval_date,
+                FECHA_ENTR as delivery_date,
+                FECHA_PEDI as order_date,
+                FECHA_INGRESO as entry_date,
+                N_REMITO as remito_number,
+                ESTADO as state
+                FROM GVA21
+                WHERE NRO_PEDIDO = @code`);
+
+    const records = rows.recordset.map((k) => Database.trimAllProperties(k as Record<string, unknown>));
+    const arraySchema = z.array(orderSchema);
+    return arraySchema.parse(records).at(0);
+  }
+
+  public async getOrder(cacheTtl?: number, forceCache = false): Promise<(typeof orderSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
       return r.data.orders;
@@ -368,16 +617,68 @@ export class Database {
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
-                NRO_PEDIDO as order_number,
-                COD_ARTICU as product_code,
-                CANT_PEN_D as ordered_quantity
-                FROM GVA03`,
+            NRO_PEDIDO as order_number,
+            COD_ARTICU as product_code,
+            CANT_PEN_D as ordered_quantity
+            FROM GVA03`,
           orderProductSchema,
           true,
         );
       },
       forceCache,
     );
+  }
+
+  public async getProductsOrdersByCode(code: string): Promise<(typeof orderProductSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.products_orders.filter((k) => k.product_code === code);
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`SELECT
+      SELECT
+      NRO_PEDIDO as order_number,
+      COD_ARTICU as product_code,
+      CANT_PEN_D as ordered_quantity
+      FROM GVA03
+      WHERE COD_ARTICU = @code`);
+
+    const records = rows.recordset
+      .map((k) => Database.trimAllProperties(k as Record<string, unknown>))
+      .map((row, index) => ({ ...row, id: index + 1 }));
+    const arraySchema = z.array(orderProductSchema);
+    return arraySchema.parse(records);
+  }
+
+  public async getProductsOrdersByOrderNumber(code: string): Promise<(typeof orderProductWProductSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.products_orders
+        .filter((k) => k.order_number === code)
+        .map((v) => {
+          const product = r.data.products.find((n) => n.code === v.product_code)!;
+          return { ...v, ...product };
+        });
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`SELECT
+      SELECT
+      GVA03.NRO_PEDIDO as order_number,
+      GVA03.COD_ARTICU as product_code,
+      GVA03.CANT_PEN_D as ordered_quantity,
+      STA11.COD_ARTICU as code,
+      STA11.DESCRIPCIO as description,
+      STA11.DESC_ADIC as additional_description
+      FROM GVA03
+      INNER JOIN STA11
+      ON GVA03.COD_ARTICU = STA11.COD_ARTICU
+      WHERE GVA03.NRO_PEDIDO = @code`);
+
+    const records = rows.recordset
+      .map((k) => Database.trimAllProperties(k as Record<string, unknown>))
+      .map((row, index) => ({ ...row, id: index + 1 }));
+    const arraySchema = z.array(orderProductWProductSchema);
+    return arraySchema.parse(records);
   }
 
   public async getClients(cacheTtl?: number, forceCache = false): Promise<(typeof clientSchema)["_output"][]> {
@@ -392,23 +693,50 @@ export class Database {
       async () => {
         return await this.fetchTableWithQuery(
           `SELECT
-                COD_CLIENT as code,
-                CUIT as cuit,
-                NOM_COM as name,
-                RAZON_SOCI as business_name,
-                OBSERVACIO as observations,
-                TELEFONO_1 as phone,
-                MAIL_DE as email,
-                WEB as web,
-                N_IMPUESTO as tax_type,
-                LOCALIDAD as city,
-                DOMICILIO as address
-                FROM GVA14`,
+          COD_CLIENT as code,
+          CUIT as cuit,
+          NOM_COM as name,
+          RAZON_SOCI as business_name,
+          OBSERVACIO as observations,
+          TELEFONO_1 as phone,
+          MAIL_DE as email,
+          WEB as web,
+          N_IMPUESTO as tax_type,
+          LOCALIDAD as city,
+          DOMICILIO as address
+          FROM GVA14`,
           clientSchema,
         );
       },
       forceCache,
     );
+  }
+
+  public async getClientByCode(code: string): Promise<(typeof clientSchema)["_output"] | undefined> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.clients.find((v) => v.code === code);
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`SELECT
+      SELECT
+      COD_CLIENT as code,
+      CUIT as cuit,
+      NOM_COM as name,
+      RAZON_SOCI as business_name,
+      OBSERVACIO as observations,
+      TELEFONO_1 as phone,
+      MAIL_DE as email,
+      WEB as web,
+      N_IMPUESTO as tax_type,
+      LOCALIDAD as city,
+      DOMICILIO as address
+      FROM GVA14
+      WHERE COD_CLIENT = @code`);
+
+    const records = rows.recordset.map((k) => Database.trimAllProperties(k as Record<string, unknown>));
+    const arraySchema = z.array(clientSchema);
+    return arraySchema.parse(records).at(0);
   }
 
   public async getSold(cacheTtl?: number, forceCache = false): Promise<(typeof orderSoldSchema)["_output"][]> {
@@ -441,6 +769,19 @@ export class Database {
       },
       forceCache,
     );
+  }
+
+  public async getProductsSoldByCode(code: string): Promise<(typeof orderProductSoldSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      const r = await this.readAllDataUT();
+      return r.data.products_sold.filter((v) => v.product_code === code);
+    }
+
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(soldProductsQueryByCode);
+
+    const records = rows.recordset.map((k) => Database.trimAllProperties(k as Record<string, unknown>));
+    const arraySchema = z.array(orderProductSoldSchema);
+    return arraySchema.parse(records);
   }
 
   public async getBudgets(cacheTtl?: number, forceCache = false): Promise<(typeof crmBudgetSchema)["_output"][]> {

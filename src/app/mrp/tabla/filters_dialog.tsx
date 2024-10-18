@@ -143,7 +143,7 @@ function ProviderRow(props: {
   onChange: (providers: Set<string>) => void;
   monolito: RouterOutputs['db']['getMonolito'];
 }) {
-  const providers = props.monolito.data.providers!;
+  const providers = props.monolito.providers!;
   const provider = providers[props.index]!;
 
   const labelId = "label-" + provider.code;

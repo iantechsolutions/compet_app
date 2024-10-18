@@ -4,6 +4,7 @@ import { z } from "zod";
 import type {
   CrmBudget,
   CrmBudgetProduct,
+  Import,
   Order,
   OrderProductSold,
   Product,
@@ -11,20 +12,29 @@ import type {
   ProductImport,
   ProductProvider,
   ProductStockCommited,
+  Provider,
 } from "~/lib/types";
 import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { getUserSetting } from "~/lib/settings";
-import { type ForecastProfile } from "~/mrp_data/transform_mrp_data";
+import { eventsOfProductByMonth, type ProductEvent, stockOfProductByMonth, type ForecastProfile } from "~/mrp_data/transform_mrp_data";
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { forecastProfiles } from "~/server/db/schema";
 import { getServerAuthSession } from "~/server/auth";
 import { nullProfile } from "~/lib/nullForecastProfile";
-import { getMonths } from "~/lib/utils";
+import { encodeData, getMonths } from "~/lib/utils";
 import { cachedAsyncFetch } from "~/lib/cache";
-import { defaultCacheTtl } from "~/scripts/lib/database";
+import { type Database, defaultCacheTtl } from "~/scripts/lib/database";
 import type { RouterOutputs } from "~/trpc/shared";
 import { getProductByCode, getMonolitoBase } from "~/lib/monolito";
+import { TRPCError } from "@trpc/server";
+import {
+  getMinimalMonolito,
+  minListAllEvents,
+  minListAllEventsWithSupplyEvents,
+  minListProductsEvents,
+  minQueryForecastData,
+} from "~/lib/events-min";
 
 export const maxDuration = 300;
 
@@ -139,6 +149,196 @@ export const dbRouter = createTRPCRouter({
   getOrders: protectedProcedure.query(async () => {
     return await (await getDbInstance()).getOrders();
   }),
+  getProductData: protectedProcedure
+    .input(
+      z.object({
+        code: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const session = await getServerAuthSession();
+      const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", session?.user.id ?? "");
+
+      let forecastProfile: ForecastProfile | null =
+        forecastProfileId != null
+          ? ((await db.query.forecastProfiles.findFirst({
+              where: eq(forecastProfiles.id, forecastProfileId),
+            })) ?? null)
+          : null;
+
+      if (!forecastProfile) {
+        forecastProfile = nullProfile;
+      }
+
+      const months = getMonths(10);
+      const minMon = await getMinimalMonolito(0, true);
+      const forecast = await minQueryForecastData(forecastProfile, minMon);
+      const events = minListAllEvents(forecast, minMon);
+      const allEvents = minListAllEventsWithSupplyEvents(events, minMon);
+      const productEvents = minListProductsEvents(allEvents, minMon);
+
+      const eventsMonths = eventsOfProductByMonth(productEvents.get(input.code) ?? [], months);
+
+      const dbi = await getDbInstance();
+      const [products_stock_commited, imports, product_imports, orders, products_orders, product_providers, product, providers] =
+        await Promise.all([
+          dbi.getCommitedStock(),
+          dbi.getImports(),
+          dbi.getProductImports(),
+          dbi.getOrders(),
+          dbi.getProductsOrders(),
+          dbi.getProductProviders(),
+          dbi.getProductByCode(input.code),
+          dbi.getProviders(),
+        ]);
+
+      const stockCommittedRes: ProductStockCommited = {
+        product_code: input.code,
+        stock_quantity: 0,
+        commited_quantity: 0,
+        pending_quantity: 0,
+        last_update: new Date(0),
+      };
+
+      for (const stockCommitted of products_stock_commited) {
+        if (stockCommitted.product_code !== input.code) {
+          continue;
+        }
+
+        stockCommittedRes.commited_quantity += stockCommitted.commited_quantity;
+        stockCommittedRes.stock_quantity += stockCommitted.stock_quantity;
+        stockCommittedRes.pending_quantity += stockCommitted.pending_quantity;
+        stockCommittedRes.last_update =
+          stockCommittedRes.last_update > stockCommitted.last_update ? stockCommittedRes.last_update : stockCommitted.last_update;
+      }
+
+      const stockVariationByMonth = new Map<string, number>();
+      const importedQuantityByMonth = new Map<string, number>();
+      const orderedQuantityByMonth = new Map<string, number>();
+      const usedAsSupplyQuantityByMonth = new Map<string, number>();
+      const usedAsForecastQuantityByMonth = new Map<string, number>();
+
+      for (const month of months) {
+        stockVariationByMonth.set(month, 0);
+        importedQuantityByMonth.set(month, 0);
+        usedAsSupplyQuantityByMonth.set(month, 0);
+        orderedQuantityByMonth.set(month, 0);
+        usedAsForecastQuantityByMonth.set(month, 0);
+
+        for (const event of eventsMonths.get(month) ?? []) {
+          // Aunque solo el valor de quantity afecte a la variación de stock, queremos que los eventos musetren la cantidad original por más de que se hayan dividido en eventos de suministro
+          const qty = event.originalQuantity ?? event.quantity;
+
+          let stockModifier = 0;
+
+          if (event.type === "import") {
+            importedQuantityByMonth.set(month, importedQuantityByMonth.get(month)! + qty);
+            stockModifier = qty;
+          } else if (event.type === "forecast" || event.isForecast) {
+            usedAsForecastQuantityByMonth.set(month, usedAsForecastQuantityByMonth.get(month)! + qty);
+
+            stockModifier = -event.quantity;
+          } else if (event.type === "order") {
+            orderedQuantityByMonth.set(month, orderedQuantityByMonth.get(month)! + qty);
+            stockModifier = -event.quantity;
+          } else if (event.type === "supply") {
+            usedAsSupplyQuantityByMonth.set(month, usedAsSupplyQuantityByMonth.get(month)! + qty);
+            stockModifier = -event.quantity;
+          }
+
+          stockVariationByMonth.set(month, stockVariationByMonth.get(month)! + stockModifier);
+        }
+      }
+
+      const stock = stockCommittedRes.stock_quantity;
+      const stockOfProductsByMonth = stockOfProductByMonth(stock, productEvents.get(input.code)!, months);
+
+      return encodeData<ProductDataType>({
+        months,
+        forecastData: forecast,
+        product: product
+          ? {
+              ...product,
+              providers: product_providers.filter((v) => v.product_code === product.code),
+              stock,
+              commited: stockCommittedRes.commited_quantity,
+              pending: stockCommittedRes.pending_quantity,
+              stock_variation_by_month: stockVariationByMonth,
+              stock_at: stockOfProductsByMonth,
+              used_as_supply_quantity_by_month: usedAsSupplyQuantityByMonth,
+              used_as_forecast_quantity_by_month: usedAsForecastQuantityByMonth,
+              imported_quantity_by_month: importedQuantityByMonth,
+              ordered_quantity_by_month: orderedQuantityByMonth,
+            }
+          : undefined,
+        importsById: new Map(imports.map((v) => [v.id, v])),
+        productImportsById: new Map(product_imports.map((v) => [v.id, v])),
+        ordersByOrderNumber: new Map(orders.map((v) => [v.order_number, v])),
+        orderProductsById: new Map(products_orders.map((v) => [v.id, v])),
+        providersByCode: new Map(providers.map((v) => [v.code, v])),
+        events: productEvents.get(input.code) ?? [],
+      });
+    }),
+  getPedidoData: protectedProcedure
+    .input(
+      z.object({
+        order_number: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const session = await getServerAuthSession();
+      const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", session?.user.id ?? "");
+
+      let forecastProfile: ForecastProfile | null =
+        forecastProfileId != null
+          ? ((await db.query.forecastProfiles.findFirst({
+              where: eq(forecastProfiles.id, forecastProfileId),
+            })) ?? null)
+          : null;
+
+      if (!forecastProfile) {
+        forecastProfile = nullProfile;
+      }
+
+      const minMon = await getMinimalMonolito(0, true);
+      const forecast = await minQueryForecastData(forecastProfile, minMon);
+      const events = minListAllEvents(forecast, minMon);
+      const allEvents = minListAllEventsWithSupplyEvents(events, minMon);
+      const productEvents = minListProductsEvents(allEvents, minMon);
+
+      const dbi = await getDbInstance();
+      const [order, orderProducts, sold, budgetProducts, budgets] = await Promise.all([
+        dbi.getOrderByNumber(input.order_number),
+        dbi.getProductsOrdersByOrderNumber(input.order_number),
+        dbi.getSold(),
+        dbi.getBudgetProducts(),
+        dbi.getBudgets(),
+      ]);
+
+      if (!order) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const client = await dbi.getClientByCode(order.client_code);
+
+      const eventsByOrderProductId = new Map<number, ProductEvent[]>();
+      for (const orderProduct of orderProducts) {
+        let events = productEvents.get(orderProduct.product_code) ?? [];
+        events = events.filter((event) => event.referenceId === orderProduct.id);
+        if (events) {
+          eventsByOrderProductId.set(orderProduct.id, events);
+        }
+      }
+
+      const res = {
+        client,
+        eventsByOrderProductId,
+        orderProducts,
+        order,
+      };
+
+      return encodeData<PedidoData>(res);
+    }),
   getOrdersByOrderNumber: protectedProcedure.query(async () => {
     const orders = await (await getDbInstance()).getOrders();
     const ordersByOrderNumber = new Map<string, Order>();
@@ -724,3 +924,48 @@ type PartialExcept<T, U extends string[]> = {
 export type MonolitoProduct = NonNullable<RouterOutputs["db"]["getMonolito"]["products"]>[0];
 export type MonolitoProductById = NonNullable<NonNullable<RouterOutputs["db"]["getMonolito"]["productsByCode"]>["get"]>;
 export type Monolito = RouterOutputs["db"]["getMonolitoUncached"];
+
+export type PedidoData = {
+  client: Awaited<ReturnType<Database["getClientByCode"]>>;
+  order: NonNullable<Awaited<ReturnType<Database["getOrderByNumber"]>>>;
+  orderProducts: Awaited<ReturnType<Database["getProductsOrdersByOrderNumber"]>>;
+  eventsByOrderProductId: Map<number, ProductEvent[]>;
+};
+
+export type ProductDataType = {
+  months: string[];
+  forecastData: Awaited<ReturnType<typeof minQueryForecastData>>;
+  importsById: Map<string, Import>;
+  productImportsById: Map<number, ProductImport>;
+  ordersByOrderNumber: Map<string, Order>;
+  providersByCode: Map<string, Provider>;
+  orderProductsById: Map<
+    number,
+    {
+      order_number: string;
+      id: number;
+      product_code: string;
+      ordered_quantity: number;
+    }
+  >;
+  events: ProductEvent[];
+  product:
+    | {
+        code: string;
+        description: string;
+        additional_description: string;
+        providers: ProductProvider[];
+        commited: number;
+        pending: number;
+        stock: number;
+        stock_at: Map<string, number>;
+        stock_variation_by_month: Map<string, number>;
+        used_as_supply_quantity_by_month: Map<string, number>;
+        used_as_forecast_quantity_by_month: Map<string, number>;
+        imported_quantity_by_month: Map<string, number>;
+        ordered_quantity_by_month: Map<string, number>;
+      }
+    | undefined;
+};
+
+export type ProductDataProduct = NonNullable<ProductDataType["product"]>;

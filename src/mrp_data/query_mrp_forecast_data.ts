@@ -8,7 +8,7 @@ import { db } from "~/server/db";
 import { type RawMRPData, queryBaseMRPData } from "./query_mrp_data";
 import type { ForecastProfile } from "./transform_mrp_data";
 
-type ForecastDataEvent = {
+export type ForecastDataEvent = {
   type: "sold" | "budget"; // | 'import'
   product_code: string;
   date: Date;

@@ -25,6 +25,7 @@ export type ProductEvent = {
   level?: number;
   expired: boolean;
   assemblyId?: number;
+  assemblyQuantity?: number;
   isForecast?: boolean;
   productAccumulativeStock: number;
 };

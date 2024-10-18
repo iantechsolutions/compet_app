@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Fragment, useMemo, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
-import { formatStock } from "~/lib/utils";
+import { decodeData, formatStock } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { ProductEventsChart } from "./chart";
 import { ProductEventRow } from "./event_row";
@@ -12,6 +12,13 @@ import { ForecastSupplyEventsRow } from "./forecast_supply_events_row";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { useMRPData } from "~/components/mrp-data-provider";
+import { api } from "~/trpc/react";
+import AppLayout from "~/components/applayout";
+import { Title } from "~/components/title";
+import { Loader2Icon } from "lucide-react";
+import { useSession } from "next-auth/react";
+import AppSidenav from "~/components/app-sidenav";
+import { ProductDataType } from "~/server/api/routers/db";
 
 export default function ProductPage() {
   /* const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery()
@@ -24,21 +31,21 @@ export default function ProductPage() {
   const { data: months, isLoading: isLoadingMonths } = api.db.getMonths.useQuery(); 
   const isLoadingData = isLoadingMonths || isLoadingProvC || isLoadingOrderProds || isLoadingOrderNums || isLoadingProdImports || isLoadingImports || isLoadingProds || isLoadingEvts;
   */
-  const { months, importsById, productImportsById, ordersByOrderNumber, orderProductsById, providersByCode, products, eventsByProductCode } = useMRPData();
-
+  // const { months, importsById, productImportsById, ordersByOrderNumber, orderProductsById, providersByCode, products, eventsByProductCode } = useMRPData();
   const params = useParams<{ code: string }>();
-  const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
-
   const productCode = decodeURIComponent(params?.code ?? "");
-  const product = products.find(v => v.code === productCode)!;
+  const { data: dataRaw, isLoading } = api.db.getProductData.useQuery({ code: productCode });
+  const auth = useSession();
+
+  const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
+  const data = dataRaw ? decodeData<ProductDataType>(dataRaw) : undefined;
 
   const productData = useMemo(() => {
-    if (!product) {
+    if (!data?.product) {
       return null;
     }
 
-    const events = eventsByProductCode?.get(product.code) ?? [];
-
+    const events = data.events;
     const dataByMonth = new Map<string, { events: ProductEvent[]; supplyForecastEvents: ProductEvent[] }>();
 
     for (const event of events) {
@@ -59,8 +66,24 @@ export default function ProductPage() {
     }
 
     return dataByMonth;
-  }, [product]);
+  }, [data]);
 
+  if (isLoading || !data) {
+    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+      <Button variant="secondary" disabled>
+        <Loader2Icon className="mr-2 animate-spin" /> {isLoadingStats ? 'Cargando estadísticas' : 'Cargando datos'}
+      </Button>
+    </div>;
+  } else if (!data.product) {
+    return (
+      <AppLayout title={<h1>Error 404</h1>} user={auth.data?.user} sidenav={<AppSidenav />}>
+        <Title>No se encontró el producto</Title>
+        <p>No encontramos ningún producto con el código "{productCode}".</p>
+      </AppLayout>
+    );
+  }
+
+  const product = data.product;
   return (
     <>
       <div className="flex flex-row justify-between">
@@ -76,7 +99,7 @@ export default function ProductPage() {
             {product?.providers.map((provider, i) => {
               return (
                 <Badge key={i} variant="secondary" className="mr-2">
-                  {providersByCode?.get(provider.provider_code)?.name ?? provider.provider_code}
+                  {data.providersByCode.get(provider.provider_code)?.name ?? provider.provider_code}
                 </Badge>
               );
             })}
@@ -86,7 +109,7 @@ export default function ProductPage() {
           <Button variant="outline">Ver estadisticas</Button>
         </Link>
       </div>
-      <ProductEventsChart key={product.code} product={product} months={months} />
+      <ProductEventsChart key={product.code} product={product} months={data.months} />
       <div className="max-w-full overflow-x-auto">
         <Table className="min-w-[600px]">
           {/* <TableCaption>Lista de importaciones pedidos y armados</TableCaption> */}
@@ -147,24 +170,24 @@ export default function ProductPage() {
                   </TableRow>
                   {forecastEvents.map((event, i) => {
                     return <ProductEventRow
-                      importsById={importsById}
-                      orderProductsById={orderProductsById}
-                      ordersByOrderNumber={ordersByOrderNumber}
-                      productImportsById={productImportsById}
+                      importsById={data.importsById}
+                      orderProductsById={data.orderProductsById}
+                      ordersByOrderNumber={data.ordersByOrderNumber}
+                      productImportsById={data.productImportsById}
                       key={`row:${month}:f_${i}`} event={event} productCode={productCode} nostock />;
                   })}
                   <ForecastSupplyEventsRow
-                    importsById={importsById}
-                    orderProductsById={orderProductsById}
-                    ordersByOrderNumber={ordersByOrderNumber}
-                    productImportsById={productImportsById}
+                    importsById={data.importsById}
+                    orderProductsById={data.orderProductsById}
+                    ordersByOrderNumber={data.ordersByOrderNumber}
+                    productImportsById={data.productImportsById}
                     events={p.supplyForecastEvents}
                     month={month} key={`forecast_supply_event_row:${month}`} />
                   {nonForecastEvents.map((event, i) => {
-                    return <ProductEventRow importsById={importsById}
-                      orderProductsById={orderProductsById}
-                      ordersByOrderNumber={ordersByOrderNumber}
-                      productImportsById={productImportsById}
+                    return <ProductEventRow importsById={data.importsById}
+                      orderProductsById={data.orderProductsById}
+                      ordersByOrderNumber={data.ordersByOrderNumber}
+                      productImportsById={data.productImportsById}
                       key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />;
                   })}
                 </Fragment>
