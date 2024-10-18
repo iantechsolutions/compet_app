@@ -546,6 +546,7 @@ export class Database {
           INNER JOIN GVA03
           ON GVA21.NRO_PEDIDO = GVA03.NRO_PEDIDO`,
           orderAndOrderProdSchema,
+          true,
         );
       },
       forceCache,
