@@ -48,8 +48,10 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   const channel = gloabalMRPChannel!;
 
   async function dataIsUpToDate(data: Monolito): Promise<boolean> {
-    const currentProfile = await obtainCurrentProfile();
-    const dataExportInfo = await obtainDataExportInfo();
+    const [currentProfile, dataExportInfo] = await Promise.all([
+      obtainCurrentProfile(),
+      obtainDataExportInfo()
+    ]);
 
     const forecastProfileMismatch = data.data.forecastData?.forecastProfile?.id != currentProfile?.id;
     const dataExportMismatch = dayjs(data.data.dataExportDate) != dayjs(dataExportInfo.exportDate);
