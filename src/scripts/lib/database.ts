@@ -181,7 +181,7 @@ export class Database {
           `SELECT
             COD_ARTICU as code,
             FROM STA11`,
-            productCodeSchema,
+          productCodeSchema,
         );
       },
       forceCache,
@@ -635,7 +635,7 @@ export class Database {
       return r.data.products_orders.filter((k) => k.product_code === code);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`SELECT
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
       SELECT
       NRO_PEDIDO as order_number,
       COD_ARTICU as product_code,
@@ -661,7 +661,7 @@ export class Database {
         });
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`SELECT
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
       SELECT
       GVA03.NRO_PEDIDO as order_number,
       GVA03.COD_ARTICU as product_code,
@@ -718,7 +718,7 @@ export class Database {
       return r.data.clients.find((v) => v.code === code);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`SELECT
+    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
       SELECT
       COD_CLIENT as code,
       CUIT as cuit,

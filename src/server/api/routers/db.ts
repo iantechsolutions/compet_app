@@ -307,12 +307,9 @@ export const dbRouter = createTRPCRouter({
       const productEvents = minListProductsEvents(allEvents, minMon);
 
       const dbi = await getDbInstance();
-      const [order, orderProducts, sold, budgetProducts, budgets] = await Promise.all([
+      const [order, orderProducts] = await Promise.all([
         dbi.getOrderByNumber(input.order_number),
         dbi.getProductsOrdersByOrderNumber(input.order_number),
-        dbi.getSold(),
-        dbi.getBudgetProducts(),
-        dbi.getBudgets(),
       ]);
 
       if (!order) {
