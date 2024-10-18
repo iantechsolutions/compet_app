@@ -23,78 +23,84 @@ type MinimalMonolito = {
 
 export async function getMinimalMonolito(cacheTtl?: number, forceCache = false): Promise<MinimalMonolito> {
   const dbi = await getDbInstance();
-  const [
-    productsBasic,
-    products_assemblies,
-    products_stock_commited,
-    budget_products,
-    budgets,
-    products_sold,
-    sold,
-    orderProducts,
-    productImports,
-  ] = await Promise.all([
-    dbi.getProductCodes(cacheTtl, forceCache),
-    dbi.getAssemblies(cacheTtl, forceCache),
-    dbi.getCommitedStock(cacheTtl, forceCache),
-    dbi.getBudgetProducts(cacheTtl, forceCache),
-    dbi.getBudgets(cacheTtl, forceCache),
-    dbi.getProductsSold(cacheTtl, forceCache),
-    dbi.getSold(cacheTtl, forceCache),
-    dbi.getOrdersAndProdOrders(cacheTtl, forceCache),
-    dbi.getProductImports(cacheTtl, forceCache),
-  ]);
+  try {
+    const [
+      productsBasic,
+      products_assemblies,
+      products_stock_commited,
+      budget_products,
+      budgets,
+      products_sold,
+      sold,
+      orderProducts,
+      productImports,
+    ] = await Promise.all([
+      dbi.getProductCodes(cacheTtl, forceCache),
+      dbi.getAssemblies(cacheTtl, forceCache),
+      dbi.getCommitedStock(cacheTtl, forceCache),
+      dbi.getBudgetProducts(cacheTtl, forceCache),
+      dbi.getBudgets(cacheTtl, forceCache),
+      dbi.getProductsSold(cacheTtl, forceCache),
+      dbi.getSold(cacheTtl, forceCache),
+      dbi.getOrdersAndProdOrders(cacheTtl, forceCache),
+      dbi.getProductImports(cacheTtl, forceCache),
+    ]);
 
-  const budgetsById = new Map<number, CrmBudget>();
-  for (const budget of budgets) {
-    budgetsById.set(budget.budget_id, budget);
-  }
+    const budgetsById = new Map<number, CrmBudget>();
+    for (const budget of budgets) {
+      budgetsById.set(budget.budget_id, budget);
+    }
 
-  const stockCommitedByProduct = new Map<string, ProductStockCommited>();
-  for (const stockCommited of products_stock_commited) {
-    // Por alguna razón puede haber más de una fila con el mismo código de producto
-    // Por eso vamos a combinarlas
-    const prev = stockCommitedByProduct.get(stockCommited.product_code) ?? {
-      product_code: stockCommited.product_code,
-      stock_quantity: 0,
-      commited_quantity: 0,
-      pending_quantity: 0,
-      last_update: new Date(0),
+    const stockCommitedByProduct = new Map<string, ProductStockCommited>();
+    for (const stockCommited of products_stock_commited) {
+      // Por alguna razón puede haber más de una fila con el mismo código de producto
+      // Por eso vamos a combinarlas
+      const prev = stockCommitedByProduct.get(stockCommited.product_code) ?? {
+        product_code: stockCommited.product_code,
+        stock_quantity: 0,
+        commited_quantity: 0,
+        pending_quantity: 0,
+        last_update: new Date(0),
+      };
+
+      stockCommitedByProduct.set(stockCommited.product_code, {
+        product_code: stockCommited.product_code,
+        commited_quantity: prev.commited_quantity + stockCommited.commited_quantity,
+        stock_quantity: prev.stock_quantity + stockCommited.stock_quantity,
+        pending_quantity: prev.pending_quantity + stockCommited.pending_quantity,
+        last_update: prev.last_update > stockCommited.last_update ? prev.last_update : stockCommited.last_update,
+      });
+    }
+
+    const suppliesOfProduct = new Map<string, (ProductAssembly & { code: string })[]>();
+    for (const assembly of products_assemblies) {
+      const supplies = suppliesOfProduct.get(assembly.product_code) ?? [];
+      supplies.push({ ...assembly, code: assembly.supply_product_code });
+      suppliesOfProduct.set(assembly.product_code, supplies);
+    }
+
+    return {
+      suppliesOfProduct,
+      productsBasic,
+      budget_products,
+      budgetsById,
+      months: getMonths(10),
+      orderProducts,
+      productImports,
+      products_sold,
+      sold,
+      products_assemblies,
+      products_stock_commited,
+      stockCommitedByProduct,
     };
-
-    stockCommitedByProduct.set(stockCommited.product_code, {
-      product_code: stockCommited.product_code,
-      commited_quantity: prev.commited_quantity + stockCommited.commited_quantity,
-      stock_quantity: prev.stock_quantity + stockCommited.stock_quantity,
-      pending_quantity: prev.pending_quantity + stockCommited.pending_quantity,
-      last_update: prev.last_update > stockCommited.last_update ? prev.last_update : stockCommited.last_update,
-    });
+  } catch (e) {
+    console.error("getMinimalMonolito error");
+    console.error(e);
+    throw new Error("getMinimalMonolito crashed");
   }
-
-  const suppliesOfProduct = new Map<string, (ProductAssembly & { code: string })[]>();
-  for (const assembly of products_assemblies) {
-    const supplies = suppliesOfProduct.get(assembly.product_code) ?? [];
-    supplies.push({ ...assembly, code: assembly.supply_product_code });
-    suppliesOfProduct.set(assembly.product_code, supplies);
-  }
-
-  return {
-    suppliesOfProduct,
-    productsBasic,
-    budget_products,
-    budgetsById,
-    months: getMonths(10),
-    orderProducts,
-    productImports,
-    products_sold,
-    sold,
-    products_assemblies,
-    products_stock_commited,
-    stockCommitedByProduct,
-  };
 }
 
-export async function minQueryForecastData(forecastProfile: ForecastProfile, data: MinimalMonolito) {
+export function minQueryForecastData(forecastProfile: ForecastProfile, data: MinimalMonolito) {
   const budgetProducts = data.budget_products;
   const clientInclusionSet = forecastProfile.clientInclusionList ? new Set(forecastProfile.clientInclusionList) : null;
 

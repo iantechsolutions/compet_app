@@ -172,7 +172,7 @@ export const dbRouter = createTRPCRouter({
 
       const months = getMonths(10);
       const minMon = await getMinimalMonolito(0, true);
-      const forecast = await minQueryForecastData(forecastProfile, minMon);
+      const forecast = minQueryForecastData(forecastProfile, minMon);
       const events = minListAllEvents(forecast, minMon);
       const allEvents = minListAllEventsWithSupplyEvents(events, minMon);
       const productEvents = minListProductsEvents(allEvents, minMon);
@@ -301,40 +301,47 @@ export const dbRouter = createTRPCRouter({
       }
 
       const minMon = await getMinimalMonolito(0, true);
-      const forecast = await minQueryForecastData(forecastProfile, minMon);
+      const forecast = minQueryForecastData(forecastProfile, minMon);
       const events = minListAllEvents(forecast, minMon);
       const allEvents = minListAllEventsWithSupplyEvents(events, minMon);
       const productEvents = minListProductsEvents(allEvents, minMon);
 
       const dbi = await getDbInstance();
-      const [order, orderProducts] = await Promise.all([
-        dbi.getOrderByNumber(input.order_number),
-        dbi.getProductsOrdersByOrderNumber(input.order_number),
-      ]);
 
-      if (!order) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
+      try {
+        const [order, orderProducts] = await Promise.all([
+          dbi.getOrderByNumber(input.order_number),
+          dbi.getProductsOrdersByOrderNumber(input.order_number),
+        ]);
 
-      const client = await dbi.getClientByCode(order.client_code);
-
-      const eventsByOrderProductId = new Map<number, ProductEvent[]>();
-      for (const orderProduct of orderProducts) {
-        let events = productEvents.get(orderProduct.product_code) ?? [];
-        events = events.filter((event) => event.referenceId === orderProduct.id);
-        if (events) {
-          eventsByOrderProductId.set(orderProduct.id, events);
+        if (!order) {
+          throw new TRPCError({ code: "NOT_FOUND" });
         }
+
+        const client = await dbi.getClientByCode(order.client_code);
+
+        const eventsByOrderProductId = new Map<number, ProductEvent[]>();
+        for (const orderProduct of orderProducts) {
+          let events = productEvents.get(orderProduct.product_code) ?? [];
+          events = events.filter((event) => event.referenceId === orderProduct.id);
+          if (events) {
+            eventsByOrderProductId.set(orderProduct.id, events);
+          }
+        }
+
+        const res = {
+          client,
+          eventsByOrderProductId,
+          orderProducts,
+          order,
+        };
+
+        return encodeData<PedidoData>(res);
+      } catch (e) {
+        console.error("getPedidoData error");
+        console.error(e);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
-
-      const res = {
-        client,
-        eventsByOrderProductId,
-        orderProducts,
-        order,
-      };
-
-      return encodeData<PedidoData>(res);
     }),
   getOrdersByOrderNumber: protectedProcedure.query(async () => {
     const orders = await (await getDbInstance()).getOrders();

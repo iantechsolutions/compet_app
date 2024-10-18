@@ -237,7 +237,7 @@ export class Database {
       return r.data.products_stock_commited.filter((v) => v.product_code === code);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, code).query(`
       SELECT
       COD_ARTICU as product_code,
       CANT_STOCK as stock_quantity,
@@ -333,7 +333,7 @@ export class Database {
         });
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, code).query(`
       SELECT
       STA03.COD_ARTICU as product_code,
       STA03.COD_INSUMO as supply_product_code,
@@ -421,7 +421,7 @@ export class Database {
       return r.data.products_imports.filter((k) => k.product_code === code);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, code).query(`
       SELECT 
       ID_CARPETA as import_id,
       COD_ARTICU as product_code,
@@ -485,7 +485,7 @@ export class Database {
         .filter((a) => a.product_code === code);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, code).query(`
       SELECT
       GVA21.NRO_PEDIDO as order_number,
       GVA21.APRUEBA as approved_by,
@@ -558,7 +558,7 @@ export class Database {
       return r.data.orders.find((v) => v.order_number === ord);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, ord).query(`SELECT
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, ord).query(`SELECT
                 NRO_PEDIDO as order_number,
                 APRUEBA as approved_by,
                 COD_CLIENT as client_code,
@@ -635,7 +635,7 @@ export class Database {
       return r.data.products_orders.filter((k) => k.product_code === code);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, code).query(`
       SELECT
       NRO_PEDIDO as order_number,
       COD_ARTICU as product_code,
@@ -661,7 +661,7 @@ export class Database {
         });
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, code).query(`
       SELECT
       GVA03.NRO_PEDIDO as order_number,
       GVA03.COD_ARTICU as product_code,
@@ -718,7 +718,7 @@ export class Database {
       return r.data.clients.find((v) => v.code === code);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(`
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, code).query(`
       SELECT
       COD_CLIENT as code,
       CUIT as cuit,
@@ -777,7 +777,7 @@ export class Database {
       return r.data.products_sold.filter((v) => v.product_code === code);
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, code).query(soldProductsQueryByCode);
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, code).query(soldProductsQueryByCode);
 
     const records = rows.recordset.map((k) => Database.trimAllProperties(k as Record<string, unknown>));
     const arraySchema = z.array(orderProductSoldSchema);
@@ -819,7 +819,7 @@ export class Database {
       return r.data.budgets.find((v) => v.budget_id === id)!;
     }
 
-    const rows = await this.assertConnected().request().input("code", sql.Int, id).query(`SELECT
+    const rows = await this.assertConnected().request().input("code", sql.VarChar, id).query(`SELECT
                 ID_Presupuesto as budget_id,
                 ID_Cliente as client_id,
                 ID_Categoria as category_id,
