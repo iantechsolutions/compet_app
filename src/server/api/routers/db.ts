@@ -14,7 +14,7 @@ import type {
   ProductStockCommited,
   Provider,
 } from "~/lib/types";
-import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
+import { type ForecastDataEvent, queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { getUserSetting } from "~/lib/settings";
 import { eventsOfProductByMonth, type ProductEvent, stockOfProductByMonth, type ForecastProfile } from "~/mrp_data/transform_mrp_data";
 import { db } from "~/server/db";
@@ -148,6 +148,201 @@ export const dbRouter = createTRPCRouter({
   }),
   getOrders: protectedProcedure.query(async () => {
     return await (await getDbInstance()).getOrders();
+  }),
+  getTableData: protectedProcedure.query(async () => {
+    const session = await getServerAuthSession();
+    const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", session?.user.id ?? "");
+
+    let forecastProfile: ForecastProfile | null =
+      forecastProfileId != null
+        ? ((await db.query.forecastProfiles.findFirst({
+            where: eq(forecastProfiles.id, forecastProfileId),
+          })) ?? null)
+        : null;
+
+    if (!forecastProfile) {
+      forecastProfile = nullProfile;
+    }
+
+    const months = getMonths(10);
+    const minMon = await getMinimalMonolito(0, true);
+    const forecast = minQueryForecastData(forecastProfile, minMon);
+    const events = minListAllEvents(forecast, minMon);
+    const allEvents = minListAllEventsWithSupplyEvents(events, minMon);
+    const productEvents = minListProductsEvents(allEvents, minMon);
+
+    const dbi = await getDbInstance();
+    const [providers, products, product_providers, products_assemblies, products_stock_commited] = await Promise.all([
+      dbi.getProviders(),
+      dbi.getProducts(),
+      dbi.getProductProviders(),
+      dbi.getAssemblies(),
+      dbi.getCommitedStock(),
+    ]);
+
+    const productsByCode = new Map(products.map((product) => [product.code, product]));
+    const suppliesOfProduct = new Map<string, (ProductAssembly & { product: Product })[]>();
+    const suppliesOfOfProduct = new Map<string, (ProductAssembly & { product: Product })[]>();
+
+    for (const assembly of products_assemblies) {
+      const supplies = suppliesOfProduct.get(assembly.product_code) ?? [];
+      let product = productsByCode.get(assembly.supply_product_code)!;
+      supplies.push({ ...assembly, product });
+      suppliesOfProduct.set(assembly.product_code, supplies);
+
+      const suppliesOf = suppliesOfOfProduct.get(assembly.supply_product_code) ?? [];
+      product = productsByCode.get(assembly.product_code)!;
+      suppliesOf.push({ ...assembly, product });
+      suppliesOfOfProduct.set(assembly.supply_product_code, suppliesOf);
+    }
+
+    const stockCommitedByProduct = new Map<string, ProductStockCommited>();
+    for (const stockCommited of products_stock_commited) {
+      // Por alguna razón puede haber más de una fila con el mismo código de producto
+      // Por eso vamos a combinarlas
+      const prev = stockCommitedByProduct.get(stockCommited.product_code) ?? {
+        product_code: stockCommited.product_code,
+        stock_quantity: 0,
+        commited_quantity: 0,
+        pending_quantity: 0,
+        last_update: new Date(0),
+      };
+
+      stockCommitedByProduct.set(stockCommited.product_code, {
+        product_code: stockCommited.product_code,
+        commited_quantity: prev.commited_quantity + stockCommited.commited_quantity,
+        stock_quantity: prev.stock_quantity + stockCommited.stock_quantity,
+        pending_quantity: prev.pending_quantity + stockCommited.pending_quantity,
+        last_update: prev.last_update > stockCommited.last_update ? prev.last_update : stockCommited.last_update,
+      });
+    }
+
+    const stockOfProductsByMonth = new Map<string, Map<string, number>>();
+    for (const product of products) {
+      stockOfProductsByMonth.set(
+        product.code,
+        stockOfProductByMonth(stockCommitedByProduct.get(product.code)?.stock_quantity ?? 0, productEvents.get(product.code)!, months),
+      );
+    }
+
+    const eventsOfProductsByMonth = new Map<string, Map<string, ProductEvent[]>>();
+    for (const product of products) {
+      eventsOfProductsByMonth.set(product.code, eventsOfProductByMonth(productEvents.get(product.code)!, months));
+    }
+
+    const stockVariationByMonth = new Map<string, Map<string, number>>();
+    const importedQuantityOfProductsByMonth = new Map<string, Map<string, number>>();
+    const orderedQuantityOfProductsByMonth = new Map<string, Map<string, number>>();
+    const usedAsSupplyQuantityOfProductsByMonth = new Map<string, Map<string, number>>();
+    const usedAsForecastQuantityOfProductsByMonth = new Map<string, Map<string, number>>();
+    const usedAsForecastTypeSoldQuantityOfProductsByMonth = new Map<string, Map<string, number>>();
+    const usedAsForecastTypeBudgetQuantityOfProductsByMonth = new Map<string, Map<string, number>>();
+
+    for (const product of products) {
+      const events = eventsOfProductsByMonth.get(product.code)!;
+
+      for (const month of months) {
+        stockVariationByMonth.set(product.code, stockVariationByMonth.get(product.code) ?? new Map<string, number>());
+        importedQuantityOfProductsByMonth.set(
+          product.code,
+          importedQuantityOfProductsByMonth.get(product.code) ?? new Map<string, number>(),
+        );
+        orderedQuantityOfProductsByMonth.set(product.code, orderedQuantityOfProductsByMonth.get(product.code) ?? new Map<string, number>());
+        usedAsSupplyQuantityOfProductsByMonth.set(
+          product.code,
+          usedAsSupplyQuantityOfProductsByMonth.get(product.code) ?? new Map<string, number>(),
+        );
+        usedAsForecastQuantityOfProductsByMonth.set(
+          product.code,
+          usedAsForecastQuantityOfProductsByMonth.get(product.code) ?? new Map<string, number>(),
+        );
+        usedAsForecastTypeSoldQuantityOfProductsByMonth.set(
+          product.code,
+          usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code) ?? new Map<string, number>(),
+        );
+        usedAsForecastTypeBudgetQuantityOfProductsByMonth.set(
+          product.code,
+          usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code) ?? new Map<string, number>(),
+        );
+
+        stockVariationByMonth.get(product.code)!.set(month, 0);
+        importedQuantityOfProductsByMonth.get(product.code)!.set(month, 0);
+        orderedQuantityOfProductsByMonth.get(product.code)!.set(month, 0);
+        usedAsSupplyQuantityOfProductsByMonth.get(product.code)!.set(month, 0);
+        usedAsForecastQuantityOfProductsByMonth.get(product.code)!.set(month, 0);
+        usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!.set(month, 0);
+        usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.set(month, 0);
+
+        for (const event of events.get(month) ?? []) {
+          // Aunque solo el valor de quantity afecte a la variación de stock, queremos que los eventos musetren la cantidad original por más de que se hayan dividido en eventos de suministro
+          const qty = event.originalQuantity ?? event.quantity;
+
+          let stockModifier = 0;
+
+          if (event.type === "import") {
+            importedQuantityOfProductsByMonth
+              .get(product.code)!
+              .set(month, importedQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty);
+            stockModifier = qty;
+          } else if (event.type === "forecast" || event.isForecast) {
+            usedAsForecastQuantityOfProductsByMonth
+              .get(product.code)!
+              .set(month, usedAsForecastQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty);
+
+            if (event.forecastType === "sold") {
+              usedAsForecastTypeSoldQuantityOfProductsByMonth
+                .get(product.code)!
+                .set(month, usedAsForecastTypeSoldQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty);
+            } else if (event.forecastType === "budget") {
+              usedAsForecastTypeBudgetQuantityOfProductsByMonth
+                .get(product.code)!
+                .set(month, usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty);
+            }
+
+            stockModifier = -event.quantity;
+          } else if (event.type === "order") {
+            orderedQuantityOfProductsByMonth
+              .get(product.code)!
+              .set(month, orderedQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty);
+            stockModifier = -event.quantity;
+          } else if (event.type === "supply") {
+            usedAsSupplyQuantityOfProductsByMonth
+              .get(product.code)!
+              .set(month, usedAsSupplyQuantityOfProductsByMonth.get(product.code)!.get(month)! + qty);
+            stockModifier = -event.quantity;
+          }
+
+          stockVariationByMonth.get(product.code)!.set(month, stockVariationByMonth.get(product.code)!.get(month)! + stockModifier);
+        }
+      }
+    }
+
+    const ret: TableDataType = {
+      providers,
+      products: products.map((v) => ({
+        code: v.code,
+        description: v.description,
+        additional_description: v.additional_description,
+        providers: product_providers.filter((k) => k.product_code === v.code),
+        supplies: suppliesOfProduct.get(v.code) ?? [],
+        suppliesOf: suppliesOfOfProduct.get(v.code) ?? [],
+        stock: stockCommitedByProduct.get(v.code)?.stock_quantity ?? 0,
+        commited: stockCommitedByProduct.get(v.code)?.commited_quantity ?? 0,
+        stock_at: Object.fromEntries(stockOfProductsByMonth.get(v.code)!),
+        used_as_forecast_quantity_by_month: Object.fromEntries(usedAsForecastQuantityOfProductsByMonth.get(v.code)!),
+        imported_quantity_by_month: Object.fromEntries(importedQuantityOfProductsByMonth.get(v.code)!),
+        ordered_quantity_by_month: Object.fromEntries(orderedQuantityOfProductsByMonth.get(v.code)!),
+        used_as_supply_quantity_by_month: Object.fromEntries(usedAsSupplyQuantityOfProductsByMonth.get(v.code)!),
+        used_as_forecast_type_sold_quantity_by_month: Object.fromEntries(usedAsForecastTypeSoldQuantityOfProductsByMonth.get(v.code)!),
+        used_as_forecast_type_budget_quantity_by_month: Object.fromEntries(usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(v.code)!),
+      })),
+      forecastData: {
+        forecastProfile: forecast.forecastProfile,
+      },
+      months,
+    };
+
+    return ret;
   }),
   getProductData: protectedProcedure
     .input(
@@ -973,3 +1168,48 @@ export type ProductDataType = {
 };
 
 export type ProductDataProduct = NonNullable<ProductDataType["product"]>;
+
+export type TableDataType = {
+  providers: Provider[];
+  products: {
+    code: string;
+    stock: number;
+    commited: number;
+    description: string;
+    additional_description: string;
+    used_as_supply_quantity_by_month: Record<string, number>;
+    imported_quantity_by_month: Record<string, number>;
+    ordered_quantity_by_month: Record<string, number>;
+    used_as_forecast_type_sold_quantity_by_month: Record<string, number>;
+    used_as_forecast_type_budget_quantity_by_month: Record<string, number>;
+    used_as_forecast_quantity_by_month: Record<string, number>;
+    providers: {
+      product_code: string;
+      provider_code: string;
+      provider_product_code: string;
+    }[];
+    supplies: ({
+      id: number;
+      quantity: number;
+      product_code: string;
+      supply_product_code: string;
+    } & {
+      product: Product;
+    })[];
+    suppliesOf: ({
+      id: number;
+      quantity: number;
+      product_code: string;
+      supply_product_code: string;
+    } & {
+      product: Product;
+    })[];
+    stock_at: Record<string, number>;
+  }[];
+  months: string[];
+  forecastData: {
+    forecastProfile: ForecastProfile;
+  };
+};
+
+export type TableDataTypeProduct = TableDataType["products"][number];

@@ -47,7 +47,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const pathname = usePathname();
 
-  const mustCache = !(pathname.includes("/mrp/productos/") || pathname.includes("/mrp/pedidos/"));
+  const mustCache = !((pathname.includes("/mrp/productos/") && !pathname.includes("/info")) || pathname.includes("/mrp/pedidos/") || pathname.includes("/mrp/tabla"));
   const channel = gloabalMRPChannel!;
 
   async function dataIsUpToDate(data: Monolito): Promise<boolean> {

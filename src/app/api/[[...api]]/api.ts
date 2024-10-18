@@ -207,6 +207,7 @@ app.get("/individualMail", async (c) => {
         for (const product of data.products) {
           _stockOfProductsByMonth.set(product.code, stockOfProductByMonth(product.stock, eventsByProductCode.get(product.code)!, months));
         }
+        
         const finalList: {
           productCode: string;
           quantity: number;

@@ -104,7 +104,7 @@ export function minQueryForecastData(forecastProfile: ForecastProfile, data: Min
   const budgetProducts = data.budget_products;
   const clientInclusionSet = forecastProfile.clientInclusionList ? new Set(forecastProfile.clientInclusionList) : null;
 
-  const events: ForecastDataEvent[] = [
+  const events: ForecastDataEvent<Date>[] = [
     // {
     //     product_code: '01014040 CON AD',
     //     date: new Date(2023, 11, 1),
