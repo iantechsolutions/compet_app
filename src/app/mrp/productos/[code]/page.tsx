@@ -11,10 +11,6 @@ import { ProductEventRow } from "./event_row";
 import { ForecastSupplyEventsRow } from "./forecast_supply_events_row";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
-import AppLayout from "~/components/applayout";
-import { Title } from "~/components/title";
-import AppSidenav from "~/components/app-sidenav";
-import { useSession } from "next-auth/react";
 import { useMRPData } from "~/components/mrp-data-provider";
 
 export default function ProductPage() {
@@ -34,8 +30,7 @@ export default function ProductPage() {
   const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
 
   const productCode = decodeURIComponent(params?.code ?? "");
-  const product = products?.find(v => v.code === productCode);
-  const auth = useSession();
+  const product = products.find(v => v.code === productCode)!;
 
   const productData = useMemo(() => {
     if (!product) {
@@ -65,15 +60,6 @@ export default function ProductPage() {
 
     return dataByMonth;
   }, [product]);
-
-  if (!product) {
-    return (
-      <AppLayout title={<h1>Error 404</h1>} user={auth.data?.user} sidenav={<AppSidenav />}>
-        <Title>No se encontró el producto</Title>
-        <p>No encontramos ningún producto con el código "{productCode}".</p>
-      </AppLayout>
-    );
-  }
 
   return (
     <>

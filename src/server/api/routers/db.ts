@@ -729,4 +729,5 @@ type PartialExcept<T, U extends string[]> = {
 };
 
 export type MonolitoProduct = NonNullable<RouterOutputs["db"]["getMonolito"]["data"]["products"]>[0];
+export type MonolitoProductById = NonNullable<NonNullable<RouterOutputs["db"]["getMonolito"]["data"]["productsByCode"]>["get"]>;
 export type Monolito = RouterOutputs["db"]["getMonolitoUncached"];
