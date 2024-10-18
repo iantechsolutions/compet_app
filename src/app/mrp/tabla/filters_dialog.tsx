@@ -22,8 +22,8 @@ export function FiltersDialog(props: {
   initialFilters: Filters;
   onApply: (filters: Filters) => void;
   number: number;
-  products: NonNullable<RouterOutputs['db']['getMonolito']['data']['products']>;
-  providers: NonNullable<RouterOutputs['db']['getMonolito']['data']['providers']>;
+  products: NonNullable<RouterOutputs['db']['getMonolito']['products']>;
+  providers: NonNullable<RouterOutputs['db']['getMonolito']['providers']>;
 }) {
   const products = props.products;
   const [filters, setFilters] = useState<Filters>(props.initialFilters);
@@ -188,8 +188,8 @@ function ProviderRow(props: {
 function ProvidersFilter(props: {
   value: Set<string>;
   onChange: (providers: Set<string>) => void;
-  products: NonNullable<RouterOutputs['db']['getMonolito']['data']['products']>;
-  providers: NonNullable<RouterOutputs['db']['getMonolito']['data']['providers']>;
+  products: NonNullable<RouterOutputs['db']['getMonolito']['products']>;
+  providers: NonNullable<RouterOutputs['db']['getMonolito']['providers']>;
 }) {
   const providers = props.providers;
   const products = props.products;

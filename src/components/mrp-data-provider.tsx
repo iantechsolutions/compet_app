@@ -53,8 +53,8 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
       obtainDataExportInfo()
     ]);
 
-    const forecastProfileMismatch = data.data.forecastData?.forecastProfile?.id != currentProfile?.id;
-    const dataExportMismatch = dayjs(data.data.dataExportDate) != dayjs(dataExportInfo.exportDate);
+    const forecastProfileMismatch = data.forecastData?.forecastProfile?.id != currentProfile?.id;
+    const dataExportMismatch = dayjs(data.dataExportDate) != dayjs(dataExportInfo.exportDate);
 
     return !forecastProfileMismatch && !dataExportMismatch;
   }
@@ -282,7 +282,7 @@ export function useMRPContext() {
 
 export function useMRPData() {
   const ctx = useMRPContext();
-  return ctx.data.data;
+  return ctx.data;
 }
 
 export function useMRPInvalidateAndReloadData() {

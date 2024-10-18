@@ -12,10 +12,10 @@ import type { RouterOutputs } from "~/trpc/shared";
 export function ForecastSupplyEventsRow(props: {
   events: ProductEvent[];
   month: string;
-  orderProductsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['orderProductsById']>;
-  ordersByOrderNumber: NonNullable<RouterOutputs['db']['getMonolito']['data']['ordersByOrderNumber']>;
-  productImportsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['productImportsById']>;
-  importsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['importsById']>;
+  orderProductsById: NonNullable<RouterOutputs['db']['getMonolito']['orderProductsById']>;
+  ordersByOrderNumber: NonNullable<RouterOutputs['db']['getMonolito']['ordersByOrderNumber']>;
+  productImportsById: NonNullable<RouterOutputs['db']['getMonolito']['productImportsById']>;
+  importsById: NonNullable<RouterOutputs['db']['getMonolito']['importsById']>;
 }) {
   const openId = useId();
 

@@ -12,8 +12,6 @@ import {
 import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { getUserSetting } from "./settings";
 import { db } from "~/server/db";
-import { eq } from "drizzle-orm";
-import { forecastProfiles } from "~/server/db/schema";
 import { nullProfile } from "./nullForecastProfile";
 
 export const getProductByCode = async () => {
@@ -30,13 +28,10 @@ export const getMonolitoBase = async (userId: string, cacheTtl?: number) => {
   const data = await queryBaseMRPData(cacheTtl);
 
   const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", userId);
+  const forecastProfiles = await db.query.forecastProfiles.findMany();
 
   let forecastProfile: ForecastProfile | null =
-    forecastProfileId != null
-      ? ((await db.query.forecastProfiles.findFirst({
-          where: eq(forecastProfiles.id, forecastProfileId),
-        })) ?? null)
-      : null;
+    forecastProfileId != null ? (forecastProfiles.find((v) => v.id === forecastProfileId) ?? null) : null;
 
   if (!forecastProfile) {
     forecastProfile = nullProfile;
@@ -239,11 +234,11 @@ export const getMonolitoBase = async (userId: string, cacheTtl?: number) => {
     eventsByProductCode,
     stockOfProductsByMonth,
     eventsOfProductsByMonth,
+    forecastProfiles: forecastProfiles.map((p) => ({
+      ...p,
+      current: p.id == forecastProfileId,
+    })),
   };
 
-  return {
-    data: transformedData,
-    events,
-    eventsByProductCode,
-  };
+  return transformedData;
 };

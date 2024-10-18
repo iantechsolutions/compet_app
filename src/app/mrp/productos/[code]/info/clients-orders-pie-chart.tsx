@@ -7,7 +7,7 @@ type Order = {
   quantity: number;
 };
 
-export default function ClientsOrdersQuantityPieChart({ orders, clientsByCode }: { orders: Order[]; clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['data']['clientsByCode']>; }) {
+export default function ClientsOrdersQuantityPieChart({ orders, clientsByCode }: { orders: Order[]; clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['clientsByCode']>; }) {
   const data: [string, string | number][] = [["Clientes", "Cantidad adquirida"]];
 
   for (const order of orders) {

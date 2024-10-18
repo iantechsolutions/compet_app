@@ -227,13 +227,11 @@ export const dbRouter = createTRPCRouter({
       forecastProfile = nullProfile;
     }
 
-    const data = (
-      await cachedAsyncFetch(
-        `monolito-base-${session?.user.id ?? ""}`,
-        defaultCacheTtl,
-        async () => await getMonolitoBase(session?.user.id ?? ""),
-      )
-    ).data;
+    const data = await cachedAsyncFetch(
+      `monolito-base-${session?.user.id ?? ""}`,
+      defaultCacheTtl,
+      async () => await getMonolitoBase(session?.user.id ?? ""),
+    );
     const forecastData = await queryForecastData(forecastProfile, data);
     return forecastData;
   }),
@@ -269,13 +267,11 @@ export const dbRouter = createTRPCRouter({
       forecastProfile = nullProfile;
     }
 
-    const data = (
-      await cachedAsyncFetch(
-        `monolito-base-${session?.user.id ?? ""}`,
-        defaultCacheTtl,
-        async () => await getMonolitoBase(session?.user.id ?? ""),
-      )
-    ).data;
+    const data = await cachedAsyncFetch(
+      `monolito-base-${session?.user.id ?? ""}`,
+      defaultCacheTtl,
+      async () => await getMonolitoBase(session?.user.id ?? ""),
+    );
     const forecastData = await queryForecastData(forecastProfile, data);
 
     return {
@@ -334,41 +330,38 @@ export const dbRouter = createTRPCRouter({
       const monolitoShallow: PartialExcept<
         typeof monolito,
         [
-          "data.products",
-          "data.products.events",
-          "data.forecastData",
-          "data.budgets",
-          "data.budgetsById",
-          "data.eventsByProductCode",
-          "data.eventsOfProductsByMonth",
-          "data.events",
-          "data.sold",
-          "data.clients",
-          "data.ordersByOrderNumber",
-          "data.orderProductsByOrderNumber",
-          "data.orderProductsByProductCode",
-          "data.clientsByCode",
-          "data.assemblyById",
-          "data.productsByCode",
-          "data.providersByCode",
-          "data.crm_clients",
-          "data.productImportsById",
-          "data.orderProductsById",
-          "data.importsById",
-          "data.providers",
-          "data.budget_products",
-          "events",
-          "eventsByProductCode",
+          "products",
+          "products.events",
           "forecastData",
+          "budgets",
+          "budgetsById",
+          "eventsByProductCode",
+          "eventsOfProductsByMonth",
+          "events",
+          "sold",
+          "clients",
+          "ordersByOrderNumber",
+          "orderProductsByOrderNumber",
+          "orderProductsByProductCode",
+          "clientsByCode",
+          "assemblyById",
+          "productsByCode",
+          "providersByCode",
+          "crm_clients",
+          "productImportsById",
+          "orderProductsById",
+          "importsById",
+          "providers",
+          "budget_products",
         ]
       > = {
         ...monolito,
       };
 
       if (input.data.products === undefined) {
-        monolitoShallow.data.products = undefined;
+        monolitoShallow.products = undefined;
       } else {
-        monolitoShallow.data.products = monolito.data.products.map((v) => {
+        monolitoShallow.products = monolito.products.map((v) => {
           const prodShallow = { ...v };
           if (!input.data.products?.events) {
             prodShallow.events = undefined;
@@ -391,83 +384,83 @@ export const dbRouter = createTRPCRouter({
       }
 
       if (!input.data.budgetsById) {
-        monolitoShallow.data.budgetsById = undefined;
+        monolitoShallow.budgetsById = undefined;
       }
 
       if (!input.data.sold) {
-        monolitoShallow.data.sold = undefined;
+        monolitoShallow.sold = undefined;
       }
 
       if (!input.data.clients) {
-        monolitoShallow.data.clients = undefined;
+        monolitoShallow.clients = undefined;
       }
 
       if (!input.data.budgets) {
-        monolitoShallow.data.budgets = undefined;
+        monolitoShallow.budgets = undefined;
       }
 
       if (!input.data.events) {
-        monolitoShallow.data.events = undefined;
+        monolitoShallow.events = undefined;
       }
 
       if (!input.data.orderProductsById) {
-        monolitoShallow.data.orderProductsById = undefined;
+        monolitoShallow.orderProductsById = undefined;
       }
 
       if (!input.data.productImportsById) {
-        monolitoShallow.data.productImportsById = undefined;
+        monolitoShallow.productImportsById = undefined;
       }
 
       if (!input.data.budget_products) {
-        monolitoShallow.data.budget_products = undefined;
+        monolitoShallow.budget_products = undefined;
       }
 
       if (!input.data.providers) {
-        monolitoShallow.data.providers = undefined;
+        monolitoShallow.providers = undefined;
       }
 
       if (!input.data.clientsByCode) {
-        monolitoShallow.data.clientsByCode = undefined;
+        monolitoShallow.clientsByCode = undefined;
       }
 
       if (!input.data.importsById) {
-        monolitoShallow.data.importsById = undefined;
+        monolitoShallow.importsById = undefined;
       }
 
       if (!input.data.assemblyById) {
-        monolitoShallow.data.assemblyById = undefined;
+        monolitoShallow.assemblyById = undefined;
       }
 
       if (!input.data.productsByCode) {
-        monolitoShallow.data.productsByCode = undefined;
+        monolitoShallow.productsByCode = undefined;
       }
 
       if (!input.data.eventsByProductCode) {
-        monolitoShallow.data.eventsByProductCode = undefined;
+        monolitoShallow.eventsByProductCode = undefined;
       }
 
       if (!input.data.crm_clients) {
-        monolitoShallow.data.crm_clients = undefined;
+        monolitoShallow.crm_clients = undefined;
       }
 
       if (!input.data.eventsOfProductsByMonth) {
-        monolitoShallow.data.eventsOfProductsByMonth = undefined;
+        monolitoShallow.eventsOfProductsByMonth = undefined;
       }
 
       if (!input.data.ordersByOrderNumber) {
-        monolitoShallow.data.ordersByOrderNumber = undefined;
+        monolitoShallow.ordersByOrderNumber = undefined;
       }
 
       if (!input.data.orderProductsByProductCode) {
-        monolitoShallow.data.orderProductsByProductCode = undefined;
+        monolitoShallow.orderProductsByProductCode = undefined;
       }
 
       if (!input.data.providersByCode) {
-        monolitoShallow.data.providersByCode = undefined;
+        monolitoShallow.providersByCode = undefined;
       }
 
       if (!input.data.orderProductsByOrderNumber) {
-        monolitoShallow.data.orderProductsByOrderNumber = undefined;
+        monolitoShallow.orderProductsByOrderNumber = undefined;
       }
 
       if (!input.events) {
@@ -498,7 +491,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.providers;
+    ).providers;
   }),
   getMAssemblyById: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -508,7 +501,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.assemblyById;
+    ).assemblyById;
   }),
   getMBudgetProducts: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -518,7 +511,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.budget_products;
+    ).budget_products;
   }),
   getMBudgetsById: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -528,7 +521,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.budgetsById;
+    ).budgetsById;
   }),
   getMCrmClients: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -538,7 +531,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.crm_clients;
+    ).crm_clients;
   }),
   getMBudgets: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -548,7 +541,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.budgets;
+    ).budgets;
   }),
   getMSold: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -558,7 +551,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.sold;
+    ).sold;
   }),
   getMClients: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -568,7 +561,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.clients;
+    ).clients;
   }),
   getMProductsDefault: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -578,7 +571,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.products;
+    ).products;
     return res.map((v) => {
       const k = { ...v };
       k.supplies = undefined;
@@ -596,7 +589,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.products;
+    ).products;
     return res.map((v) => {
       const k = { ...v };
       k.supplies = undefined;
@@ -613,7 +606,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.products;
+    ).products;
     return res.map((v) => {
       const k = { ...v };
       k.suppliesOf = undefined;
@@ -630,7 +623,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.providersByCode;
+    ).providersByCode;
   }),
   getMOrderProductsById: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -640,7 +633,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.orderProductsById;
+    ).orderProductsById;
   }),
   getMOrdersByOrderNumber: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -650,7 +643,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.ordersByOrderNumber;
+    ).ordersByOrderNumber;
   }),
   getMOrderProductsByProductCode: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -660,7 +653,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.orderProductsByProductCode;
+    ).orderProductsByProductCode;
   }),
   getMOrderProductsByOrderNumber: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -670,7 +663,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.orderProductsByOrderNumber;
+    ).orderProductsByOrderNumber;
   }),
   getMProductImportsById: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -680,7 +673,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.productImportsById;
+    ).productImportsById;
   }),
   getMImportsById: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -690,7 +683,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.importsById;
+    ).importsById;
   }),
   getMClientsByCode: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -700,7 +693,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.clientsByCode;
+    ).clientsByCode;
   }),
   getMProductsByCode: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -710,7 +703,7 @@ export const dbRouter = createTRPCRouter({
         defaultCacheTtl,
         async () => await getMonolitoBase(session?.user.id ?? ""),
       )
-    ).data.productsByCode;
+    ).productsByCode;
   }),
   getMonolitoUncached: protectedProcedure.mutation(async () => {
     const session = await getServerAuthSession();
@@ -728,6 +721,6 @@ type PartialExcept<T, U extends string[]> = {
   [K in keyof T as K extends U[number] ? never : K]: K extends string ? PartialExcept<T[K], NestedKeys<K, U>> : T[K];
 };
 
-export type MonolitoProduct = NonNullable<RouterOutputs["db"]["getMonolito"]["data"]["products"]>[0];
-export type MonolitoProductById = NonNullable<NonNullable<RouterOutputs["db"]["getMonolito"]["data"]["productsByCode"]>["get"]>;
+export type MonolitoProduct = NonNullable<RouterOutputs["db"]["getMonolito"]["products"]>[0];
+export type MonolitoProductById = NonNullable<NonNullable<RouterOutputs["db"]["getMonolito"]["productsByCode"]>["get"]>;
 export type Monolito = RouterOutputs["db"]["getMonolitoUncached"];

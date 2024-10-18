@@ -106,8 +106,8 @@ export default function OrderPage(props: { user?: NavUserData }) {
 function EventRenderer(props: {
   event: ProductEvent | null;
   top: boolean;
-  productsByCode: NonNullable<RouterOutputs['db']['getMonolito']['data']['productsByCode']>;
-  assemblyById: NonNullable<RouterOutputs['db']['getMonolito']['data']['assemblyById']>;
+  productsByCode: NonNullable<RouterOutputs['db']['getMonolito']['productsByCode']>;
+  assemblyById: NonNullable<RouterOutputs['db']['getMonolito']['assemblyById']>;
 }) {
   const event = props.event;
   if (!event) {

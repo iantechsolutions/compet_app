@@ -8,13 +8,12 @@ import type { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import type { RouterOutputs } from "~/trpc/shared";
 import ForecastDialogForm from "./forecast-dialog-form";
 import ForecastProfileCard from "./forecast-profile-card";
 import type { ForecastProfile } from "~/mrp_data/transform_mrp_data";
 import { useMRPData } from "~/components/mrp-data-provider";
 
-export default function ForecastSettingsPage(props: { user?: NavUserData; forecastProfiles: RouterOutputs["forecast"]["listProfiles"] }) {
+export default function ForecastSettingsPage(props: { user?: NavUserData }) {
   const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isApplyingProfile } = api.forecast.applyProfile.useMutation();
   const { mutateAsync: applyNullProfile, isLoading: isApplyingNullProfile } = api.forecast.applyNullProfile.useMutation();
@@ -25,7 +24,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
   const { data: clientsByCode, isLoading: isLoadingClients } = api.db.getMClientsByCode.useQuery();
   const { data: forecastProfile, isLoading: isLoadingFP } = api.db.getForecastProfile.useQuery();
   const isLoadingData = isLoadingBP || isLoadingBID || isLoadingCRMC || isLoadingClients || isLoadingFP; */
-  const { forecastData, clientsByCode, crm_clients, budgetsById, budget_products } = useMRPData();
+  const { forecastData, clientsByCode, crm_clients, budgetsById, budget_products, forecastProfiles } = useMRPData();
 
   const isApplying = isApplyingProfile || isApplyingNullProfile;
   const router = useRouter();
@@ -115,7 +114,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData; foreca
               )}
             </div>
           </li>
-          {props.forecastProfiles.map((profile) => {
+          {forecastProfiles.map((profile) => {
             return (
               <ForecastProfileCard
                 key={profile.id}

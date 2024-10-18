@@ -168,7 +168,7 @@ function ListRow({ index, style }: { index: number; style: React.CSSProperties }
 }
 
 const listRowContext = createContext<{
-  filteredProducts: NonNullable<RouterOutputs['db']['getMonolito']['data']['products']>;
+  filteredProducts: NonNullable<RouterOutputs['db']['getMonolito']['products']>;
   months: string[];
 }>({
   filteredProducts: [],

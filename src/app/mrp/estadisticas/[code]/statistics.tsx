@@ -184,11 +184,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
   // necesita budgetsById, crm_clients y budget_products del monolito data
   const crmMonolito = {
-    data: {
-      budget_products: budget_products,
-      budgetsById: budgetsById,
-      crm_clients: crm_clients
-    }
+    budget_products: budget_products,
+    budgetsById: budgetsById,
+    crm_clients: crm_clients
   };
 
   const product = products.find((p) => p.code === productCode) ?? null;

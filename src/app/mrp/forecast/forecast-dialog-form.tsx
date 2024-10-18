@@ -15,10 +15,10 @@ import type { RouterOutputs } from "~/trpc/shared";
 export default function ForecastDialogForm(props: {
   disabled?: boolean;
   children: React.ReactNode;
-  budget_products: NonNullable<RouterOutputs['db']['getMonolito']['data']['budget_products']>;
-  budgetsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['budgetsById']>;
-  crm_clients: NonNullable<RouterOutputs['db']['getMonolito']['data']['crm_clients']>;
-  clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['data']['clientsByCode']>;
+  budget_products: NonNullable<RouterOutputs['db']['getMonolito']['budget_products']>;
+  budgetsById: NonNullable<RouterOutputs['db']['getMonolito']['budgetsById']>;
+  crm_clients: NonNullable<RouterOutputs['db']['getMonolito']['crm_clients']>;
+  clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['clientsByCode']>;
 }) {
   const { mutateAsync: createProfile, isLoading: isLoading1 } = api.forecast.createProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isLoading2 } = api.forecast.applyProfile.useMutation();

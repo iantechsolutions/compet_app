@@ -20,7 +20,7 @@ import type { RouterOutputs } from "~/trpc/shared";
 export function SelectCRMClients(props: { setSelected: (selected: Set<string>) => void; unselected: Set<string>; monolito: RouterOutputs['db']['getMonolito']; }) {
   const setSelected = props.setSelected;
   const unselected = props.unselected;
-  const data = props.monolito.data;
+  const data = props.monolito;
 
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();

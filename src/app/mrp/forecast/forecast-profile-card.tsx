@@ -9,14 +9,14 @@ import { formatStock } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/shared";
 
 export default function ForecastProfileCard(props: {
-  profile: RouterOutputs["forecast"]["listProfiles"][number];
+  profile: RouterOutputs["db"]["getMonolito"]['forecastProfiles'][number];
   handleDeleteProfile: (id: number) => void;
   handleApplyProfile: (id: number) => void;
   isLoading: boolean;
-  budget_products: NonNullable<RouterOutputs['db']['getMonolito']['data']['budget_products']>;
-  budgetsById: NonNullable<RouterOutputs['db']['getMonolito']['data']['budgetsById']>;
-  crm_clients: NonNullable<RouterOutputs['db']['getMonolito']['data']['crm_clients']>;
-  clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['data']['clientsByCode']>;
+  budget_products: NonNullable<RouterOutputs['db']['getMonolito']['budget_products']>;
+  budgetsById: NonNullable<RouterOutputs['db']['getMonolito']['budgetsById']>;
+  crm_clients: NonNullable<RouterOutputs['db']['getMonolito']['crm_clients']>;
+  clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['clientsByCode']>;
 }) {
   const profile = props.profile;
 
