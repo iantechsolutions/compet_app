@@ -1,15 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { queryBaseMRPData } from "~/serverfunctions";
+import type { queryBaseMRPData } from "~/serverfunctions";
 import { excludeProducts } from "../constants";
-import {
-  type ForecastProfile,
-  listAllEventsWithSupplyEvents,
-  listProductsEvents,
-  mapData,
-  type ProductEvent,
-} from "~/mrp_data/transform_mrp_data";
-import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
+import { type ForecastProfile, type ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { getUserSetting } from "~/lib/settings";
 import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
@@ -21,6 +14,9 @@ import { Resend } from "resend";
 import { NotificacionMailTemplate } from "~/components/email-notification-template";
 import { env } from "process";
 import { isSemiElaborate } from "~/lib/utils";
+import { cachedAsyncFetch } from "~/lib/cache";
+import { getMonolitoByForecastId } from "~/lib/monolito";
+import { defaultCacheTtl } from "~/scripts/lib/database";
 
 // import { excludeProducts } from 'constants';
 
@@ -38,12 +34,12 @@ export interface ProductWithDependencies {
   cuts: ProductWithDependenciesCut[] | null;
 }
 
-async function getConsumoForProductList(
+function getConsumoForProductList(
   listado: ProductWithDependencies[],
   yaConsumidoLoop: Map<string, number>,
   yaConsumidoCuts: Map<number, number>,
   curatedProducts: Awaited<ReturnType<typeof queryBaseMRPData>>["products"],
-  eventsByProductCode: Map<string, ProductEvent<number | Date>[]>,
+  eventsByProductCode: Record<string, ProductEvent<number | Date>[]>,
   // ya están ordenados de menor a mayor measure
   productCuts: Map<string, InferSelectModel<typeof schema.cuts>[]>,
 ) {
@@ -54,16 +50,14 @@ async function getConsumoForProductList(
   listadoCopy = listado.filter((product) => !excludeProducts.some((excludedProduct) => product.productCode.startsWith(excludedProduct)));
   // console.log(listadoCopy.map((v) => v.productCode));
 
-  const promises = listadoCopy.map(async (prod, index) => {
+  listadoCopy.map((prod, index) => {
     const pcKey = prod.productCode;
     const pcValue = prod.consumed;
     const product = curatedProducts.find((product) => product.code === prod.productCode);
 
     if (product !== undefined) {
       const semielaborado = isSemiElaborate(product);
-      const expiredNotImportEvents = (eventsByProductCode.get(product.code) ?? []).filter(
-        (event) => event.expired && event.type !== "import",
-      );
+      const expiredNotImportEvents = (eventsByProductCode[product.code] ?? []).filter((event) => event.expired && event.type !== "import");
 
       const commited = expiredNotImportEvents.reduce((sum, event) => sum + event.quantity, 0);
       const consumedTotal = commited + (yaConsumidoLoop.get(pcKey) ?? 0);
@@ -124,7 +118,7 @@ async function getConsumoForProductList(
         if (pcValueFaltante > 0) {
           // hay supplies
           if (product.supplies && product.supplies.length > 0) {
-            const cons = await getConsumoForProductList(
+            const cons = getConsumoForProductList(
               product.supplies.map((supply) => ({
                 arrivalDate: null,
                 consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
@@ -211,7 +205,7 @@ async function getConsumoForProductList(
         if (pcValue > product.stock - consumedTotal) {
           // hay supplies
           if (product.supplies && product.supplies.length > 0) {
-            const cons = await getConsumoForProductList(
+            const cons = getConsumoForProductList(
               product.supplies.map((supply) => ({
                 arrivalDate: null,
                 consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
@@ -291,7 +285,6 @@ async function getConsumoForProductList(
     } */
   });
 
-  await Promise.all(promises);
   return listadoCopy;
 }
 
@@ -317,11 +310,7 @@ export const consultRouter = createTRPCRouter({
         cuts: [],
       }));
 
-      const [data, session, allCuts] = await Promise.all([
-        await queryBaseMRPData(),
-        await getServerAuthSession(),
-        await db.query.cuts.findMany(),
-      ]);
+      const [session, allCuts] = await Promise.all([await getServerAuthSession(), await db.query.cuts.findMany()]);
 
       // ordeno por mts o ctd
       allCuts.sort((a, b) => a.measure - b.measure);
@@ -350,20 +339,27 @@ export const consultRouter = createTRPCRouter({
         forecastProfile = nullProfile;
       }
 
-      const forecastData = await queryForecastData(forecastProfile, data);
-      const evolvedData = mapData(data, forecastData);
-      const events = listAllEventsWithSupplyEvents(evolvedData);
-      const eventsByProductCode = listProductsEvents(evolvedData, events);
+      let data;
+      if (forecastProfileId === null) {
+        data = await cachedAsyncFetch(`monolito-fc-null`, defaultCacheTtl, async () => await getMonolitoByForecastId(null));
+      } else {
+        data = await cachedAsyncFetch(
+          `monolito-fc-${forecastProfileId}`,
+          defaultCacheTtl,
+          async () => await getMonolitoByForecastId(forecastProfileId),
+        );
+      }
+
       const curatedProducts = data.products.filter(
         (product) => !excludeProducts.some((excludedProduct) => product.code.startsWith(excludedProduct)),
       );
 
-      const res = await getConsumoForProductList(
+      const res = getConsumoForProductList(
         array,
         new Map<string, number>(),
         new Map<number, number>(),
         curatedProducts,
-        eventsByProductCode,
+        data.eventsByProductCode,
         productCuts,
       );
 

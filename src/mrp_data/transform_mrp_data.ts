@@ -20,8 +20,8 @@ export type ProductEvent<Date> = {
   originalQuantity?: number;
   quantity: number;
   productCode: string;
-  parentEvent?: ProductEvent<Date>;
-  childEvents?: ProductEvent<Date>[];
+  parentEventIndex?: number;
+  childEventsIndexes?: number[];
   level?: number;
   expired: boolean;
   assemblyId?: number;
@@ -313,7 +313,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
             productCode: supply.supply_product_code, // Código del suministro
             quantity: supply.quantity * overflow, // Cantidad por armado por cantidad a armar
             assemblyId: supply.id,
-            parentEvent: event,
+            parentEventIndex: index,
             referenceId: event.referenceId, // Referencia al producto de la orden original
             expired: event.expired,
             isForecast: event.isForecast,
@@ -321,11 +321,15 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
           });
         }
 
-        // Referenciamos el evento original a los nuevos eventos de suministro
-        event.childEvents = newSupplyEvents;
+        // (no) Referenciamos el evento original a los nuevos eventos de suministro
+        event.childEventsIndexes = [];
+        for (let k = 0; k < newSupplyEvents.length; k++) {
+          event.childEventsIndexes.push(index + 1 + k);
+        }
 
         // Agregamos los nuevos eventos de suministro a la lista de eventos
         // ES MUY IMPORTANTE RESPETAR EL ORDEN POR FECHA
+        // Obs: esto no rompe parentEventIndex porque los indices previos se mantienen
         events = [...events.slice(0, index + 1), ...newSupplyEvents, ...events.slice(index + 1)];
       }
 

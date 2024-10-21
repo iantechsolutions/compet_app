@@ -228,9 +228,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
       setLoadingMessage("Esperando al servidor");
       const res = await fetch("/api/data/monolito");
       setLoadingMessage("Descargando datos");
-      const raw = await res.text();
-      setLoadingMessage("Decodificando datos");
-      const serverData = parse(raw) as Monolito;
+      const serverData = await res.json() as Monolito;
       dataReady(serverData);
 
       if (opts?.revalidateMode) {

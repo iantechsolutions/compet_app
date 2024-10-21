@@ -151,6 +151,7 @@ export default function ProductPage() {
                       orderProductsById={orderProductsById}
                       ordersByOrderNumber={ordersByOrderNumber}
                       productImportsById={productImportsById}
+                      indexedEvents={p.events}
                       key={`row:${month}:f_${i}`} event={event} productCode={productCode} nostock />;
                   })}
                   <ForecastSupplyEventsRow
@@ -159,12 +160,14 @@ export default function ProductPage() {
                     ordersByOrderNumber={ordersByOrderNumber}
                     productImportsById={productImportsById}
                     events={p.supplyForecastEvents}
+                    indexedEvents={p.events}
                     month={month} key={`forecast_supply_event_row:${month}`} />
                   {nonForecastEvents.map((event, i) => {
                     return <ProductEventRow importsById={importsById}
                       orderProductsById={orderProductsById}
                       ordersByOrderNumber={ordersByOrderNumber}
                       productImportsById={productImportsById}
+                      indexedEvents={p.events}
                       key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />;
                   })}
                 </Fragment>

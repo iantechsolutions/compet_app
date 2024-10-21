@@ -103,6 +103,9 @@ export async function cacheTask() {
   }
 
   const Cache = (global as unknown as GlobalCache).cache;
+
+  void (await (await getDbInstance()).readAllData(undefined, true));
+
   for (const key of Object.keys(Cache)) {
     if (key.startsWith("monolito-base-")) {
       const id = key.replace("monolito-base-", "");
@@ -118,6 +121,5 @@ export async function cacheTask() {
   await cacheTaskKey(`monolito-fc-null`, Cache, async () => await getMonolitoByForecastId(null));
 
   // await cacheTaskKey(, Cache, async () => await getMonolitoBase());
-  void (await (await getDbInstance()).readAllData(undefined, true));
   console.log("cacheTask finished execution");
 }

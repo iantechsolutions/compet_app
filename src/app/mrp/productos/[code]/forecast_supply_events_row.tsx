@@ -11,6 +11,7 @@ import type { Monolito } from "~/server/api/routers/db";
 
 export function ForecastSupplyEventsRow(props: {
   events: ProductEvent<number>[];
+  indexedEvents: ProductEvent<number>[];
   month: string;
   orderProductsById: NonNullable<Monolito['orderProductsById']>;
   ordersByOrderNumber: NonNullable<Monolito['ordersByOrderNumber']>;
@@ -83,7 +84,7 @@ export function ForecastSupplyEventsRow(props: {
               </TableHeader>
               <TableBody>
                 {props.events.map((event, index) => {
-                  return <ProductEventRow importsById={props.importsById} orderProductsById={props.orderProductsById} ordersByOrderNumber={props.ordersByOrderNumber} productImportsById={props.productImportsById} key={index} event={event} productCode={event.productCode} nobg nodate nostate />;
+                  return <ProductEventRow indexedEvents={props.indexedEvents} importsById={props.importsById} orderProductsById={props.orderProductsById} ordersByOrderNumber={props.ordersByOrderNumber} productImportsById={props.productImportsById} key={index} event={event} productCode={event.productCode} nobg nodate nostate />;
                 })}
               </TableBody>
             </Table>

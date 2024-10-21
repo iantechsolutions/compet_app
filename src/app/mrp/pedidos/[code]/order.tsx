@@ -26,7 +26,9 @@ export default function OrderPage(props: { user?: NavUserData }) {
   const { data: productsByCode, isLoading: isLoadingProd } = api.db.getMProductsByCode.useQuery();
   const { data: assemblyById, isLoading: isLoadingAssembly } = api.db.getMAssemblyById.useQuery();
   const isLoadingData = isLoadingAssembly || isLoadingProd || isLoadingClients || isLoadingOrdProd || isLoadingOrdNum || isLoadingEvts; */
-  const { assemblyById, productsByCode, clientsByCode, orderProductsByOrderNumber, ordersByOrderNumber, eventsByProductCode } = useMRPData();
+  const mrpData = useMRPData();
+  const { assemblyById, productsByCode, clientsByCode, orderProductsByOrderNumber, ordersByOrderNumber, eventsByProductCode } = mrpData;
+  const indexedEvents = mrpData.events ?? [];
 
   const params = useParams<{ code: string }>();
   const orderNumber = decodeURIComponent(params?.code ?? "");
@@ -92,7 +94,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
               </AccordionTrigger>
               <AccordionContent className="px-3">
                 {eventsByOrderProductId.get(orderProduct.id)?.map((event, i) => {
-                  return <EventRenderer key={i} event={event} top assemblyById={assemblyById} productsByCode={productsByCode} />;
+                  return <EventRenderer indexedEvents={indexedEvents} key={i} event={event} top assemblyById={assemblyById} productsByCode={productsByCode} />;
                 })}
               </AccordionContent>
             </AccordionItem>
@@ -105,6 +107,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
 
 function EventRenderer(props: {
   event: ProductEvent<number> | null;
+  indexedEvents: ProductEvent<number>[];
   top: boolean;
   productsByCode: NonNullable<Monolito['productsByCode']>;
   assemblyById: NonNullable<Monolito['assemblyById']>;
@@ -119,8 +122,9 @@ function EventRenderer(props: {
 
   if (!product) return <></>;
 
+  const parentEvent = event.parentEventIndex !== undefined ? props.indexedEvents[event.parentEventIndex]! : undefined;
   const assembliesQuantities =
-    event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+    parentEvent?.originalQuantity && parentEvent.originalQuantity - parentEvent.quantity;
 
   const productRef = useProductRef();
 
@@ -151,11 +155,11 @@ function EventRenderer(props: {
           )}
         </p>
       )}
-      {(event.childEvents?.length ?? 0) > 0 && <p className="mt-2 font-semibold">Necesidad de insumos:</p>}
-      {event.childEvents?.map((childEvent, i) => {
+      {(event.childEventsIndexes?.length ?? 0) > 0 && <p className="mt-2 font-semibold">Necesidad de insumos:</p>}
+      {event.childEventsIndexes?.map((childEventIndex, i) => {
         return (
           <div className="m-3" key={i}>
-            <EventRenderer event={childEvent} top={false} assemblyById={props.assemblyById} productsByCode={props.productsByCode} />
+            <EventRenderer indexedEvents={props.indexedEvents} event={props.indexedEvents[childEventIndex]!} top={false} assemblyById={props.assemblyById} productsByCode={props.productsByCode} />
           </div>
         );
       })}

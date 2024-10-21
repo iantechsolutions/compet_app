@@ -75,7 +75,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const { data: budgets, isLoading: isLoadingBudgets } = api.db.getMBudgets.useQuery();
   const { data: sold, isLoading: isLoadingSold } = api.db.getMSold.useQuery();
   const loading = isLoadingClients || isLoadingSold || isLoadingBudgets || isLoadingCRMC || isLoadingBID || isLoadingProv || isLoadingProds || isLoadingEvts || isLoadingAssemb || isLoadingBP; */
-  const { providers, eventsByProductCode, products, assemblyById, budget_products, budgetsById, clients, crm_clients, budgets, sold } = useMRPData();
+  const mrpData = useMRPData();
+  const { providers, eventsByProductCode, products, assemblyById, budget_products, budgetsById, clients, crm_clients, budgets, sold } = mrpData;
+  const indexedEvents = mrpData.events ?? [];
 
   ring2.register();
   const productsByProvider = useMemo(() => {
@@ -254,8 +256,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     );
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
+      const parentEvent = event.parentEventIndex !== undefined ? indexedEvents[event.parentEventIndex]! : undefined;
       const assembliesQuantities =
-        event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+        parentEvent?.originalQuantity && parentEvent.originalQuantity - parentEvent.quantity;
       if (event.assemblyId) {
         const assembly = assemblyById[event.assemblyId];
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
@@ -265,11 +268,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           day = new Date(String(event.date)).toISOString().slice(0, 10);
         }
 
-        const key: [string, string] = [day, event.parentEvent?.productCode ?? ""];
+        const key: [string, string] = [day, parentEvent?.productCode ?? ""];
         const currentAmount = tupleToAmountMap.get(key) ?? 0;
         tupleToAmountMap.set(key, currentAmount + totalConsumptionOnEvent);
-        const currentMotiveAmount = totalMotiveConsumption.get(event.parentEvent?.productCode ?? "") ?? 0;
-        totalMotiveConsumption.set(event.parentEvent?.productCode ?? "", currentMotiveAmount + totalConsumptionOnEvent);
+        const currentMotiveAmount = totalMotiveConsumption.get(parentEvent?.productCode ?? "") ?? 0;
+        totalMotiveConsumption.set(parentEvent?.productCode ?? "", currentMotiveAmount + totalConsumptionOnEvent);
       }
     });
 
@@ -454,8 +457,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     events.forEach((event) => {
       // event.quantity
       if (event.assemblyId) {
+        const parentEvent = event.parentEventIndex !== undefined ? indexedEvents[event.parentEventIndex]! : undefined;
         const assembliesQuantities =
-          event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+          parentEvent?.originalQuantity && parentEvent.originalQuantity - parentEvent.quantity;
         const assembly = assemblyById[event.assemblyId];
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         let day = "";

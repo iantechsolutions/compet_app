@@ -1,11 +1,9 @@
 /* eslint-disable */
 
-import { stringify } from "flatted";
 import { type NextRequest, NextResponse } from "next/server";
 import { cachedAsyncFetch } from "~/lib/cache";
 import { getMonolitoByForecastId } from "~/lib/monolito";
 import { getUserSetting } from "~/lib/settings";
-import { encodeData } from "~/lib/utils";
 import { defaultCacheTtl } from "~/scripts/lib/database";
 import { getServerAuthSession } from "~/server/auth";
 
@@ -27,7 +25,7 @@ export async function GET(req: NextRequest) {
     data = await cachedAsyncFetch(`monolito-fc-${forecastProfileId}`, defaultCacheTtl, async () => await getMonolitoByForecastId(forecastProfileId));
   }
 
-  return new NextResponse(stringify(data), {
+  return new NextResponse(JSON.stringify(data), {
     headers: {
       "Content-Type": "application/json",
     },
