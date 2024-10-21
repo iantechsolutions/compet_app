@@ -52,7 +52,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   const channel = gloabalMRPChannel!;
 
   async function dataIsUpToDate(data: Monolito): Promise<boolean> {
-    /* const [currentProfile, dataExportInfo] = await Promise.all([
+    const [currentProfile, dataExportInfo] = await Promise.all([
       obtainCurrentProfile(),
       obtainDataExportInfo()
     ]);
@@ -60,8 +60,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     const forecastProfileMismatch = data.forecastData?.forecastProfile?.id != currentProfile?.id;
     const dataExportMismatch = dayjs(data.dataExportDate) != dayjs(dataExportInfo.exportDate);
 
-    return !forecastProfileMismatch && !dataExportMismatch; */
-    return false;
+    return !forecastProfileMismatch && !dataExportMismatch;
   }
 
   function dataReady(data: Monolito) {
@@ -202,7 +201,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
         console.log("Data not found in another tab, searching in cache...");
 
         // Buscar si existe en cache
-        data = await readFromCache<Monolito>(cacheKey);
+        /* data = await readFromCache<Monolito>(cacheKey);
         if (data) {
           setLoadingMessage("Datos encontrados en caché, comprobando validez");
 
@@ -220,7 +219,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
           dataReady(data);
           isInitializingData = false;
           return data;
-        }
+        } */
       }
 
       if (opts?.revalidateMode) {
