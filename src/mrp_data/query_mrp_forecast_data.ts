@@ -2,13 +2,13 @@
 
 import dayjs from "dayjs";
 import { sql } from "drizzle-orm";
-import { OrderProductSold, type OrderSold } from "~/lib/types";
+import { CrmBudget, CrmBudgetProduct, OrderProductSold, type OrderSold } from "~/lib/types";
 import { monthCodeFromDate, monthCodeToDate } from "~/lib/utils";
 import { db } from "~/server/db";
 import { type RawMRPData, queryBaseMRPData } from "./query_mrp_data";
 import type { ForecastProfile } from "./transform_mrp_data";
 
-export type ForecastDataEvent = {
+export type ForecastDataEvent<Date> = {
   type: "sold" | "budget"; // | 'import'
   product_code: string;
   date: Date;
@@ -16,13 +16,22 @@ export type ForecastDataEvent = {
   originalQuantity?: number;
 };
 
-export async function queryForecastData(forecastProfile: ForecastProfile, mrpRawData?: RawMRPData) {
+export async function queryForecastData(
+  forecastProfile: ForecastProfile,
+  mrpRawData?: {
+    budget_products: CrmBudgetProduct[];
+    products_sold: OrderProductSold[];
+    sold: OrderSold[];
+    months: string[];
+    budgetsById: Map<number, CrmBudget>;
+  },
+) {
   const data = mrpRawData ?? (await queryBaseMRPData());
 
   const budgetProducts = data.budget_products;
   const clientInclusionSet = forecastProfile.clientInclusionList ? new Set(forecastProfile.clientInclusionList) : null;
 
-  const events: ForecastDataEvent[] = [
+  const events: ForecastDataEvent<Date>[] = [
     // {
     //     product_code: '01014040 CON AD',
     //     date: new Date(2023, 11, 1),

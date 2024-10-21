@@ -7,15 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~
 import { cn, formatStock } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
 import { ProductEventRow } from "./event_row";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 export function ForecastSupplyEventsRow(props: {
-  events: ProductEvent[];
+  events: ProductEvent<number>[];
   month: string;
-  orderProductsById: NonNullable<RouterOutputs['db']['getMonolito']['orderProductsById']>;
-  ordersByOrderNumber: NonNullable<RouterOutputs['db']['getMonolito']['ordersByOrderNumber']>;
-  productImportsById: NonNullable<RouterOutputs['db']['getMonolito']['productImportsById']>;
-  importsById: NonNullable<RouterOutputs['db']['getMonolito']['importsById']>;
+  orderProductsById: NonNullable<Monolito['orderProductsById']>;
+  ordersByOrderNumber: NonNullable<Monolito['ordersByOrderNumber']>;
+  productImportsById: NonNullable<Monolito['productImportsById']>;
+  importsById: NonNullable<Monolito['importsById']>;
 }) {
   const openId = useId();
 

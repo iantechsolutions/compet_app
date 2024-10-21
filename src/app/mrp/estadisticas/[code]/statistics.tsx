@@ -246,7 +246,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    let events = eventsByProductCode?.get(productCode) ?? [];
+    let events = eventsByProductCode?.[productCode] ?? [];
     let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
     events = events.filter(
@@ -257,7 +257,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const assembliesQuantities =
         event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
       if (event.assemblyId) {
-        const assembly = assemblyById.get(event.assemblyId);
+        const assembly = assemblyById[event.assemblyId];
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
@@ -446,7 +446,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       }
     });
 
-    let events = eventsByProductCode?.get(productCode) ?? [];
+    let events = eventsByProductCode?.[productCode] ?? [];
     events = events.filter(
       (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
     );
@@ -456,7 +456,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       if (event.assemblyId) {
         const assembliesQuantities =
           event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
-        const assembly = assemblyById.get(event.assemblyId);
+        const assembly = assemblyById[event.assemblyId];
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         let day = "";
         if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
@@ -498,7 +498,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       // const longNecesaria = supply.quantity;
       if (dataSemi !== null) {
         const clave = dataSemi.long + " mm";
-        let events = eventsByProductCode?.get(supplyOfCode) ?? [];
+        let events = eventsByProductCode?.[supplyOfCode] ?? [];
         events = events.filter(
           (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
         );

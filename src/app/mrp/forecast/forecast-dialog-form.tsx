@@ -9,16 +9,16 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import type { CrmBudget } from "~/lib/types";
 import { formatStock } from "~/lib/utils";
+import type { Monolito } from "~/server/api/routers/db";
 import { api } from "~/trpc/react";
-import type { RouterOutputs } from "~/trpc/shared";
 
 export default function ForecastDialogForm(props: {
   disabled?: boolean;
   children: React.ReactNode;
-  budget_products: NonNullable<RouterOutputs['db']['getMonolito']['budget_products']>;
-  budgetsById: NonNullable<RouterOutputs['db']['getMonolito']['budgetsById']>;
-  crm_clients: NonNullable<RouterOutputs['db']['getMonolito']['crm_clients']>;
-  clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['clientsByCode']>;
+  budget_products: NonNullable<Monolito['budget_products']>;
+  budgetsById: NonNullable<Monolito['budgetsById']>;
+  crm_clients: NonNullable<Monolito['crm_clients']>;
+  clientsByCode: NonNullable<Monolito['clientsByCode']>;
 }) {
   const { mutateAsync: createProfile, isLoading: isLoading1 } = api.forecast.createProfile.useMutation();
   const { mutateAsync: applyProfile, isLoading: isLoading2 } = api.forecast.applyProfile.useMutation();
@@ -41,7 +41,7 @@ export default function ForecastDialogForm(props: {
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
   for (const budgetProduct of props.budget_products) {
-    const budget = props.budgetsById.get(budgetProduct.budget_id);
+    const budget = props.budgetsById[budgetProduct.budget_id];
 
     if (!budget) continue;
 
@@ -56,7 +56,7 @@ export default function ForecastDialogForm(props: {
 
   const clientsWithBudgets = useMemo(() => {
     return props.crm_clients.filter(
-      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && props.clientsByCode.has(client.tango_code)),
+      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && props.clientsByCode[client.tango_code]),
     );
   }, [props.crm_clients, quantityByClient]);
 

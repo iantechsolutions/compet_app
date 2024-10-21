@@ -15,13 +15,13 @@ import {
 import { Button } from "~/components/ui/button";
 import type { CrmBudget } from "~/lib/types";
 import { formatStock } from "~/lib/utils";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 export function SelectCRMClients(props: {
   setSelected: (selected: Set<string>) => void; unselected: Set<string>; monolito: {
-    budget_products: RouterOutputs['db']['getMonolito']['budget_products'];
-    budgetsById: RouterOutputs['db']['getMonolito']['budgetsById'];
-    crm_clients: RouterOutputs['db']['getMonolito']['crm_clients'];
+    budget_products: Monolito['budget_products'];
+    budgetsById: Monolito['budgetsById'];
+    crm_clients: Monolito['crm_clients'];
   }
 }) {
   const setSelected = props.setSelected;
@@ -31,8 +31,8 @@ export function SelectCRMClients(props: {
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
-  for (const budgetProduct of data.budget_products!) {
-    const budget = data.budgetsById!.get(budgetProduct.budget_id);
+  for (const budgetProduct of data.budget_products) {
+    const budget = data.budgetsById[budgetProduct.budget_id];
     if (!budget) continue;
 
     let qty = quantityByClient.get(budget.client_id) ?? 0;
@@ -44,7 +44,7 @@ export function SelectCRMClients(props: {
     budgetsByClient.set(budget.client_id, budgets);
   }
 
-  const crmClients = data.crm_clients!;
+  const crmClients = data.crm_clients;
 
   const clientsWithBudgets = useMemo(() => {
     return crmClients.filter((client) => quantityByClient.has(client.client_id));

@@ -37,9 +37,9 @@ export default function ProductPage() {
       return null;
     }
 
-    const events = eventsByProductCode?.get(product.code) ?? [];
+    const events = eventsByProductCode?.[product.code] ?? [];
 
-    const dataByMonth = new Map<string, { events: ProductEvent[]; supplyForecastEvents: ProductEvent[] }>();
+    const dataByMonth = new Map<string, { events: ProductEvent<number>[]; supplyForecastEvents: ProductEvent<number>[] }>();
 
     for (const event of events) {
       const month = dayjs(event.date).format("YYYY-MM");
@@ -76,7 +76,7 @@ export default function ProductPage() {
             {product?.providers.map((provider, i) => {
               return (
                 <Badge key={i} variant="secondary" className="mr-2">
-                  {providersByCode?.get(provider.provider_code)?.name ?? provider.provider_code}
+                  {providersByCode?.[provider.provider_code]?.name ?? provider.provider_code}
                 </Badge>
               );
             })}
@@ -121,16 +121,16 @@ export default function ProductPage() {
               // const supplyForecastEventsSum = p.supplyForecastEvents.reduce((acc, e) => acc + e.quantity, 0)
 
               // Variación de stock
-              const stockVariation = product.stock_variation_by_month.get(month) ?? 0;
+              const stockVariation = product.stock_variation_by_month[month] ?? 0;
               // Stock al final del mes
-              const finalStock = product.stock_at.get(month) ?? 0;
+              const finalStock = product.stock_at[month] ?? 0;
               // Stock inicial del mes
               const initialStock = finalStock - stockVariation;
 
               // Usado como forecast (no insumo, facturación y presupuesto)
-              // const usedAsForecast = product.used_as_forecast_quantity_by_month.get(month) ?? 0
-              // const usedAsSoldForecast = product.used_as_forecast_type_sold_quantity_by_month.get(month) ?? 0
-              // const usedAsBudgetForecast = product.used_as_forecast_type_budget_quantity_by_month.get(month) ?? 0
+              // const usedAsForecast = product.used_as_forecast_quantity_by_month[month) ?? 0
+              // const usedAsSoldForecast = product.used_as_forecast_type_sold_quantity_by_month[month) ?? 0
+              // const usedAsBudgetForecast = product.used_as_forecast_type_budget_quantity_by_month[month) ?? 0
 
               return (
                 <Fragment key={i}>

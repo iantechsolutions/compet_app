@@ -6,17 +6,17 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import type { CrmBudget } from "~/lib/types";
 import { formatStock } from "~/lib/utils";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 export default function ForecastProfileCard(props: {
-  profile: RouterOutputs["db"]["getMonolito"]['forecastProfiles'][number];
+  profile: Monolito['forecastProfiles'][number];
   handleDeleteProfile: (id: number) => void;
   handleApplyProfile: (id: number) => void;
   isLoading: boolean;
-  budget_products: NonNullable<RouterOutputs['db']['getMonolito']['budget_products']>;
-  budgetsById: NonNullable<RouterOutputs['db']['getMonolito']['budgetsById']>;
-  crm_clients: NonNullable<RouterOutputs['db']['getMonolito']['crm_clients']>;
-  clientsByCode: NonNullable<RouterOutputs['db']['getMonolito']['clientsByCode']>;
+  budget_products: NonNullable<Monolito['budget_products']>;
+  budgetsById: NonNullable<Monolito['budgetsById']>;
+  crm_clients: NonNullable<Monolito['crm_clients']>;
+  clientsByCode: NonNullable<Monolito['clientsByCode']>;
 }) {
   const profile = props.profile;
 
@@ -24,7 +24,7 @@ export default function ForecastProfileCard(props: {
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
   for (const budgetProduct of props.budget_products) {
-    const budget = props.budgetsById.get(budgetProduct.budget_id);
+    const budget = props.budgetsById[budgetProduct.budget_id];
     if (!budget) continue;
 
     let qty = quantityByClient.get(budget.client_id) ?? 0;
@@ -38,7 +38,7 @@ export default function ForecastProfileCard(props: {
 
   const clientsWithBudgets = useMemo(() => {
     return props.crm_clients.filter(
-      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && props.clientsByCode.has(client.tango_code)),
+      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && props.clientsByCode[client.tango_code]),
     );
   }, [props.crm_clients, quantityByClient]);
 

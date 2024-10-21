@@ -3,17 +3,16 @@
 
 import { Loader2Icon } from "lucide-react";
 import { createContext, useContext, useState } from "react";
-import { readFromCache, saveToCache } from "~/lib/cache-store";
+import { saveToCache } from "~/lib/cache-store";
 import { useOnMounted } from "~/lib/hooks";
-import { decodeData } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Button } from "./ui/button";
-import { Mutex } from 'async-mutex';
 
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import { Monolito } from "~/server/api/routers/db";
 import { usePathname } from "next/navigation";
+import { parse } from "flatted";
 dayjs.locale("es");
 
 async function sleep(ms: number): Promise<void> {
@@ -231,7 +230,7 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
       setLoadingMessage("Descargando datos");
       const raw = await res.text();
       setLoadingMessage("Decodificando datos");
-      const serverData = decodeData<Monolito>(raw);
+      const serverData = parse(raw) as Monolito;
       dataReady(serverData);
 
       if (opts?.revalidateMode) {

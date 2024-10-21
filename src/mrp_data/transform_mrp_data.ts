@@ -12,7 +12,7 @@ import { Client, Import, Order, OrderProduct, Product, ProductAssembly, ProductI
 
 export type ProductEventType = "import" | "order" | "supply" | "forecast";
 
-export type ProductEvent = {
+export type ProductEvent<Date> = {
   type: ProductEventType;
   forecastType?: "sold" | "budget"; // | 'import'
   referenceId: number;
@@ -20,8 +20,8 @@ export type ProductEvent = {
   originalQuantity?: number;
   quantity: number;
   productCode: string;
-  parentEvent?: ProductEvent;
-  childEvents?: ProductEvent[];
+  parentEvent?: ProductEvent<Date>;
+  childEvents?: ProductEvent<Date>[];
   level?: number;
   expired: boolean;
   assemblyId?: number;
@@ -46,7 +46,7 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
 
   // product_id: { month_code: number }
 
-  const eventsOfProductsByMonth = new Map<string, Map<string, ProductEvent[]>>();
+  const eventsOfProductsByMonth = new Map<string, Map<string, ProductEvent<Date>[]>>();
   for (const product of data.products) {
     eventsOfProductsByMonth.set(product.code, eventsOfProductByMonth(eventsByProductCode.get(product.code)!, months));
   }
@@ -190,7 +190,7 @@ export type MRPProduct = MRPData["products"][number];
 
 // Generamos una lista de eventos generales ordenados por fecha
 export function listAllEvents(data: MappedData) {
-  const events: ProductEvent[] = [];
+  const events: ProductEvent<Date>[] = [];
 
   const today = dayjs().startOf("day").toDate();
 
@@ -254,7 +254,7 @@ export function listAllEvents(data: MappedData) {
 // en estos casos se asocia al pedido la materia prima necesaria para armar el producto
 // debería usarse posteriormente a mapData (supplies!)
 export function listAllEventsWithSupplyEvents(data: MappedData) {
-  let events: ProductEvent[] = [...listAllEvents(data)];
+  let events: ProductEvent<Date>[] = [...listAllEvents(data)];
 
   const stockOfProductTmp = new Map<string, number>();
 
@@ -301,7 +301,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
         event.quantity -= overflow;
 
         // Nuevos eventos de summistro
-        const newSupplyEvents: ProductEvent[] = [];
+        const newSupplyEvents: ProductEvent<Date>[] = [];
 
         // Por cada producto que se necesita para armar el producto
         for (const supply of product.supplies ?? []) {
@@ -342,8 +342,8 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
   return events;
 }
 
-export function listProductsEvents(data: MappedData, events: ProductEvent[]) {
-  const eventsByProductCode = new Map<string, ProductEvent[]>();
+export function listProductsEvents(data: MappedData, events: ProductEvent<Date>[]) {
+  const eventsByProductCode = new Map<string, ProductEvent<Date>[]>();
 
   for (const product of data.products) {
     eventsByProductCode.set(product.code, []);
@@ -358,7 +358,7 @@ export function listProductsEvents(data: MappedData, events: ProductEvent[]) {
   return eventsByProductCode;
 }
 
-export function stockOfProductByMonth(initialStock: number, productEvents: ProductEvent[], months: string[]) {
+export function stockOfProductByMonth(initialStock: number, productEvents: ProductEvent<Date | number>[], months: string[]) {
   const stockByMonth = new Map<string, number>();
 
   let stock = initialStock;
@@ -376,14 +376,14 @@ export function stockOfProductByMonth(initialStock: number, productEvents: Produ
     }
   }
 
-  const eventsByMonth = new Map<string, ProductEvent[]>();
+  const eventsByMonth = new Map<string, ProductEvent<Date | number>[]>();
 
   for (const month of months) {
     eventsByMonth.set(month, []);
   }
 
   for (const event of eventFromToday) {
-    const monthCode = monthCodeFromDate(event.date);
+    const monthCode = monthCodeFromDate(typeof event.date === "number" ? new Date(event.date) : event.date);
     eventsByMonth.get(monthCode)?.push(event);
   }
 
@@ -407,11 +407,11 @@ export function stockOfProductByMonth(initialStock: number, productEvents: Produ
   return stockByMonth;
 }
 
-export function eventsOfProductByMonth(productEvents: ProductEvent[], months: string[]) {
-  const eventsByMonth = new Map<string, ProductEvent[]>();
+export function eventsOfProductByMonth<K>(productEvents: ProductEvent<K>[], months: string[]) {
+  const eventsByMonth = new Map<string, ProductEvent<K>[]>();
 
   for (const event of productEvents) {
-    const monthCode = monthCodeFromDate(event.date);
+    const monthCode = monthCodeFromDate(new Date(event.date as unknown as number | Date));
     eventsByMonth.set(monthCode, [...(eventsByMonth.get(monthCode) ?? []), event]);
   }
 

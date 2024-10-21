@@ -15,10 +15,10 @@ export default function ProductInfoPage() {
   const isLoading = isLoadingClients || isLoadingOrdNum || isLoadingOrdProd; */
 
   const orders = useMemo(() => {
-    const orderProducts = orderProductsByProductCode?.get(product.code) ?? [];
+    const orderProducts = orderProductsByProductCode?.[product.code] ?? [];
 
     return orderProducts.map((orderProduct) => {
-      const order = ordersByOrderNumber?.get(orderProduct.order_number);
+      const order = ordersByOrderNumber?.[orderProduct.order_number];
       return {
         ...orderProduct,
         order,

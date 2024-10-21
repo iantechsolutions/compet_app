@@ -9,7 +9,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { useShortcut } from "~/lib/hooks";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 export type Filters = {
   search: string;
@@ -22,8 +22,8 @@ export function FiltersDialog(props: {
   initialFilters: Filters;
   onApply: (filters: Filters) => void;
   number: number;
-  products: NonNullable<RouterOutputs['db']['getMonolito']['products']>;
-  providers: NonNullable<RouterOutputs['db']['getMonolito']['providers']>;
+  products: NonNullable<Monolito['products']>;
+  providers: NonNullable<Monolito['providers']>;
 }) {
   const products = props.products;
   const [filters, setFilters] = useState<Filters>(props.initialFilters);
@@ -141,9 +141,9 @@ function ProviderRow(props: {
   style: React.CSSProperties;
   value: Set<string>;
   onChange: (providers: Set<string>) => void;
-  monolito: RouterOutputs['db']['getMonolito'];
+  monolito: Monolito;
 }) {
-  const providers = props.monolito.providers!;
+  const providers = props.monolito.providers;
   const provider = providers[props.index]!;
 
   const labelId = "label-" + provider.code;
@@ -188,8 +188,8 @@ function ProviderRow(props: {
 function ProvidersFilter(props: {
   value: Set<string>;
   onChange: (providers: Set<string>) => void;
-  products: NonNullable<RouterOutputs['db']['getMonolito']['products']>;
-  providers: NonNullable<RouterOutputs['db']['getMonolito']['providers']>;
+  products: NonNullable<Monolito['products']>;
+  providers: NonNullable<Monolito['providers']>;
 }) {
   const providers = props.providers;
   const products = props.products;

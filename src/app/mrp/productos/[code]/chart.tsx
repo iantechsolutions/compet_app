@@ -13,7 +13,7 @@ export function ProductEventsChart(props: { product: MonolitoProduct; months: st
       name: "Importaciones",
       type: "column",
       data: props.months.map((month) => {
-        return props.product.imported_quantity_by_month.get(month) ?? 0;
+        return props.product.imported_quantity_by_month[month] ?? 0;
       }),
       // data: [44, 55, 41, 67, 22, 43, 21, 41, 56, 27, 43]
     },
@@ -21,7 +21,7 @@ export function ProductEventsChart(props: { product: MonolitoProduct; months: st
       name: "Pedidos",
       type: "column",
       data: props.months.map((month) => {
-        return props.product.ordered_quantity_by_month.get(month) ?? 0;
+        return props.product.ordered_quantity_by_month[month] ?? 0;
       }),
       // data: [23, 11, 22, 27, 13, 22, 37, 21, 44, 22, 30]
     },
@@ -29,7 +29,7 @@ export function ProductEventsChart(props: { product: MonolitoProduct; months: st
       name: "Armados",
       type: "column",
       data: props.months.map((month) => {
-        return props.product.used_as_supply_quantity_by_month.get(month) ?? 0;
+        return props.product.used_as_supply_quantity_by_month[month] ?? 0;
       }),
       // data: [23, 11, 22, 27, 13, 22, 37, 21, 44, 22, 30]
     },
@@ -37,7 +37,7 @@ export function ProductEventsChart(props: { product: MonolitoProduct; months: st
       name: "Stock",
       type: "line",
       data: props.months.map((month) => {
-        return props.product.stock_at.get(month) ?? 0;
+        return props.product.stock_at[month] ?? 0;
       }),
       // data: [30, 25, 36, 30, 45, 35, 64, 52, 59, 36, 39]
     },
@@ -45,7 +45,7 @@ export function ProductEventsChart(props: { product: MonolitoProduct; months: st
       name: "Forecast",
       type: "column",
       data: props.months.map((month) => {
-        return props.product.used_as_forecast_quantity_by_month.get(month) ?? 0;
+        return props.product.used_as_forecast_quantity_by_month[month] ?? 0;
       }),
       // data: [23, 11, 22, 27, 13, 22, 37, 21, 44, 22, 30]
     },

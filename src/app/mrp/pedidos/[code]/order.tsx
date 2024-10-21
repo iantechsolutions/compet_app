@@ -11,7 +11,7 @@ import { Title } from "~/components/title";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
 import { cn, formatStockWithDecimals } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 function useProductRef() {
   const params = useSearchParams();
@@ -32,7 +32,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
   const orderNumber = decodeURIComponent(params?.code ?? "");
   const productRef = useProductRef();
 
-  const order = ordersByOrderNumber?.get(orderNumber);
+  const order = ordersByOrderNumber?.[orderNumber];
   if (!order) {
     return (
       <AppLayout title={<h1>Error 404</h1>} user={props?.user} sidenav={<AppSidenav />}>
@@ -42,12 +42,12 @@ export default function OrderPage(props: { user?: NavUserData }) {
     );
   }
 
-  const orderProducts = orderProductsByOrderNumber?.get(orderNumber) ?? [];
+  const orderProducts = orderProductsByOrderNumber?.[orderNumber] ?? [];
 
-  const eventsByOrderProductId = new Map<number, ProductEvent[]>();
+  const eventsByOrderProductId = new Map<number, ProductEvent<number>[]>();
 
   for (const orderProduct of orderProducts) {
-    let events = eventsByProductCode?.get(orderProduct.product_code) ?? [];
+    let events = eventsByProductCode?.[orderProduct.product_code] ?? [];
 
     events = events.filter((event) => event.referenceId === orderProduct.id);
 
@@ -56,7 +56,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
     }
   }
 
-  const client = clientsByCode?.get(order.client_code);
+  const client = clientsByCode?.[order.client_code];
   console.log(eventsByOrderProductId);
 
   return (
@@ -70,7 +70,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
       </div>
       <Accordion type="single" collapsible className="w-full">
         {orderProducts.map((orderProduct) => {
-          const product = productsByCode?.get(orderProduct.product_code);
+          const product = productsByCode?.[orderProduct.product_code];
 
           if (!product) return <></>;
 
@@ -104,18 +104,18 @@ export default function OrderPage(props: { user?: NavUserData }) {
 }
 
 function EventRenderer(props: {
-  event: ProductEvent | null;
+  event: ProductEvent<number> | null;
   top: boolean;
-  productsByCode: NonNullable<RouterOutputs['db']['getMonolito']['productsByCode']>;
-  assemblyById: NonNullable<RouterOutputs['db']['getMonolito']['assemblyById']>;
+  productsByCode: NonNullable<Monolito['productsByCode']>;
+  assemblyById: NonNullable<Monolito['assemblyById']>;
 }) {
   const event = props.event;
   if (!event) {
     return <></>;
   }
 
-  const product = props.productsByCode.get(event.productCode);
-  const assembly = event.assemblyId && props.assemblyById.get(event.assemblyId);
+  const product = props.productsByCode[event.productCode];
+  const assembly = event.assemblyId && props.assemblyById[event.assemblyId];
 
   if (!product) return <></>;
 

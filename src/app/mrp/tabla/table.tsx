@@ -18,7 +18,7 @@ import { api } from "~/trpc/react";
 import { RouterOutputs } from "~/trpc/shared";
 import { Button } from "~/components/ui/button";
 import { Loader2Icon } from "lucide-react";
-import { MonolitoProduct } from "~/server/api/routers/db";
+import { Monolito, MonolitoProduct } from "~/server/api/routers/db";
 import { useMRPContext, useMRPData } from "~/components/mrp-data-provider";
 
 function ProductInfoCell({ product }: { product: MonolitoProduct }) {
@@ -82,7 +82,7 @@ function StockCommitedCells({ product }: { product: MonolitoProduct }) {
 }
 
 function StockAtMonthCell({ product, month }: { product: MonolitoProduct; month: string }) {
-  const stock = product.stock_at.get(month) ?? 0;
+  const stock = product.stock_at[month] ?? 0;
 
   const [currentFocus, setFocus] = useFocus();
 
@@ -102,12 +102,12 @@ function StockAtMonthCell({ product, month }: { product: MonolitoProduct; month:
       {formatStock(stock)}
 
       <div className="absolute bottom-1 left-1 flex gap-1">
-        {product.imported_quantity_by_month.get(month)! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-green-600"></div>}
-        {product.ordered_quantity_by_month.get(month)! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-blue-600"></div>}
-        {product.used_as_supply_quantity_by_month.get(month)! > 0 && (
+        {product.imported_quantity_by_month[month]! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-green-600"></div>}
+        {product.ordered_quantity_by_month[month]! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-blue-600"></div>}
+        {product.used_as_supply_quantity_by_month[month]! > 0 && (
           <div className="h-[4px] w-[16px] rounded-full bg-black dark:bg-white"></div>
         )}
-        {Math.floor(product.used_as_forecast_quantity_by_month.get(month)!) > 0 && (
+        {Math.floor(product.used_as_forecast_quantity_by_month[month]!) > 0 && (
           <div className="h-[4px] w-[16px] rounded-full bg-orange-900 opacity-25"></div>
         )}
       </div>
@@ -168,7 +168,7 @@ function ListRow({ index, style }: { index: number; style: React.CSSProperties }
 }
 
 const listRowContext = createContext<{
-  filteredProducts: NonNullable<RouterOutputs['db']['getMonolito']['products']>;
+  filteredProducts: NonNullable<Monolito['products']>;
   months: string[];
 }>({
   filteredProducts: [],
@@ -194,7 +194,7 @@ export function Table(props: { user?: NavUserData }) {
         if (product.stock != 0) return true;
 
         for (const m of months!) {
-          const stock = product.stock_at.get(m);
+          const stock = product.stock_at[m];
           if (stock != 0) return true;
         }
 
@@ -221,7 +221,7 @@ export function Table(props: { user?: NavUserData }) {
       });
     }
     if (filters.suppliesOf) {
-      const product = productsByCode!.get(filters.suppliesOf);
+      const product = productsByCode![filters.suppliesOf];
       if (!product) {
         return [];
       }
@@ -229,7 +229,7 @@ export function Table(props: { user?: NavUserData }) {
       let index = 0;
 
       while (index < supplies.length) {
-        const prod = productsByCode!.get(supplies[index] ?? "");
+        const prod = productsByCode![supplies[index] ?? ""];
         console.log(prod);
         if (prod?.supplies) {
           supplies = supplies.concat(prod.supplies.map((p) => p.supply_product_code));

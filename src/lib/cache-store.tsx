@@ -1,4 +1,4 @@
-import { decodeData, encodeData } from "./utils";
+import { parse, stringify } from "flatted";
 
 async function getCache() {
   return caches.open("data");
@@ -7,7 +7,7 @@ async function getCache() {
 export async function saveToCache<T>(key: string, value: T) {
   const cache = await getCache();
 
-  const response = new Response(encodeData(value), {});
+  const response = new Response(stringify(value), {});
 
   return cache.put("/" + key, response);
 }
@@ -24,7 +24,7 @@ export async function readFromCache<T>(key: string): Promise<T | null> {
 
     const text = await response.text();
 
-    return decodeData<T>(text);
+    return parse(text) as T;
   }
   catch (e) {
     console.log("aca");

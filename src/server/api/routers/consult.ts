@@ -43,7 +43,7 @@ async function getConsumoForProductList(
   yaConsumidoLoop: Map<string, number>,
   yaConsumidoCuts: Map<number, number>,
   curatedProducts: Awaited<ReturnType<typeof queryBaseMRPData>>["products"],
-  eventsByProductCode: Map<string, ProductEvent[]>,
+  eventsByProductCode: Map<string, ProductEvent<number | Date>[]>,
   // ya están ordenados de menor a mayor measure
   productCuts: Map<string, InferSelectModel<typeof schema.cuts>[]>,
 ) {

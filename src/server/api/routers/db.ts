@@ -2,6 +2,7 @@ import { getDbInstance } from "~/scripts/lib/instance";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { z } from "zod";
 import type {
+  ChangeTypeOfKeys,
   CrmBudget,
   CrmBudgetProduct,
   Order,
@@ -12,7 +13,6 @@ import type {
   ProductProvider,
   ProductStockCommited,
 } from "~/lib/types";
-import { queryForecastData } from "~/mrp_data/query_mrp_forecast_data";
 import { getUserSetting } from "~/lib/settings";
 import { type ForecastProfile } from "~/mrp_data/transform_mrp_data";
 import { db } from "~/server/db";
@@ -232,8 +232,8 @@ export const dbRouter = createTRPCRouter({
       defaultCacheTtl,
       async () => await getMonolitoBase(session?.user.id ?? ""),
     );
-    const forecastData = await queryForecastData(forecastProfile, data);
-    return forecastData;
+
+    return data.forecastData;
   }),
   getForecastProfile: protectedProcedure.query(async () => {
     const session = await getServerAuthSession();
@@ -272,7 +272,7 @@ export const dbRouter = createTRPCRouter({
       defaultCacheTtl,
       async () => await getMonolitoBase(session?.user.id ?? ""),
     );
-    const forecastData = await queryForecastData(forecastProfile, data);
+    const forecastData = data.forecastData;
 
     return {
       forecastData,
@@ -721,6 +721,7 @@ type PartialExcept<T, U extends string[]> = {
   [K in keyof T as K extends U[number] ? never : K]: K extends string ? PartialExcept<T[K], NestedKeys<K, U>> : T[K];
 };
 
-export type MonolitoProduct = NonNullable<RouterOutputs["db"]["getMonolito"]["products"]>[0];
 export type MonolitoProductById = NonNullable<NonNullable<RouterOutputs["db"]["getMonolito"]["productsByCode"]>["get"]>;
-export type Monolito = RouterOutputs["db"]["getMonolitoUncached"];
+export type MonolitoRaw = RouterOutputs["db"]["getMonolitoUncached"];
+export type Monolito = ChangeTypeOfKeys<ChangeTypeOfKeys<MonolitoRaw, Date, unknown>, Map<unknown, unknown>, unknown>;
+export type MonolitoProduct = NonNullable<Monolito["products"]>[0];

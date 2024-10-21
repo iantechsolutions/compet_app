@@ -4,27 +4,27 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/h
 import { TableCell, TableRow } from "~/components/ui/table";
 import { cn, formatStock } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 export function ProductEventRow(props: {
-  event: ProductEvent;
+  event: ProductEvent<number>;
   productCode: string;
   nobg?: boolean;
   nostate?: boolean;
   nodate?: boolean;
   nostock?: boolean;
-  orderProductsById: NonNullable<RouterOutputs['db']['getMonolito']['orderProductsById']>;
-  ordersByOrderNumber: NonNullable<RouterOutputs['db']['getMonolito']['ordersByOrderNumber']>;
-  productImportsById: NonNullable<RouterOutputs['db']['getMonolito']['productImportsById']>;
-  importsById: NonNullable<RouterOutputs['db']['getMonolito']['importsById']>;
+  orderProductsById: NonNullable<Monolito['orderProductsById']>;
+  ordersByOrderNumber: NonNullable<Monolito['ordersByOrderNumber']>;
+  productImportsById: NonNullable<Monolito['productImportsById']>;
+  importsById: NonNullable<Monolito['importsById']>;
 }) {
   const { event, productCode } = props;
 
-  const orderProducts = event.type === "order" ? props.orderProductsById.get(event.referenceId) : undefined;
-  const order = orderProducts ? props.ordersByOrderNumber.get(orderProducts.order_number) : undefined;
+  const orderProducts = event.type === "order" ? props.orderProductsById[event.referenceId] : undefined;
+  const order = orderProducts ? props.ordersByOrderNumber[orderProducts.order_number] : undefined;
 
-  const productImport = event.type === "import" ? props.productImportsById.get(event.referenceId) : undefined;
-  const importation = productImport ? props.importsById.get(productImport.import_id) : undefined;
+  const productImport = event.type === "import" ? props.productImportsById[event.referenceId] : undefined;
+  const importation = productImport ? props.importsById[productImport.import_id] : undefined;
 
   const hasChildren = (event.childEvents?.length ?? 0) > 0;
 
@@ -135,7 +135,7 @@ export function ProductEventRow(props: {
     orderNumber = order?.order_number;
   }
   if (event.type === "supply") {
-    orderNumber = props.orderProductsById.get(event.referenceId)?.order_number;
+    orderNumber = props.orderProductsById[event.referenceId]?.order_number;
   }
   if (event.type === "forecast") {
     orderNumber = "forecast";
@@ -224,7 +224,7 @@ export function ProductEventRow(props: {
   );
 }
 
-function EventHoverCard(props: { event: ProductEvent; children: React.ReactNode }) {
+function EventHoverCard(props: { event: ProductEvent<number>; children: React.ReactNode }) {
   const event = props.event;
   const childEvents = event.childEvents ?? [];
   const parentEvent = event.parentEvent;

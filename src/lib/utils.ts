@@ -7,6 +7,7 @@ import { nanoid } from "nanoid";
 import { twMerge } from "tailwind-merge";
 import { z } from "zod";
 import { MRPData, MRPProduct } from "~/mrp_data/transform_mrp_data";
+import { MonolitoProduct } from "~/server/api/routers/db";
 import { queryBaseMRPData } from "~/serverfunctions";
 
 export function cn(...inputs: ClassValue[]) {
@@ -114,9 +115,9 @@ export function decodeData<T>(data: string): T {
 }
 
 //que devuelva longitud de corte
-export function isSemiElaborate(prod: Awaited<ReturnType<typeof queryBaseMRPData>>["products"][0] | undefined): {
+export function isSemiElaborate(prod?: { additional_description: string; supplies?: NonNullable<MonolitoProduct["supplies"]>[0][] }): {
   long: number;
-  supply: NonNullable<MRPData["products"][number]["supplies"]>[0];
+  supply: NonNullable<MonolitoProduct["supplies"]>[0];
 } | null {
   let long = null;
   let supply = null;
