@@ -5,9 +5,9 @@ type ApexOptions = Props["options"];
 import dayjs from "dayjs";
 import Chart from "react-apexcharts";
 import { formatStock } from "~/lib/utils";
-import type { ProductDataProduct } from "~/server/api/routers/db";
+import type { MonolitoProduct } from "~/server/api/routers/db";
 
-export function ProductEventsChart(props: { product: ProductDataProduct; months: string[] }) {
+export function ProductEventsChart(props: { product: MonolitoProduct; months: string[] }) {
   const series = [
     {
       name: "Importaciones",

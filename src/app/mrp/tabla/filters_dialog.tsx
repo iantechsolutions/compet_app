@@ -9,7 +9,6 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { useShortcut } from "~/lib/hooks";
-import type { TableDataTypeProduct } from "~/server/api/routers/db";
 import type { RouterOutputs } from "~/trpc/shared";
 
 export type Filters = {
@@ -23,7 +22,7 @@ export function FiltersDialog(props: {
   initialFilters: Filters;
   onApply: (filters: Filters) => void;
   number: number;
-  products: TableDataTypeProduct[];
+  products: NonNullable<RouterOutputs['db']['getMonolito']['products']>;
   providers: NonNullable<RouterOutputs['db']['getMonolito']['providers']>;
 }) {
   const products = props.products;
@@ -189,7 +188,7 @@ function ProviderRow(props: {
 function ProvidersFilter(props: {
   value: Set<string>;
   onChange: (providers: Set<string>) => void;
-  products: TableDataTypeProduct[];
+  products: NonNullable<RouterOutputs['db']['getMonolito']['products']>;
   providers: NonNullable<RouterOutputs['db']['getMonolito']['providers']>;
 }) {
   const providers = props.providers;

@@ -8,7 +8,7 @@ import { db } from "~/server/db";
 import { type RawMRPData, queryBaseMRPData } from "./query_mrp_data";
 import type { ForecastProfile } from "./transform_mrp_data";
 
-export type ForecastDataEvent<Date> = {
+export type ForecastDataEvent = {
   type: "sold" | "budget"; // | 'import'
   product_code: string;
   date: Date;
@@ -22,7 +22,7 @@ export async function queryForecastData(forecastProfile: ForecastProfile, mrpRaw
   const budgetProducts = data.budget_products;
   const clientInclusionSet = forecastProfile.clientInclusionList ? new Set(forecastProfile.clientInclusionList) : null;
 
-  const events: ForecastDataEvent<Date>[] = [
+  const events: ForecastDataEvent[] = [
     // {
     //     product_code: '01014040 CON AD',
     //     date: new Date(2023, 11, 1),

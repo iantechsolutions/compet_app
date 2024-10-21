@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { nullProfile } from "~/lib/nullForecastProfile";
 import { getUserSetting, setUserSetting } from "~/lib/settings";
-import { createId } from "~/lib/utils";
 import { db } from "~/server/db";
 import * as schema from "~/server/db/schema";
 import { createTRPCRouter, protectedProcedure } from "../trpc";

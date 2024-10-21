@@ -2,10 +2,10 @@
 /* eslint-disable */
 
 import { createContext, useContext, useState } from "react";
-import { TableDataTypeProduct } from "~/server/api/routers/db";
+import { MonolitoProduct } from "~/server/api/routers/db";
 
 export type FocusedContext = {
-  product: TableDataTypeProduct;
+  product: MonolitoProduct;
   month?: string;
   elementId: string;
 } | null;

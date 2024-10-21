@@ -1,18 +1,17 @@
 "use client";
 import dayjs from "dayjs";
-import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import AppSidenav from "~/components/app-sidenav";
 import AppLayout from "~/components/applayout";
+import { useMRPData } from "~/components/mrp-data-provider";
 import type { NavUserData } from "~/components/nav-user-section";
 import { Title } from "~/components/title";
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
-import { Button } from "~/components/ui/button";
-import { cn, decodeData, formatStockWithDecimals } from "~/lib/utils";
+import { cn, formatStockWithDecimals } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
-import type { PedidoData } from "~/server/api/routers/db";
-import { api } from "~/trpc/react";
+import type { RouterOutputs } from "~/trpc/shared";
 
 function useProductRef() {
   const params = useSearchParams();
@@ -27,21 +26,14 @@ export default function OrderPage(props: { user?: NavUserData }) {
   const { data: productsByCode, isLoading: isLoadingProd } = api.db.getMProductsByCode.useQuery();
   const { data: assemblyById, isLoading: isLoadingAssembly } = api.db.getMAssemblyById.useQuery();
   const isLoadingData = isLoadingAssembly || isLoadingProd || isLoadingClients || isLoadingOrdProd || isLoadingOrdNum || isLoadingEvts; */
-  const params = useParams<{ code: string }>();
-  const { data: dataRaw, isLoading } = api.db.getPedidoData.useQuery({ order_number: params.code });
+  const { assemblyById, productsByCode, clientsByCode, orderProductsByOrderNumber, ordersByOrderNumber, eventsByProductCode } = useMRPData();
 
+  const params = useParams<{ code: string }>();
   const orderNumber = decodeURIComponent(params?.code ?? "");
   const productRef = useProductRef();
 
-  if (isLoading) {
-    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-      <Button variant="secondary" disabled>
-        <Loader2Icon className="mr-2 animate-spin" /> Cargando datos
-      </Button>
-    </div>;
-  }
-
-  if (!dataRaw) {
+  const order = ordersByOrderNumber?.get(orderNumber);
+  if (!order) {
     return (
       <AppLayout title={<h1>Error 404</h1>} user={props?.user} sidenav={<AppSidenav />}>
         <Title>No se encontró el pedido</Title>
@@ -50,13 +42,22 @@ export default function OrderPage(props: { user?: NavUserData }) {
     );
   }
 
-  const data = decodeData<PedidoData>(dataRaw);
-  const orderProducts = data.orderProducts;
-  const eventsByOrderProductId = data.eventsByOrderProductId;
-  const client = data.client;
-  const order = data.order;
+  const orderProducts = orderProductsByOrderNumber?.get(orderNumber) ?? [];
 
-  console.log('eventsByOrderProductId', eventsByOrderProductId);
+  const eventsByOrderProductId = new Map<number, ProductEvent[]>();
+
+  for (const orderProduct of orderProducts) {
+    let events = eventsByProductCode?.get(orderProduct.product_code) ?? [];
+
+    events = events.filter((event) => event.referenceId === orderProduct.id);
+
+    if (events) {
+      eventsByOrderProductId.set(orderProduct.id, events);
+    }
+  }
+
+  const client = clientsByCode?.get(order.client_code);
+  console.log(eventsByOrderProductId);
 
   return (
     <AppLayout title={<h1>Pedido N°: {order.order_number}</h1>} user={props?.user} sidenav={<AppSidenav />}>
@@ -69,8 +70,9 @@ export default function OrderPage(props: { user?: NavUserData }) {
       </div>
       <Accordion type="single" collapsible className="w-full">
         {orderProducts.map((orderProduct) => {
-          const product = orderProduct;
-          if (product.product_code === '') return <></>;
+          const product = productsByCode?.get(orderProduct.product_code);
+
+          if (!product) return <></>;
 
           return (
             <AccordionItem value={orderProduct.id.toString()} key={orderProduct.id} id={`accordion-${orderProduct.id}`}>
@@ -90,7 +92,7 @@ export default function OrderPage(props: { user?: NavUserData }) {
               </AccordionTrigger>
               <AccordionContent className="px-3">
                 {eventsByOrderProductId.get(orderProduct.id)?.map((event, i) => {
-                  return <EventRenderer key={i} event={event} top />;
+                  return <EventRenderer key={i} event={event} top assemblyById={assemblyById} productsByCode={productsByCode} />;
                 })}
               </AccordionContent>
             </AccordionItem>
@@ -104,13 +106,16 @@ export default function OrderPage(props: { user?: NavUserData }) {
 function EventRenderer(props: {
   event: ProductEvent | null;
   top: boolean;
+  productsByCode: NonNullable<RouterOutputs['db']['getMonolito']['productsByCode']>;
+  assemblyById: NonNullable<RouterOutputs['db']['getMonolito']['assemblyById']>;
 }) {
   const event = props.event;
   if (!event) {
     return <></>;
   }
 
-  const product = { code: event.productCode };
+  const product = props.productsByCode.get(event.productCode);
+  const assembly = event.assemblyId && props.assemblyById.get(event.assemblyId);
 
   if (!product) return <></>;
 
@@ -138,17 +143,19 @@ function EventRenderer(props: {
       {event.originalQuantity == undefined && (
         <p className="font-medium">
           Cantidad: {formatStockWithDecimals(event.quantity)}
-          <span className="text-xs">
-            {" "}
-            (armado: {formatStockWithDecimals(event.assemblyQuantity!)} * {formatStockWithDecimals(assembliesQuantities ?? 1)})
-          </span>
+          {assembly && (
+            <span className="text-xs">
+              {" "}
+              (armado: {formatStockWithDecimals(assembly.quantity)} * {formatStockWithDecimals(assembliesQuantities ?? 1)})
+            </span>
+          )}
         </p>
       )}
       {(event.childEvents?.length ?? 0) > 0 && <p className="mt-2 font-semibold">Necesidad de insumos:</p>}
       {event.childEvents?.map((childEvent, i) => {
         return (
           <div className="m-3" key={i}>
-            <EventRenderer event={childEvent} top={false} />
+            <EventRenderer event={childEvent} top={false} assemblyById={props.assemblyById} productsByCode={props.productsByCode} />
           </div>
         );
       })}

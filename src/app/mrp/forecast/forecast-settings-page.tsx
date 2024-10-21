@@ -11,7 +11,7 @@ import { api } from "~/trpc/react";
 import ForecastDialogForm from "./forecast-dialog-form";
 import ForecastProfileCard from "./forecast-profile-card";
 import type { ForecastProfile } from "~/mrp_data/transform_mrp_data";
-import { useMRPData } from "~/components/mrp-data-provider";
+import { useMRPData, useMRPInvalidateAndReloadData } from "~/components/mrp-data-provider";
 
 export default function ForecastSettingsPage(props: { user?: NavUserData }) {
   const { mutateAsync: deleteProfile } = api.forecast.deleteProfile.useMutation();
@@ -28,10 +28,12 @@ export default function ForecastSettingsPage(props: { user?: NavUserData }) {
 
   const isApplying = isApplyingProfile || isApplyingNullProfile;
   const router = useRouter();
+  const invalidateAndReloadData = useMRPInvalidateAndReloadData();
 
   async function handleDeleteProfile(id: number) {
     if (confirm("¿Estás seguro de que quieres eliminar este perfil?")) {
       void deleteProfile({ id }).finally(() => {
+        invalidateAndReloadData(true);
         router.refresh();
       });
     }
@@ -40,6 +42,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData }) {
   function handleApplyProfile(id: number) {
     void applyProfile({ id })
       .then(() => {
+        invalidateAndReloadData(true);
         console.log("Applied profile!", id);
       })
       .finally(() => {
@@ -50,6 +53,7 @@ export default function ForecastSettingsPage(props: { user?: NavUserData }) {
   function handleApplyNullProfile() {
     void applyNullProfile()
       .then(() => {
+        invalidateAndReloadData(true);
         console.log("Applied null profile!");
       })
       .finally(() => {

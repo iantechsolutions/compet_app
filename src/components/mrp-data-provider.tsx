@@ -22,13 +22,13 @@ async function sleep(ms: number): Promise<void> {
 
 type CTXType = {
   data: Monolito | null;
-  invalidateAndReloadData: () => void;
+  invalidateAndReloadData: (showMessage: boolean) => void;
   isUpdating: boolean;
   loadingMessage: string;
 };
 
 export const dataProviderContext = createContext<CTXType | null>(null);
-const cacheKey = "monolito-data";
+const cacheKey = "monolito-data-x";
 
 let gloabalMRPChannel: BroadcastChannel | null = null;
 let isInitializingData = false;
@@ -45,9 +45,10 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   const { mutateAsync: obtainDataExportInfo } = api.mrpData.obtainDataExportInfo.useMutation();
   const { mutateAsync: getMonolito } = api.db.getMonolitoUncached.useMutation();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdatingWithMessage, setIsUpdatingWithMessage] = useState(false);
   const pathname = usePathname();
 
-  const mustCache = !((pathname.includes("/mrp/productos/") && !pathname.includes("/info")) || pathname.includes("/mrp/pedidos/") || pathname.includes("/mrp/tabla"));
+  const mustCache = /* !(pathname.includes("/mrp/productos/") || pathname.includes("/mrp/pedidos/")) */ true;
   const channel = gloabalMRPChannel!;
 
   async function dataIsUpToDate(data: Monolito): Promise<boolean> {
@@ -115,8 +116,14 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
     });
   }
 
-  async function invalidateAndReloadData() {
+  async function invalidateAndReloadData(showMessage: boolean) {
     setIsUpdating(true);
+
+    if (showMessage) {
+      setIsUpdatingWithMessage(true);
+      setLoadingMessage("Recargando datos");
+    }
+
     try {
       await initializeData({ revalidateMode: true });
     } catch (error) {
@@ -125,6 +132,10 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
       window.location.reload();
     } finally {
       setIsUpdating(false);
+    }
+
+    if (showMessage) {
+      setIsUpdatingWithMessage(false);
     }
   }
 
@@ -242,7 +253,8 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
   useOnMounted(() => {
     if (mustCache) {
       void initializeData();
-      (async () => {
+      // si en un futuro podemos meter un check de validez iría acá
+      /* (async () => {
         const expectedWait = 1000 * 60 * 2;
         while (true) {
           const start = Date.now();
@@ -257,11 +269,11 @@ export default function MRPDataProvider(props: { children: React.ReactNode }) {
             await sleep(timeDif);
           }
         }
-      })();
+      })(); */
     }
   });
 
-  if (!data && mustCache)
+  if (!data && mustCache || isUpdatingWithMessage)
     return (
       <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
         <Button variant="secondary" disabled>

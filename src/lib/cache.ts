@@ -81,6 +81,10 @@ async function cacheTaskKey<T>(key: string, Cache: GlobalCache["cache"], callbac
 
 export function cacheInvalidate(userId: string) {
   const Cache = (global as unknown as GlobalCache).cache;
+  if (!Cache) {
+    return;
+  }
+
   for (const key of Object.keys(Cache)) {
     if (key.endsWith(userId)) {
       Cache[key] = null;

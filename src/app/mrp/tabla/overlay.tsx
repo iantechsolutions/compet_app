@@ -9,10 +9,10 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { useOnScroll } from "~/lib/hooks";
 import { cn, formatStock } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/shared";
-import type { TableDataTypeProduct } from "~/server/api/routers/db";
+import type { MonolitoProduct } from "~/server/api/routers/db";
 
 export function TargetOverlayInfoCard(props: {
-  product: TableDataTypeProduct;
+  product: MonolitoProduct;
   column: string | undefined;
   onClose: () => void;
   productHref: string;
@@ -23,13 +23,13 @@ export function TargetOverlayInfoCard(props: {
 
   const { product, forecastProfile } = props;
 
-  const stock = props.column ? product.stock_at[props.column] : 0;
-  const imported = props.column ? product.imported_quantity_by_month[props.column] : 0;
-  const ordered = props.column ? product.ordered_quantity_by_month[props.column] : 0;
-  const usedAsSupply = props.column ? product.used_as_supply_quantity_by_month[props.column] : 0;
-  // const usedAsForecast = props.column ? product.used_as_forecast_quantity_by_month[props.column] : 0
-  const usedAsForecastSold = props.column ? product.used_as_forecast_type_sold_quantity_by_month[props.column] : 0;
-  const usedAsForecastBudgets = props.column ? product.used_as_forecast_type_budget_quantity_by_month[props.column] : 0;
+  const stock = props.column ? product.stock_at.get(props.column) : 0;
+  const imported = props.column ? product.imported_quantity_by_month.get(props.column) : 0;
+  const ordered = props.column ? product.ordered_quantity_by_month.get(props.column) : 0;
+  const usedAsSupply = props.column ? product.used_as_supply_quantity_by_month.get(props.column) : 0;
+  // const usedAsForecast = props.column ? product.used_as_forecast_quantity_by_month.get(props.column) : 0
+  const usedAsForecastSold = props.column ? product.used_as_forecast_type_sold_quantity_by_month.get(props.column) : 0;
+  const usedAsForecastBudgets = props.column ? product.used_as_forecast_type_budget_quantity_by_month.get(props.column) : 0;
 
   useEffect(() => {
     function listener(e: KeyboardEvent) {
