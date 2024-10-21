@@ -25,9 +25,13 @@ export const getProductByCode = async () => {
 };
 
 export const getMonolitoBase = async (userId: string, cacheTtl?: number) => {
+  const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", userId);
+  return getMonolitoByForecastId(forecastProfileId, cacheTtl);
+};
+
+export const getMonolitoByForecastId = async (forecastProfileId: number | null, cacheTtl?: number) => {
   const data = await queryBaseMRPData(cacheTtl);
 
-  const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", userId);
   const forecastProfiles = await db.query.forecastProfiles.findMany();
 
   let forecastProfile: ForecastProfile | null =

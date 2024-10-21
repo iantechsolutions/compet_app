@@ -1,7 +1,8 @@
 import { Mutex } from "async-mutex";
 import { defaultCacheTtl } from "~/scripts/lib/database";
-import { getMonolitoBase } from "./monolito";
+import { getMonolitoBase, getMonolitoByForecastId } from "./monolito";
 import { getDbInstance } from "~/scripts/lib/instance";
+import { db } from "~/server/db";
 
 type CacheEntry = {
   expiresAt: number;
@@ -59,7 +60,7 @@ async function cacheTaskKey<T>(key: string, Cache: GlobalCache["cache"], callbac
   }
 
   const start = Date.now();
-  if (Cache[key] === undefined) {
+  if (!Cache[key]) {
     Cache[key] = {
       expiresAt: Date.now() + defaultCacheTtl,
       value: await callback(),
@@ -67,7 +68,7 @@ async function cacheTaskKey<T>(key: string, Cache: GlobalCache["cache"], callbac
     };
 
     console.log(`cacheTask: first loaded ${key} in ${Date.now() - start}ms`, process.env.NEXT_RUNTIME);
-  } else if (typeof Cache[key]?.expiresAt === "number" && Date.now() >= Cache[key].expiresAt) {
+  } else {
     await Cache[key].fetchMutex.runExclusive(async () => {
       if (Cache[key]) {
         Cache[key].value = await callback();
@@ -109,6 +110,14 @@ export async function cacheTask() {
     }
   }
 
+  const allForecastProfiles = await db.query.forecastProfiles.findMany();
+  for (const fProfile of allForecastProfiles) {
+    await cacheTaskKey(`monolito-fc-${fProfile.id}`, Cache, async () => await getMonolitoByForecastId(fProfile.id));
+  }
+
+  await cacheTaskKey(`monolito-fc-null`, Cache, async () => await getMonolitoByForecastId(null));
+
   // await cacheTaskKey(, Cache, async () => await getMonolitoBase());
   void (await (await getDbInstance()).readAllData(undefined, true));
+  console.log("cacheTask finished execution");
 }

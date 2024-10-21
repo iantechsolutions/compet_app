@@ -1,10 +1,10 @@
-/* import cron from "node-cron";
+import cron from "node-cron";
 import { cacheTask } from "./lib/cache";
 
-let cronTask: cron.ScheduledTask | null = null; */
+let cronTask: cron.ScheduledTask | null = null;
 
 export async function registerServer() {
-  /* if (cronTask === null) {
+  if (cronTask === null) {
     console.log("Starting cache cron job...");
     await cacheTask();
     cronTask = cron.schedule("0,5,10,15,20,25,30,35,40,45,50,55 * * * *", () => {
@@ -17,5 +17,5 @@ export async function registerServer() {
         }
       })();
     });
-  } */
+  }
 }

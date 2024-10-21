@@ -1,8 +1,11 @@
 /* eslint-disable */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { getMonolitoBase } from "~/lib/monolito";
+import { cachedAsyncFetch } from "~/lib/cache";
+import { getMonolitoBase, getMonolitoByForecastId } from "~/lib/monolito";
+import { getUserSetting } from "~/lib/settings";
 import { encodeData } from "~/lib/utils";
+import { defaultCacheTtl } from "~/scripts/lib/database";
 import { getServerAuthSession } from "~/server/auth";
 
 // export const runtime = "edge";
@@ -15,7 +18,13 @@ export async function GET(req: NextRequest) {
     return new NextResponse(null, { status: 401 });
   }
 
-  const data = await getMonolitoBase(session?.user.id ?? '', 50000);
+  let data;
+  const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", session?.user.id ?? '');
+  if (forecastProfileId === null) {
+    data = await cachedAsyncFetch(`monolito-fc-null`, defaultCacheTtl, async () => await getMonolitoByForecastId(null));
+  } else {
+    data = await cachedAsyncFetch(`monolito-fc-${forecastProfileId}`, defaultCacheTtl, async () => await getMonolitoByForecastId(forecastProfileId));
+  }
 
   return new NextResponse(encodeData(data), {
     headers: {
