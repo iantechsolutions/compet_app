@@ -252,7 +252,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
     events = events.filter(
-      (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type != "import" && new Date(event.date) && new Date(event.date) >= fromDate && new Date(event.date) <= toDate,
     );
     const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
@@ -264,8 +264,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
-        if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
-          day = new Date(String(event.date)).toISOString().slice(0, 10);
+        if (new Date(event.date) instanceof Date && !isNaN(new Date(event.date).getTime())) {
+          day = new Date(event.date).toISOString().slice(0, 10);
         }
 
         const key: [string, string] = [day, parentEvent?.productCode ?? ""];
@@ -284,15 +284,15 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.emission_date)) >= fromDate &&
-        new Date(String(order.emission_date)) <= new Date(String(toDate)),
+        new Date(order.emission_date) >= fromDate &&
+        new Date(order.emission_date) <= toDate,
     );
     sales.forEach((sale) => {
       const order_products = sale.products;
       const product = order_products?.find((order_product) => order_product.product_code === productCode);
       if (product) {
         salesList.push({
-          date: new Date(String(sale.emission_date)).toISOString().slice(0, 10),
+          date: new Date(sale.emission_date).toISOString().slice(0, 10),
           motive: "Venta Directa",
           amount: product.CANTIDAD,
         });
@@ -326,7 +326,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const budgetsMap = new Map<number, number>();
 
     sold.forEach((sale) => {
-      const emDate = new Date(String(sale?.emission_date));
+      const emDate = new Date(sale?.emission_date);
       if (!(emDate instanceof Date) || isNaN(emDate.getTime()) || clientExemptionList?.includes(sale.client_code)) {
         return;
       }
@@ -344,7 +344,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     });
 
     budgets.forEach((budget) => {
-      const bDate = new Date(String(budget.date));
+      const bDate = budget.date ? new Date(budget.date) : null;
       if (!(bDate instanceof Date) || isNaN(bDate.getTime()) || clientExemptionList?.includes(budget.client_id)) {
         return;
       }
@@ -388,8 +388,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.emission_date)) >= fromDate &&
-        new Date(String(order.emission_date)) <= new Date(String(toDate)),
+        new Date(order.emission_date) >= fromDate &&
+        new Date(order.emission_date) <= toDate,
     );
 
     const clientInformation = new Map<string, [number, number]>();
@@ -425,8 +425,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.emission_date)) >= fromDate &&
-        new Date(String(order.emission_date)) <= new Date(String(toDate)),
+        new Date(order.emission_date) >= fromDate &&
+        new Date(order.emission_date) <= toDate,
     );
 
     const validOrderProducts: {
@@ -451,7 +451,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     let events = eventsByProductCode?.[productCode] ?? [];
     events = events.filter(
-      (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type != "import" && new Date(event.date) && new Date(event.date) >= fromDate && new Date(event.date) <= toDate,
     );
 
     events.forEach((event) => {
@@ -463,8 +463,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         const assembly = assemblyById[event.assemblyId];
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         let day = "";
-        if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
-          day = new Date(String(event.date)).toISOString().slice(0, 10);
+        if (new Date(event.date) instanceof Date && !isNaN(new Date(event.date).getTime())) {
+          day = new Date(event.date).toISOString().slice(0, 10);
         }
         validOrderProducts.push({
           product_code: productCode,
@@ -493,9 +493,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   }
 
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
-    const prod = products.find((p) => p.code === productCode);
-    const possibleSuppliesOf = prod?.suppliesOf?.map(x => x.product_code);
+    const prod = products.find((p) => p.code === productCode)!;
+    const possibleSuppliesOf = prod.suppliesOf!.map(x => x.product_code);
     const mapeoConsumo = new Map<string, number>();
+
     possibleSuppliesOf?.map((supplyOfCode) => {
       const semielaborate = products.find((p) => p.code === supplyOfCode);
       const dataSemi = isSemiElaborate(semielaborate);
@@ -504,19 +505,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         const clave = dataSemi.long + " mm";
         let events = eventsByProductCode?.[supplyOfCode] ?? [];
         events = events.filter(
-          (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+          (event) => event.type != "import" && new Date(event.date) && new Date(event.date) >= fromDate && new Date(event.date) <= toDate,
         );
         events.forEach((event) => {
-          console.log("pre", (mapeoConsumo.get(clave) ?? 0))
           mapeoConsumo.set(clave, (event.originalQuantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
-          console.log("post", (mapeoConsumo.get(clave) ?? 0))
         })
-        console.log(events);
       }
-    }
-    )
-    console.log("final")
-    console.log(mapeoConsumo);
+    });
+
     return mapeoConsumo;
   }
 

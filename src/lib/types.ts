@@ -86,7 +86,7 @@ export const productImportSchema = z.object({
   closed: z.boolean(),
   shipping_date: dateZodType,
   national_date: dateZodType,
-  arrival_date: dateZodType,
+  arrival_date: nullableDate,
   national_quantity: z.number().catch(0),
 });
 
@@ -236,5 +236,5 @@ export enum CutUnits {
 export const CutUnitsZEnum = [CutUnits.Meters, CutUnits.Quantity, CutUnits.Kits, CutUnits.Piece] as const;
 
 export type ChangeTypeOfKeys<T extends object, A, B> = {
-  [key in keyof T]: T[key] extends A ? B : (T[key] extends object ? ChangeTypeOfKeys<T[key], A, B> : T[key]);
+  [key in keyof T]: T[key] extends A ? B : T[key] extends object ? ChangeTypeOfKeys<T[key], A, B> : T[key];
 };

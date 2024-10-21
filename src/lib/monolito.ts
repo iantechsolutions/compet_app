@@ -21,7 +21,7 @@ type MappedData = {
     events: ForecastDataEvent<number>[];
   };
   productImports: {
-    arrival_date: number;
+    arrival_date?: number;
     id: number;
     ordered_quantity: number;
     product_code: string;
@@ -226,16 +226,7 @@ export const getMonolitoBase = async (userId: string, cacheTtl?: number) => {
 };
 
 export const getMonolitoByForecastId = async (forecastProfileId: number | null, cacheTtl?: number) => {
-  const rawData = await queryBaseMRPData(cacheTtl);
-  const data = {
-    ...rawData,
-    productImports: rawData.productImports.map((pi) => {
-      return {
-        ...pi,
-        arrival_date: new Date(pi.arrival_date).getTime(),
-      };
-    }),
-  };
+  const data = await queryBaseMRPData(cacheTtl);
 
   const forecastProfiles = await db.query.forecastProfiles.findMany();
 
@@ -325,6 +316,29 @@ export const getMonolitoByForecastId = async (forecastProfileId: number | null, 
       forecastProfile: forecastData.forecastProfile,
       // productSoldAverageMonthlyByCode: Object.fromEntries(forecastData.productSoldAverageMonthlyByCode.entries()),
     },
+
+    sold: data.sold.map((sale) => ({
+      ...sale,
+      emission_date: new Date(sale.emission_date).getTime(),
+    })),
+
+    budgets: data.budgets.map((bd) => ({
+      ...bd,
+      date: bd.date ? new Date(bd.date).getTime() : null,
+    })),
+
+    imports: data.imports.map((bd) => ({
+      ...bd,
+      opening_date: bd.opening_date ? new Date(bd.opening_date).getTime() : null,
+      validity_date: bd.validity_date ? new Date(bd.validity_date).getTime() : null,
+    })),
+
+    productImports: data.productImports.map((pi) => {
+      return {
+        ...pi,
+        arrival_date: pi.arrival_date ? new Date(pi.arrival_date).getTime() : undefined,
+      };
+    }),
 
     productsByCode,
     providersByCode,
@@ -466,8 +480,8 @@ export const getMonolitoByForecastId = async (forecastProfileId: number | null, 
       used_as_forecast_type_budget_quantity_by_month: Object.fromEntries(
         usedAsForecastTypeBudgetQuantityOfProductsByMonth.get(product.code)!.entries(),
       ),
-      events_by_month: eventsOfProductsByMonth[product.code],
-      events: eventsByProductCode[product.code],
+      // events_by_month: eventsOfProductsByMonth[product.code],
+      // events: eventsByProductCode[product.code],
     };
   });
 
@@ -477,7 +491,7 @@ export const getMonolitoByForecastId = async (forecastProfileId: number | null, 
     events,
     eventsByProductCode,
     stockOfProductsByMonth,
-    eventsOfProductsByMonth,
+    // eventsOfProductsByMonth,
     forecastProfiles: forecastProfiles.map((p) => ({
       ...p,
       current: p.id == forecastProfileId,

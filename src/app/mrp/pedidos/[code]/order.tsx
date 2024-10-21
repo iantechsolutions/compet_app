@@ -59,7 +59,6 @@ export default function OrderPage(props: { user?: NavUserData }) {
   }
 
   const client = clientsByCode?.[order.client_code];
-  console.log(eventsByOrderProductId);
 
   return (
     <AppLayout title={<h1>Pedido N°: {order.order_number}</h1>} user={props?.user} sidenav={<AppSidenav />}>

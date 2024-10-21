@@ -287,8 +287,6 @@ export const dbRouter = createTRPCRouter({
             .object({
               products: z
                 .object({
-                  events: z.boolean().default(false),
-                  events_by_month: z.boolean().default(false),
                   supplies: z.boolean().default(false),
                   suppliesOf: z.boolean().default(false),
                 })
@@ -297,7 +295,6 @@ export const dbRouter = createTRPCRouter({
               budgets: z.boolean().default(false),
               events: z.boolean().default(false),
               eventsByProductCode: z.boolean().default(false),
-              eventsOfProductsByMonth: z.boolean().default(false),
               ordersByOrderNumber: z.boolean().default(false),
               orderProductsByProductCode: z.boolean().default(false),
               orderProductsByOrderNumber: z.boolean().default(false),
@@ -363,14 +360,6 @@ export const dbRouter = createTRPCRouter({
       } else {
         monolitoShallow.products = monolito.products.map((v) => {
           const prodShallow = { ...v };
-          if (!input.data.products?.events) {
-            prodShallow.events = undefined;
-          }
-
-          if (!input.data.products?.events_by_month) {
-            prodShallow.events_by_month = undefined;
-          }
-
           if (!input.data.products?.supplies) {
             prodShallow.supplies = undefined;
           }
@@ -441,10 +430,6 @@ export const dbRouter = createTRPCRouter({
 
       if (!input.data.crm_clients) {
         monolitoShallow.crm_clients = undefined;
-      }
-
-      if (!input.data.eventsOfProductsByMonth) {
-        monolitoShallow.eventsOfProductsByMonth = undefined;
       }
 
       if (!input.data.ordersByOrderNumber) {
@@ -576,8 +561,6 @@ export const dbRouter = createTRPCRouter({
       const k = { ...v };
       k.supplies = undefined;
       k.suppliesOf = undefined;
-      k.events = undefined;
-      k.events_by_month = undefined;
       return k;
     });
   }),
@@ -593,8 +576,6 @@ export const dbRouter = createTRPCRouter({
     return res.map((v) => {
       const k = { ...v };
       k.supplies = undefined;
-      k.events = undefined;
-      k.events_by_month = undefined;
       return k;
     });
   }),
@@ -610,8 +591,6 @@ export const dbRouter = createTRPCRouter({
     return res.map((v) => {
       const k = { ...v };
       k.suppliesOf = undefined;
-      k.events = undefined;
-      k.events_by_month = undefined;
       return k;
     });
   }),
