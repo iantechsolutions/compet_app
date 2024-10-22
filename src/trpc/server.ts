@@ -1,6 +1,6 @@
 import "server-only";
 
-import { TRPCClientError, createTRPCProxyClient, loggerLink } from "@trpc/client";
+import { TRPCClientError, createTRPCProxyClient } from "@trpc/client";
 import { callProcedure } from "@trpc/server";
 import { observable } from "@trpc/server/observable";
 import type { TRPCErrorResponse } from "@trpc/server/rpc";

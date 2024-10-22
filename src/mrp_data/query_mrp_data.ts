@@ -1,6 +1,4 @@
 /* eslint-disable */
-import "server-only";
-
 import dayjs from "dayjs";
 import { getSetting } from "~/lib/settings";
 import type {

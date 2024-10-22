@@ -1,4 +1,4 @@
-import { getDbInstance } from "~/scripts/lib/instance";
+import { getDbInstance } from "../../../scripts/lib/instance";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { z } from "zod";
 import type {
@@ -12,19 +12,19 @@ import type {
   ProductImport,
   ProductProvider,
   ProductStockCommited,
-} from "~/lib/types";
-import { getUserSetting } from "~/lib/settings";
-import { type ForecastProfile } from "~/mrp_data/transform_mrp_data";
-import { db } from "~/server/db";
+} from "../../../lib/types";
+import { getUserSetting } from "../../../lib/settings";
+import { type ForecastProfile } from "../../../mrp_data/transform_mrp_data";
+import { db } from "../../../server/db";
 import { eq } from "drizzle-orm";
-import { forecastProfiles } from "~/server/db/schema";
-import { getServerAuthSession } from "~/server/auth";
-import { nullProfile } from "~/lib/nullForecastProfile";
-import { getMonths } from "~/lib/utils";
-import { cachedAsyncFetch } from "~/lib/cache";
-import { defaultCacheTtl } from "~/scripts/lib/database";
-import type { RouterOutputs } from "~/trpc/shared";
-import { getProductByCode, getMonolitoBase } from "~/lib/monolito";
+import { forecastProfiles } from "../../../server/db/schema";
+import { getServerAuthSession } from "../../../server/auth";
+import { nullProfile } from "../../../lib/nullForecastProfile";
+import { getMonths } from "../../../lib/utils";
+import { cachedAsyncFetch } from "../../../lib/cache";
+import { defaultCacheTtl } from "../../../scripts/lib/database";
+import type { RouterOutputs } from "../../../trpc/shared";
+import { getProductByCode, getMonolitoBase } from "../../../lib/monolito";
 
 export const maxDuration = 300;
 

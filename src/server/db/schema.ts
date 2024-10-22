@@ -1,20 +1,7 @@
 import type { AdapterAccount } from "@auth/core/adapters";
 import { relations, sql } from "drizzle-orm";
-import {
-  boolean,
-  index,
-  integer,
-  json,
-  numeric,
-  pgTableCreator,
-  primaryKey,
-  real,
-  serial,
-  text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
-import { createId } from "~/lib/utils";
+import { boolean, index, integer, json, pgTableCreator, primaryKey, real, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { nanoid } from "nanoid";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -147,7 +134,7 @@ export const excelCutsDocs = pgTable("excelCutsDocs", {
   id: varchar("id", { length: 255 })
     .notNull()
     .primaryKey()
-    .$defaultFn(() => createId()),
+    .$defaultFn(() => nanoid()),
   fileName: varchar("fileName", { length: 255 }).notNull(),
   url: varchar("url", { length: 255 }).notNull(),
   uploadAt: timestamp("date", { mode: "date" }).notNull(),

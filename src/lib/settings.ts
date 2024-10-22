@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "~/server/db";
-import { settings, userSettings } from "~/server/db/schema";
+import { db } from "../server/db";
+import { settings, userSettings } from "../server/db/schema";
 import { cacheInvalidate } from "./cache";
 
 export async function getSetting<T>(key: string): Promise<T | null> {

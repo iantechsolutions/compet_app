@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { getSetting } from "~/lib/settings";
+import { getSetting } from "./lib/settings";
 import type {
   CrmBudget,
   CrmBudgetProduct,
@@ -10,8 +10,8 @@ import type {
   ProductImport,
   ProductProvider,
   ProductStockCommited,
-} from "~/lib/types";
-import { decodeData, getMonths } from "~/lib/utils";
+} from "./lib/types";
+import { decodeData, getMonths } from "./lib/utils";
 import { utapi } from "./server/uploadthing";
 import { type DataExport } from "./scripts/lib/database";
 import { getDbInstance } from "./scripts/lib/instance";

@@ -3,12 +3,8 @@
 import { type ClassValue, clsx } from "clsx";
 import dayjs from "dayjs";
 import { parse, stringify } from "flatted";
-import { nanoid } from "nanoid";
 import { twMerge } from "tailwind-merge";
-import { z } from "zod";
-import { MRPData, MRPProduct } from "~/mrp_data/transform_mrp_data";
-import { MonolitoProduct } from "~/server/api/routers/db";
-import { queryBaseMRPData } from "~/serverfunctions";
+import { MonolitoProduct } from "../server/api/routers/db";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -17,10 +13,6 @@ export function cn(...inputs: ClassValue[]) {
 export function nameInitials(name: string) {
   const [firstName, lastName] = name.split(" ");
   return `${firstName?.[0] ?? ""}${lastName ? lastName[0] : ""}`;
-}
-
-export function createId() {
-  return nanoid();
 }
 
 export const topRightAbsoluteOnDesktopClassName = "md:absolute md:top-0 md:right-0 mr-10 mt-10";

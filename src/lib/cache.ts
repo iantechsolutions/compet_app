@@ -1,8 +1,12 @@
 import { Mutex } from "async-mutex";
 import { defaultCacheTtl } from "~/scripts/lib/database";
-import { getMonolitoBase, getMonolitoByForecastId } from "./monolito";
+import type { getMonolitoByForecastId } from "./monolito";
 import { getDbInstance } from "~/scripts/lib/instance";
 import { db } from "~/server/db";
+import { Worker } from "node:worker_threads";
+import type { ForecastProfile } from "~/mrp_data/transform_mrp_data";
+import { nullProfile } from "./nullForecastProfile";
+import { queryBaseMRPData } from "~/serverfunctions";
 
 type CacheEntry = {
   expiresAt: number;
@@ -93,6 +97,37 @@ export function cacheInvalidate(userId: string) {
   }
 }
 
+function runService<T>(workerData: unknown): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker("./src/worker.js", { workerData });
+    worker.on("message", resolve);
+    worker.on("error", reject);
+    worker.on("exit", (code) => {
+      if (code !== 0) reject(new Error(`Worker stopped with exit code ${code}`));
+    });
+  });
+}
+
+async function workerGetMonolitoByForecastId(forecastProfileId: number | null) {
+  const forecastProfiles = await db.query.forecastProfiles.findMany();
+
+  let forecastProfile: ForecastProfile | null =
+    forecastProfileId != null ? (forecastProfiles.find((v) => v.id === forecastProfileId) ?? null) : null;
+
+  if (!forecastProfile) {
+    forecastProfile = nullProfile;
+  }
+
+  const args = {
+    data: await queryBaseMRPData(defaultCacheTtl),
+    forecastProfile,
+    forecastProfiles,
+  };
+
+  console.log("");
+  return runService<ReturnType<typeof getMonolitoByForecastId>>(args);
+}
+
 export async function cacheTask() {
   if (process.env.NEXT_RUNTIME !== "nodejs") {
     console.error("cacheTask called from NEXT_RUNTIME", process.env.NEXT_RUNTIME);
@@ -106,19 +141,19 @@ export async function cacheTask() {
 
   void (await (await getDbInstance()).readAllData(undefined, true));
 
-  for (const key of Object.keys(Cache)) {
+  /* for (const key of Object.keys(Cache)) {
     if (key.startsWith("monolito-base-")) {
       const id = key.replace("monolito-base-", "");
       await cacheTaskKey(key, Cache, async () => await getMonolitoBase(id));
     }
-  }
+  } */
 
   const allForecastProfiles = await db.query.forecastProfiles.findMany();
   for (const fProfile of allForecastProfiles) {
-    await cacheTaskKey(`monolito-fc-${fProfile.id}`, Cache, async () => await getMonolitoByForecastId(fProfile.id));
+    await cacheTaskKey(`monolito-fc-${fProfile.id}`, Cache, async () => await workerGetMonolitoByForecastId(fProfile.id));
   }
 
-  await cacheTaskKey(`monolito-fc-null`, Cache, async () => await getMonolitoByForecastId(null));
+  await cacheTaskKey(`monolito-fc-null`, Cache, async () => await workerGetMonolitoByForecastId(null));
 
   // await cacheTaskKey(, Cache, async () => await getMonolitoBase());
   console.log("cacheTask finished execution");
