@@ -30,9 +30,68 @@ export interface ProductWithDependencies {
   description: string;
   stock: number;
   dependencies: ProductWithDependencies[] | null;
-  arrivalDate: Date | null;
+  arrivalData: {
+    date: Date;
+    importId: string;
+  } | null;
   consumed: number;
   cuts: ProductWithDependenciesCut[] | null;
+  state: "preparable" | "import" | "sinEntrada" | null;
+}
+
+function weakestState(entries: ProductWithDependencies[]): "import" | "preparable" | "sinEntrada" {
+  let state: "import" | "preparable" | "sinEntrada" = "preparable";
+  for (const entry of entries) {
+    const eState = getState(entry);
+    if (state === "preparable") {
+      if (eState === "sinEntrada") {
+        state = "sinEntrada";
+        break;
+      } else if (eState === "import") {
+        state = "import";
+      }
+    } else if (state === "import") {
+      if (eState === "sinEntrada") {
+        state = "sinEntrada";
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+
+  return state;
+}
+
+function getState(entry: ProductWithDependencies): "import" | "preparable" | "sinEntrada" {
+  if (entry.dependencies) {
+    return weakestState(entry.dependencies);
+  } else if (entry.arrivalData) {
+    return "import";
+  } else {
+    if (entry.cuts !== null) {
+      if (entry.cuts.length > 0) {
+        return "preparable";
+      } else {
+        return "sinEntrada";
+      }
+    } else {
+      if (entry.stock > entry.consumed) {
+        return "preparable";
+      } else {
+        return "sinEntrada";
+      }
+    }
+  }
+}
+
+function setState(entry: ProductWithDependencies) {
+  entry.state = getState(entry);
+  if (entry.dependencies) {
+    for (const dep of entry.dependencies) {
+      setState(dep);
+    }
+  }
 }
 
 function getConsumoForProductList(
@@ -122,13 +181,14 @@ function getConsumoForProductList(
           if (product.supplies && product.supplies.length > 0) {
             const cons = getConsumoForProductList(
               product.supplies.map((supply) => ({
-                arrivalDate: null,
+                arrivalData: null,
                 consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
                 dependencies: null,
                 productCode: supply.supply_product_code,
                 description: "",
                 stock: 0,
                 cuts: null,
+                state: null,
               })),
               yaConsumidoLoop,
               yaConsumidoCuts,
@@ -140,13 +200,14 @@ function getConsumoForProductList(
 
             // console.log("recortes entra aca 3", product.code);
             listadoCopy[index] = {
-              arrivalDate: null,
+              arrivalData: null,
               consumed: pcValue,
               dependencies: cons,
               productCode: product.code,
               description: product.description,
               stock: inventory,
               cuts: cutsUsed,
+              state: null,
             };
 
             // no hay supplies, se fija si va a importar
@@ -158,13 +219,17 @@ function getConsumoForProductList(
                 if (pcValueFaltante < impor.ordered_quantity && !validAmount) {
                   // console.log("recortes entra aca 2", product.code);
                   listadoCopy[index] = {
-                    arrivalDate: new Date(String(impor.arrival_date)),
+                    arrivalData: {
+                      date: new Date(String(impor.arrival_date)),
+                      importId: impor.import_id,
+                    },
                     consumed: pcValue,
                     dependencies: null,
                     productCode: product.code,
                     description: product.description,
                     stock: inventory,
                     cuts: cutsUsed,
+                    state: null,
                   };
 
                   validAmount = true;
@@ -175,13 +240,14 @@ function getConsumoForProductList(
             if (!validAmount) {
               // console.log("recortes entra aca 1", product.code);
               listadoCopy[index] = {
-                arrivalDate: null,
+                arrivalData: null,
                 consumed: pcValue,
                 dependencies: null,
                 productCode: product.code,
                 description: product.description,
                 stock: inventory,
                 cuts: [],
+                state: null,
               };
             }
           }
@@ -189,23 +255,25 @@ function getConsumoForProductList(
           yaConsumidoLoop.set(pcKey, (yaConsumidoLoop.get(pcKey) ?? 0) + pcValue);
           // console.log("recortes entra aca 0", product.code);
           listadoCopy[index] = {
-            arrivalDate: null,
+            arrivalData: null,
             consumed: pcValue,
             dependencies: cutsUsed.map((v) => {
               return {
                 productCode: v.cut.prodId,
                 stock: v.cut.amount,
                 dependencies: null,
-                arrivalDate: null,
+                arrivalData: null,
                 consumed: v.amount,
                 description: productsByCode[v.cut.prodId]?.description ?? "",
                 cuts: null,
+                state: null,
               };
             }),
             productCode: product.code,
             description: product.description,
             stock: inventory,
             cuts: cutsUsed,
+            state: null,
           };
         }
       } else {
@@ -216,13 +284,14 @@ function getConsumoForProductList(
           if (product.supplies && product.supplies.length > 0) {
             const cons = getConsumoForProductList(
               product.supplies.map((supply) => ({
-                arrivalDate: null,
+                arrivalData: null,
                 consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
                 dependencies: null,
                 productCode: supply.supply_product_code,
                 description: "",
                 stock: 0,
                 cuts: null,
+                state: null,
               })),
               yaConsumidoLoop,
               yaConsumidoCuts,
@@ -234,13 +303,14 @@ function getConsumoForProductList(
 
             // console.log("!recortes entra aca 3", product.code);
             listadoCopy[index] = {
-              arrivalDate: null,
+              arrivalData: null,
               consumed: pcValue,
               dependencies: cons,
               productCode: product.code,
               description: product.description,
               stock: inventory,
               cuts: null,
+              state: null,
             };
             // console.log(listadoCopy);
 
@@ -253,13 +323,17 @@ function getConsumoForProductList(
                 if (pcValue < product.stock - consumedTotal + impor.ordered_quantity && !validAmount) {
                   console.log("!recortes entra aca 2", product.code);
                   listadoCopy[index] = {
-                    arrivalDate: new Date(String(impor.arrival_date)),
+                    arrivalData: {
+                      date: new Date(String(impor.arrival_date)),
+                      importId: impor.import_id,
+                    },
                     consumed: pcValue,
                     dependencies: null,
                     productCode: product.code,
                     description: product.description,
                     stock: inventory,
                     cuts: null,
+                    state: null,
                   };
 
                   validAmount = true;
@@ -270,13 +344,14 @@ function getConsumoForProductList(
             if (!validAmount) {
               console.log("!recortes entra aca 1", product.code);
               listadoCopy[index] = {
-                arrivalDate: null,
+                arrivalData: null,
                 consumed: pcValue,
                 dependencies: null,
                 productCode: product.code,
                 description: product.description,
                 stock: inventory,
                 cuts: null,
+                state: null,
               };
             }
           }
@@ -285,13 +360,14 @@ function getConsumoForProductList(
           yaConsumidoLoop.set(pcKey, (yaConsumidoLoop.get(pcKey) ?? 0) + pcValue);
           // console.log("!recortes entra aca 0", product.code);
           listadoCopy[index] = {
-            arrivalDate: null,
+            arrivalData: null,
             consumed: pcValue,
             dependencies: null,
             productCode: product.code,
             description: product.description,
             stock: inventory,
             cuts: null,
+            state: null,
           };
         }
       }
@@ -317,13 +393,14 @@ export const consultRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const array = input.listado.map((prod) => ({
-        arrivalDate: null,
+        arrivalData: null,
         consumed: prod.quantity,
         dependencies: null,
         productCode: prod.productCode,
         description: "",
         stock: 0,
         cuts: [],
+        state: null,
       }));
 
       const [session, allCuts] = await Promise.all([await getServerAuthSession(), await db.query.cuts.findMany()]);
@@ -379,6 +456,10 @@ export const consultRouter = createTRPCRouter({
         productCuts,
         data.productsByCode,
       );
+
+      for (const entry of res) {
+        setState(entry);
+      }
 
       // console.dir(res, { depth: 50 });
       return res;

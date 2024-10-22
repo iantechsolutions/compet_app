@@ -95,7 +95,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     // }
     if (finalList) {
       const res = await notifyEmail({
-        listado: finalList.filter(x => !x.arrivalDate && x.stock < x.consumed && !x.dependencies).map((product) => product.productCode),
+        listado: finalList.filter(x => !x.arrivalData && x.stock < x.consumed && !x.dependencies).map((product) => product.productCode),
       });
     }
   }
@@ -386,8 +386,10 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
   const toggleDependencies = () => setShowDependencies(!showDependencies);
 
   let arrivalDate: string;
-  if (product.arrivalDate) {
-    arrivalDate = dayjs(product.arrivalDate.toString()).format("YYYY-MM");
+  let arrivalDataId: string | null = null;
+  if (product.arrivalData) {
+    arrivalDate = dayjs(product.arrivalData.date.toString()).format("YYYY-MM");
+    arrivalDataId = product.arrivalData.importId;
   } else {
     if (product.dependencies) {
       arrivalDate = "-";
@@ -409,23 +411,40 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
     }
   }
 
+  let color;
+  if (product.state === 'sinEntrada') {
+    color = 'bg-red-600';
+  } else if (product.state === 'import') {
+    color = 'bg-yellow-500';
+  } else if (product.state === 'preparable') {
+    color = 'bg-green-600';
+  } else {
+    console.error('product.state', product.state);
+    color = 'bg-gray-500';
+  }
 
   return (
     <div className="bg-gray-500">
-      <ListRowContainer className={`z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
-        <div className={cn(tableCellClassName, "flex md:left-0")}>
+      <ListRowContainer className={`${color} z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
+        <div className={cn(tableCellClassName, `${color} min-h-14 flex md:left-0 flex-col`)}>
           <p>{product.productCode}</p>
+          <div className="whitespace-nowrap text-xs font-semibold">
+            <p>{product.description}</p>
+          </div>
         </div>
-        <div className={cn(tableCellClassName, "flex md:left-0")}>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
           <p>{Math.round(product.stock)}</p>
         </div>
-        <div className={cn(tableCellClassName, "flex md:left-0")}>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
           <p>{Math.round(product.consumed)}</p>
         </div>
-        <div className={cn(tableCellClassName, "flex md:left-0")}>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0 flex-col`)}>
           <p>{arrivalDate}</p>
+          {arrivalDataId !== null ? <div className="whitespace-nowrap text-xs font-semibold">
+            <p>{arrivalDataId}</p>
+          </div> : <></>}
         </div>
-        <div className={cn(tableCellClassName, "flex md:left-0 justify-center")}>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0 justify-center`)}>
           {product.cuts !== null && product.cuts.length > 0 && (
             <Popover>
               <PopoverTrigger asChild>
