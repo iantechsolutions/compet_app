@@ -14,29 +14,15 @@ import { cn } from "~/lib/utils";
 import { excludeProducts } from "~/server/api/constants";
 import { api } from "~/trpc/react";
 import type { ProductWithDependencies } from "~/server/api/routers/consult";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import type { RouterOutputs } from "~/trpc/shared";
 import { useMRPData } from "~/components/mrp-data-provider";
-import { CrmBudgetProduct } from "~/lib/types";
+import type { CrmBudgetProduct } from "~/lib/types";
+import { ConsultCutsDialog } from "./cuts-dialog";
 const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white";
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
   const { mutateAsync: checkAvailability, isLoading } = api.consults.isConstructionPossible.useMutation();
   const { mutateAsync: notifyEmail, isLoading: isLoadingEmail } = api.consults.mailNotificacion.useMutation();
-
-  interface Product {
-    commited: number;
-    stock_at: Map<string, number>;
-    imported_quantity_by_month: Map<string, number>;
-    ordered_quantity_by_month: Map<string, number>;
-    stock_variation_by_month: Map<string, number>;
-    additional_description: string;
-    code: string;
-    description: string;
-    stock: number;
-    supplies: { product_code: string; quantity: number }[];
-    imports: { arrival_date: Date; ordered_quantity: number }[];
-  }
 
   // const { data, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
   // const { data: budgetProductByBudgetId, isLoading: isLoadingBudgets } = api.db.getBudgetProductsByBudgetId.useQuery();
@@ -355,7 +341,6 @@ export function ListRowContainer({
   style,
   id,
   className,
-  columnLength
 }: {
   children: React.ReactNode;
   style?: React.CSSProperties;
@@ -413,11 +398,11 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
 
   let color;
   if (product.state === 'sinEntrada') {
-    color = 'bg-red-600';
+    color = 'bg-[#f9c3c3]';
   } else if (product.state === 'import') {
-    color = 'bg-yellow-500';
+    color = 'bg-[#fbfcb8]';
   } else if (product.state === 'preparable') {
-    color = 'bg-green-600';
+    color = 'bg-[#BEF0BB]';
   } else {
     console.error('product.state', product.state);
     color = 'bg-gray-500';
@@ -446,7 +431,12 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
         </div>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0 justify-center`)}>
           {product.cuts !== null && product.cuts.length > 0 && (
-            <Popover>
+            <ConsultCutsDialog product={product} cuts={product.cuts}>
+              <Button variant="link" >?</Button>
+            </ConsultCutsDialog>
+          )}
+
+          {/* <Popover>
               <PopoverTrigger asChild>
                 <Button variant="link" >?</Button>
               </PopoverTrigger>
@@ -461,10 +451,9 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
                   </div>
                 </>)}
               </PopoverContent>
-            </Popover>
-          )}
-          {product.dependencies && product.dependencies.length > 0 && (
+            </Popover> */ }
 
+          {product.dependencies && product.cuts === null && product.dependencies.length > 0 && (
             <Button variant="outline" onClick={toggleDependencies} className=" px-2 my-2">
               {showDependencies ?
                 <ChevronUp />
@@ -472,7 +461,6 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
                 <ChevronDown />
               }
             </Button>
-
           )}
         </div>
 
