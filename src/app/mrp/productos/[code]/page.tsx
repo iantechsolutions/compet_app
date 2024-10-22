@@ -24,7 +24,9 @@ export default function ProductPage() {
   const { data: months, isLoading: isLoadingMonths } = api.db.getMonths.useQuery(); 
   const isLoadingData = isLoadingMonths || isLoadingProvC || isLoadingOrderProds || isLoadingOrderNums || isLoadingProdImports || isLoadingImports || isLoadingProds || isLoadingEvts;
   */
-  const { months, importsById, productImportsById, ordersByOrderNumber, orderProductsById, providersByCode, products, eventsByProductCode } = useMRPData();
+  const mrpData = useMRPData();
+  const { months, importsById, productImportsById, ordersByOrderNumber, orderProductsById, providersByCode, products, eventsByProductCode } = mrpData;
+  const indexedEvents = mrpData.events;
 
   const params = useParams<{ code: string }>();
   const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
@@ -151,7 +153,7 @@ export default function ProductPage() {
                       orderProductsById={orderProductsById}
                       ordersByOrderNumber={ordersByOrderNumber}
                       productImportsById={productImportsById}
-                      indexedEvents={p.events}
+                      indexedEvents={indexedEvents}
                       key={`row:${month}:f_${i}`} event={event} productCode={productCode} nostock />;
                   })}
                   <ForecastSupplyEventsRow
@@ -160,14 +162,14 @@ export default function ProductPage() {
                     ordersByOrderNumber={ordersByOrderNumber}
                     productImportsById={productImportsById}
                     events={p.supplyForecastEvents}
-                    indexedEvents={p.events}
+                    indexedEvents={indexedEvents}
                     month={month} key={`forecast_supply_event_row:${month}`} />
                   {nonForecastEvents.map((event, i) => {
                     return <ProductEventRow importsById={importsById}
                       orderProductsById={orderProductsById}
                       ordersByOrderNumber={ordersByOrderNumber}
                       productImportsById={productImportsById}
-                      indexedEvents={p.events}
+                      indexedEvents={indexedEvents}
                       key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />;
                   })}
                 </Fragment>

@@ -27,6 +27,7 @@ export interface ProductWithDependenciesCut {
 
 export interface ProductWithDependencies {
   productCode: string;
+  description: string;
   stock: number;
   dependencies: ProductWithDependencies[] | null;
   arrivalDate: Date | null;
@@ -42,6 +43,7 @@ function getConsumoForProductList(
   eventsByProductCode: Record<string, ProductEvent<number | Date>[]>,
   // ya están ordenados de menor a mayor measure
   productCuts: Map<string, InferSelectModel<typeof schema.cuts>[]>,
+  productsByCode: Awaited<ReturnType<typeof getMonolitoByForecastId>>["productsByCode"],
 ) {
   let listadoCopy = listado;
   // const productConsumo: [string, number][] = [];
@@ -124,6 +126,7 @@ function getConsumoForProductList(
                 consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
                 dependencies: null,
                 productCode: supply.supply_product_code,
+                description: "",
                 stock: 0,
                 cuts: null,
               })),
@@ -132,6 +135,7 @@ function getConsumoForProductList(
               curatedProducts,
               eventsByProductCode,
               productCuts,
+              productsByCode,
             );
 
             // console.log("recortes entra aca 3", product.code);
@@ -140,6 +144,7 @@ function getConsumoForProductList(
               consumed: pcValue,
               dependencies: cons,
               productCode: product.code,
+              description: product.description,
               stock: inventory,
               cuts: cutsUsed,
             };
@@ -157,6 +162,7 @@ function getConsumoForProductList(
                     consumed: pcValue,
                     dependencies: null,
                     productCode: product.code,
+                    description: product.description,
                     stock: inventory,
                     cuts: cutsUsed,
                   };
@@ -173,6 +179,7 @@ function getConsumoForProductList(
                 consumed: pcValue,
                 dependencies: null,
                 productCode: product.code,
+                description: product.description,
                 stock: inventory,
                 cuts: [],
               };
@@ -191,10 +198,12 @@ function getConsumoForProductList(
                 dependencies: null,
                 arrivalDate: null,
                 consumed: v.amount,
+                description: productsByCode[v.cut.prodId]?.description ?? "",
                 cuts: null,
               };
             }),
             productCode: product.code,
+            description: product.description,
             stock: inventory,
             cuts: cutsUsed,
           };
@@ -211,6 +220,7 @@ function getConsumoForProductList(
                 consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
                 dependencies: null,
                 productCode: supply.supply_product_code,
+                description: "",
                 stock: 0,
                 cuts: null,
               })),
@@ -219,6 +229,7 @@ function getConsumoForProductList(
               curatedProducts,
               eventsByProductCode,
               productCuts,
+              productsByCode,
             );
 
             // console.log("!recortes entra aca 3", product.code);
@@ -227,6 +238,7 @@ function getConsumoForProductList(
               consumed: pcValue,
               dependencies: cons,
               productCode: product.code,
+              description: product.description,
               stock: inventory,
               cuts: null,
             };
@@ -245,6 +257,7 @@ function getConsumoForProductList(
                     consumed: pcValue,
                     dependencies: null,
                     productCode: product.code,
+                    description: product.description,
                     stock: inventory,
                     cuts: null,
                   };
@@ -261,6 +274,7 @@ function getConsumoForProductList(
                 consumed: pcValue,
                 dependencies: null,
                 productCode: product.code,
+                description: product.description,
                 stock: inventory,
                 cuts: null,
               };
@@ -275,6 +289,7 @@ function getConsumoForProductList(
             consumed: pcValue,
             dependencies: null,
             productCode: product.code,
+            description: product.description,
             stock: inventory,
             cuts: null,
           };
@@ -306,6 +321,7 @@ export const consultRouter = createTRPCRouter({
         consumed: prod.quantity,
         dependencies: null,
         productCode: prod.productCode,
+        description: "",
         stock: 0,
         cuts: [],
       }));
@@ -361,6 +377,7 @@ export const consultRouter = createTRPCRouter({
         curatedProducts,
         data.eventsByProductCode,
         productCuts,
+        data.productsByCode,
       );
 
       // console.dir(res, { depth: 50 });
