@@ -160,12 +160,18 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                 if (budget === undefined) {
                   console.error(`budgetSelected ${budgetSelected} undefined`, budgetProductByBudgetId);
                 } else {
-                  setProductList(budget.map(v => {
+                  const prodList = budget.map(v => {
                     return {
                       productCode: v.product_code,
                       quantity: v.quantity
                     }
-                  }));
+                  });
+
+                  const res = prodList.filter(v => {
+                    return prodList.find(k => k.productCode === v.productCode) === v;
+                  })
+
+                  setProductList(res);
                 }
               }
             }} disabled={budgetProductByBudgetId?.get(Number(budgetSelected)) === undefined}>Importar presupuesto</Button>
