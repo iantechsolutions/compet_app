@@ -33,9 +33,34 @@ export const ConsultCutsDialog = (props: { product: ProductWithDependencies, cut
     console.error(`cutsEntries.length > 1`, cutsEntries);
   }
 
+  let description;
+  if (cutsEntry[1].length > 10) {
+    description = <div className="grid-cols-3 grid gap-x-3">
+      {cutsEntry[1].map(v => <Card className="my-2">
+        <CardContent className="flex flex-auto my-4">
+          <CutCardContent cut={v} />
+        </CardContent>
+      </Card>)}
+    </div>;
+  } else if (cutsEntry[1].length > 5) {
+    description = <div className="grid-cols-2 grid gap-x-3">
+      {cutsEntry[1].map(v => <Card className="my-2">
+        <CardContent className="flex flex-auto my-4">
+          <CutCardContent cut={v} />
+        </CardContent>
+      </Card>)}
+    </div>;
+  } else {
+    description = cutsEntry[1].map(v => <Card className="my-2">
+      <CardContent className="flex flex-auto my-4">
+        <CutCardContent cut={v} />
+      </CardContent>
+    </Card>);
+  }
+
   return <Dialog>
     <DialogTrigger asChild>{props.children}</DialogTrigger>
-    <DialogContent>
+    <DialogContent className="min-w-[580px]">
       <DialogHeader>
         <DialogTitle>
           <div className="flex flex-col">
@@ -44,11 +69,7 @@ export const ConsultCutsDialog = (props: { product: ProductWithDependencies, cut
           </div>
         </DialogTitle>
         <DialogDescription>
-          {cutsEntry[1].map(v => <Card className="my-2">
-            <CardContent className="flex flex-auto my-4">
-              <CutCardContent cut={v} />
-            </CardContent>
-          </Card>)}
+          {description}
         </DialogDescription>
       </DialogHeader>
     </DialogContent>

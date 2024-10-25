@@ -413,7 +413,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
       <ListRowContainer className={`${color} z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
         <div className={cn(tableCellClassName, `${color} min-h-14 flex md:left-0 flex-col`)}>
           <p>{product.productCode}</p>
-          <div className="text-[10px] font-semibold">
+          <div className="text-[10px] font-semibold text-center">
             <p>{product.description}</p>
           </div>
         </div>
@@ -454,7 +454,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
             </Popover> */ }
 
           {product.dependencies && product.cuts === null && product.dependencies.length > 0 && (
-            <Button variant="outline" onClick={toggleDependencies} className=" px-2 my-2">
+            <Button variant="outline" onClick={toggleDependencies} className="bg-white px-2 my-2">
               {showDependencies ?
                 <ChevronUp />
                 :
