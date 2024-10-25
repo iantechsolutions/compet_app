@@ -76,7 +76,7 @@ function getState(entry: ProductWithDependencies): "import" | "preparable" | "si
         return "sinEntrada";
       }
     } else {
-      if (entry.stock > entry.consumed) {
+      if (entry.stock >= entry.consumed) {
         return "preparable";
       } else {
         return "sinEntrada";

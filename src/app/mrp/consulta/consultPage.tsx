@@ -387,7 +387,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           arrivalDate = "No hay suficientes recortes";
         }
       } else {
-        if (product.stock > product.consumed) {
+        if (product.stock >= product.consumed) {
           arrivalDate = "Hay suficiente stock";
         } else {
           arrivalDate = "No hay pedido registrado";
@@ -413,7 +413,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
       <ListRowContainer className={`${color} z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
         <div className={cn(tableCellClassName, `${color} min-h-14 flex md:left-0 flex-col`)}>
           <p>{product.productCode}</p>
-          <div className="whitespace-nowrap text-xs font-semibold">
+          <div className="text-[10px] font-semibold">
             <p>{product.description}</p>
           </div>
         </div>
