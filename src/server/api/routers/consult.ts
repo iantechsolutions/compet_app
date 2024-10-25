@@ -28,6 +28,7 @@ export interface ProductWithDependenciesCut {
 export interface ProductWithDependencies {
   productCode: string;
   description: string;
+  additional_description: string;
   stock: number;
   dependencies: ProductWithDependencies[] | null;
   arrivalData: {
@@ -186,6 +187,7 @@ function getConsumoForProductList(
                 dependencies: null,
                 productCode: supply.supply_product_code,
                 description: "",
+                additional_description: "",
                 stock: 0,
                 cuts: null,
                 state: null,
@@ -205,6 +207,7 @@ function getConsumoForProductList(
               dependencies: cons,
               productCode: product.code,
               description: product.description,
+              additional_description: product.additional_description,
               stock: inventory,
               cuts: cutsUsed,
               state: null,
@@ -227,6 +230,7 @@ function getConsumoForProductList(
                     dependencies: null,
                     productCode: product.code,
                     description: product.description,
+                    additional_description: product.additional_description,
                     stock: inventory,
                     cuts: cutsUsed,
                     state: null,
@@ -245,6 +249,7 @@ function getConsumoForProductList(
                 dependencies: null,
                 productCode: product.code,
                 description: product.description,
+                additional_description: product.additional_description,
                 stock: inventory,
                 cuts: [],
                 state: null,
@@ -265,12 +270,14 @@ function getConsumoForProductList(
                 arrivalData: null,
                 consumed: v.amount,
                 description: productsByCode[v.cut.prodId]?.description ?? "",
+                additional_description: productsByCode[v.cut.prodId]?.additional_description ?? "",
                 cuts: null,
                 state: null,
               };
             }),
             productCode: product.code,
             description: product.description,
+            additional_description: product.additional_description,
             stock: inventory,
             cuts: cutsUsed,
             state: null,
@@ -289,6 +296,7 @@ function getConsumoForProductList(
                 dependencies: null,
                 productCode: supply.supply_product_code,
                 description: "",
+                additional_description: '',
                 stock: 0,
                 cuts: null,
                 state: null,
@@ -308,6 +316,7 @@ function getConsumoForProductList(
               dependencies: cons,
               productCode: product.code,
               description: product.description,
+              additional_description: product.additional_description,
               stock: inventory,
               cuts: null,
               state: null,
@@ -331,6 +340,7 @@ function getConsumoForProductList(
                     dependencies: null,
                     productCode: product.code,
                     description: product.description,
+                    additional_description: product.additional_description,
                     stock: inventory,
                     cuts: null,
                     state: null,
@@ -349,6 +359,7 @@ function getConsumoForProductList(
                 dependencies: null,
                 productCode: product.code,
                 description: product.description,
+                additional_description: product.additional_description,
                 stock: inventory,
                 cuts: null,
                 state: null,
@@ -365,6 +376,7 @@ function getConsumoForProductList(
             dependencies: null,
             productCode: product.code,
             description: product.description,
+            additional_description: product.additional_description,
             stock: inventory,
             cuts: null,
             state: null,
@@ -398,6 +410,7 @@ export const consultRouter = createTRPCRouter({
         dependencies: null,
         productCode: prod.productCode,
         description: "",
+        additional_description: "",
         stock: 0,
         cuts: [],
         state: null,

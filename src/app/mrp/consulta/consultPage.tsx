@@ -411,10 +411,13 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
   return (
     <div className="bg-gray-500">
       <ListRowContainer className={`${color} z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
-        <div className={cn(tableCellClassName, `${color} min-h-14 flex md:left-0 flex-col`)}>
+        <div className={cn(tableCellClassName, `${color} min-h-16 flex md:left-0 flex-col`)}>
           <p>{product.productCode}</p>
-          <div className="text-[10px] font-semibold text-center">
+          <div className="md:text-[10px] sm:text-[9px] font-semibold text-center">
             <p>{product.description}</p>
+          </div>
+          <div className="md:text-[10px] sm:text-[9px] font-semibold text-center">
+            <p>{product.additional_description}</p>
           </div>
         </div>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
@@ -426,7 +429,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0 flex-col`)}>
           <p>{arrivalDate}</p>
           {arrivalDataId !== null ? <div className="whitespace-nowrap text-xs font-semibold">
-            <p>{arrivalDataId}</p>
+            <p>{arrivalDataId.slice(-4)}</p>
           </div> : <></>}
         </div>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0 justify-center`)}>
