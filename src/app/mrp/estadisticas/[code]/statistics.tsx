@@ -12,7 +12,7 @@ import { isSemiElaborate } from "~/lib/utils";
 import { SelectCRMClients } from "../../forecast/select-crm-clients";
 import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
 import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
-import SimpleBartChart from "~/components/estadisticas/simpleBartChart";
+import ClientUnitsSold from "~/components/estadisticas/simpleBartChart";
 import { DatePicker } from "~/components/day-picker";
 import dayjs from "dayjs";
 import DataCard from "~/components/ui/dataCard";
@@ -47,7 +47,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     salesList: { date: string; totalSales: number }[];
     budgetsList: { date: string; totalBudgets: number }[];
   }>();
-  const [soldProportions, setSoldProportions] = useState<{ name: string | undefined; totalSales: number; amountOfSales: number }[]>();
+  const [soldProportions, setSoldProportions] = useState<{ name: string; totalSales: number; amountOfSales: number }[]>();
   const [generalStatistics, setGeneralStatistics] = useState<{
     MaximumSales: number;
     MinimumSales: number;
@@ -406,7 +406,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const [totalSales, amountOfSales] = value;
 
       return {
-        name: clients.find((client) => client.code === key)?.name,
+        name: clients.find((client) => client.code === key)!.name,
         totalSales,
         amountOfSales,
       };
@@ -795,7 +795,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         <DataCard title="GRAFICOS" icon={<AreaChart />}>
           <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
             <StackedAreaChart data={consumption ?? []} />
-            <SimpleBartChart data={soldProportions ?? []} />
+            <ClientUnitsSold data={soldProportions ?? []} />
           </div>
           <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
             <SimpleLineChart data={salesAndBudgets} />
