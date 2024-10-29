@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { CutUnits } from "~/lib/types";
@@ -26,8 +27,56 @@ export const ConsultCutsDialog = (props: { product: ProductWithDependencies, cut
     }
   }
 
+  let errorMessage: string | null = null;
+  let importData: {
+    date: Date,
+    code: string,
+  } | null = null;
+
+  if (props.product.state !== 'preparable') {
+    if (props.product.dependencies?.length !== 1) {
+      console.error('ConsultCutsDialog dependencies.length !== 1');
+    } else {
+      const dep = props.product.dependencies[0]!;
+      if (dep.state === 'sinEntrada') {
+        errorMessage = "No alcanzan los recortes, no hay entrada.";
+      } else if (dep.state === 'import') {
+        errorMessage = "No alcanzan los recortes.";
+        importData = {
+          code: dep.arrivalData!.importId.slice(-4),
+          date: dep.arrivalData!.date,
+        }
+      }
+    }
+  }
+
+  if (errorMessage !== null) {
+    return <Dialog>
+      <DialogTrigger asChild>{props.children}</DialogTrigger>
+      <DialogContent className="min-w-[580px]">
+        <DialogHeader>
+          <DialogTitle>
+            <div className="flex flex-col">
+              <p>No alcanzan los recortes</p>
+              <p className="font-semibold text-xs">{props.product.description}</p>
+            </div>
+          </DialogTitle>
+          <DialogDescription>
+            <p className="text-red-600">{errorMessage}</p>
+            {importData !== null ? <>
+              <p>Fecha de entrada: {dayjs(importData.date.toString()).format("YYYY-MM")}</p>
+              <p>Código de importación: {importData.code}</p>
+            </> : <></>}
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog >;
+  } else if (props.cuts.length === 0) {
+    return <></>;
+  }
+
   const cutsEntries = [...cutsMapped.entries()];
-  const cutsEntry = cutsEntries[0]!
+  const cutsEntry = cutsEntries[0]!;
 
   if (cutsEntries.length > 1) {
     console.error(`cutsEntries.length > 1`, cutsEntries);

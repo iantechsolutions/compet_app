@@ -439,7 +439,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           </div> : <></>}
         </div>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0 justify-center`)}>
-          {product.cuts !== null && product.cuts.length > 0 && (
+          {product.cuts !== null && (
             <ConsultCutsDialog product={product} cuts={product.cuts}>
               <Button variant="link" >?</Button>
             </ConsultCutsDialog>
