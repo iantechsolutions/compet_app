@@ -28,8 +28,8 @@ const recDocValidator = z.object({
   Medida: z.number(),
   Unidad: z.enum(["PZA", "KITS", "MT", "UNI"]),
   "Cant de mt/pzas": stringToValidIntegerZodTransformer,
-  "Stock Fisico": allToString.optional(),
-  "Stock Tango": allToString.optional(),
+  "Stock Fisico": allToString.optional().nullable(),
+  "Stock Tango": allToString.optional().nullable(),
 });
 
 export const recRowsFormat = (rows: Record<string, unknown>[]) => {
