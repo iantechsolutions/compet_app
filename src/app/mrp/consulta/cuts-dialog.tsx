@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, } from "~/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { CutUnits } from "~/lib/types";
 import type { ProductWithDependencies, ProductWithDependenciesCut } from "~/server/api/routers/consult";
@@ -12,6 +12,7 @@ const CutCardContent = (props: { cut: ProductWithDependenciesCut }) => {
     <p>Ubicación: {(v.cut.location?.length ?? 0) === 0 ? '-' : v.cut.location}</p>
     <p>Cantidad: {v.cut.amount}</p>
     <p>Medida: {v.cut.units as CutUnits === CutUnits.Meters ? (v.cut.measure / 1000) : v.cut.measure} {v.cut.units}</p>
+    <p>Consumido: {v.amount}</p>
   </div>;
 }
 
