@@ -128,6 +128,8 @@ function getConsumoForProductList(
       if (semielaborado !== null) {
         const { supply, long: pcMeasure } = semielaborado;
         const selectedProdCuts = productCuts.get(supply.supply_product_code) ?? [];
+        selectedProdCuts.sort((a, b) => a.amount - b.amount);
+
         const cutsUsed: ProductWithDependenciesCut[] = [];
 
         let falta = false;
