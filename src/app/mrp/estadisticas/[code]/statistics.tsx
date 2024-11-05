@@ -79,9 +79,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const { providers, eventsByProductCode, products, assemblyById, budget_products, budgetsById, clients, crm_clients, budgets, sold } = mrpData;
   const indexedEvents = mrpData.events ?? [];
 
-  const prod = '01014040 CON AD';
-  console.log(`producto ${prod} products_sold`, mrpData.products_sold.filter(v => v.product_code === prod));
-  console.log(`producto ${prod} sold`, mrpData.sold.filter(v => v.products.find(k => k.product_code === prod) !== undefined));
+  console.log(`producto ${params.code} stock_movements`, mrpData.stock_movements.filter(v => v.p === params.code));
 
   ring2.register();
   const productsByProvider = useMemo(() => {
