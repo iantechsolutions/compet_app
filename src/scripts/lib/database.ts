@@ -19,6 +19,7 @@ import {
   productSchema,
   productStockCommitedSchema,
   providerSchema,
+  stockMovementSchema,
 } from "../../lib/types";
 import { z } from "zod";
 import { soldProductsQuery, soldProductsQueryByCode, soldQuery } from "./large-queries";
@@ -73,7 +74,10 @@ export class Database {
   public async readAllData(cacheTtl?: number, forceCache = false) {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT(cacheTtl, forceCache);
-      return r.data;
+      return {
+        ...r.data,
+        stock_movements: [],
+      };
     } else {
       return await this.readAllDataDirect(cacheTtl, forceCache);
     }
@@ -101,6 +105,7 @@ export class Database {
       budgets,
       budget_products,
       crm_clients,
+      stock_movements
     ] = await Promise.all([
       this.getProducts(cacheTtl, forceCache),
       this.getCommitedStock(cacheTtl, forceCache),
@@ -117,6 +122,7 @@ export class Database {
       this.getBudgets(cacheTtl, forceCache),
       this.getBudgetProducts(cacheTtl, forceCache),
       this.getCrmClients(cacheTtl, forceCache),
+      this.getStockMovements(cacheTtl, forceCache)
     ]);
 
     const productsFiltered = products.filter((product) => !(product.code.startsWith("A000") || product.code.startsWith("Z000")));
@@ -140,6 +146,7 @@ export class Database {
       budgets,
       budget_products,
       crm_clients,
+      stock_movements
     };
   }
 
@@ -894,6 +901,38 @@ export class Database {
                 Estado as state
                 FROM CRM_CLIENTES`,
           crmClientSchema,
+        );
+      },
+      forceCache,
+    );
+  }
+
+  public async getStockMovements(cacheTtl?: number, forceCache = false): Promise<(typeof stockMovementSchema)["_output"][]> {
+    if (!env.DB_DIRECT_CONNECTION) {
+      // const r = await this.readAllDataUT();
+      console.error('getStockMovements not implemented for UT');
+      return [];
+    }
+
+    return await cachedAsyncFetch(
+      "db-getStockMovements",
+      cacheTtl ?? defaultCacheTtl,
+      async () => {
+        return await this.fetchTableWithQuery(
+          `SELECT
+           STA20.CANTIDAD as c,
+           STA20.COD_ARTICU as p,
+           STA20.FECHA_MOV as f,
+           STA20.TIPO_MOV t
+           FROM
+           Compet_SA.dbo.STA20 STA20,
+           Compet_SA.dbo.STA14 STA14
+           WHERE
+           STA14.ID_STA14 = STA20.ID_STA14
+           AND STA20.COD_ARTICU <> ''
+           AND STA20.TCOMP_IN_S IS NOT NULL
+            `,
+          stockMovementSchema,
         );
       },
       forceCache,
