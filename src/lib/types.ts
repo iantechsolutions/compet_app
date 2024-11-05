@@ -214,7 +214,7 @@ export const stockMovementSchema = z.object({
   // product code
   p: z.string(),
   // fecha_mov
-  f: z.string(),
+  f: z.date(),
   // tipo (E o S)
   t: z.string(),
 });

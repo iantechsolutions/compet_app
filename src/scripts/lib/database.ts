@@ -931,6 +931,7 @@ export class Database {
            STA14.ID_STA14 = STA20.ID_STA14
            AND STA20.COD_ARTICU <> ''
            AND STA20.TCOMP_IN_S IS NOT NULL
+           AND STA20.FECHA_MOV IS NOT NULL
             `,
           stockMovementSchema,
         );
