@@ -42,7 +42,6 @@ export default function ClientUnitsSold({ data }: graphicProps) {
       sortedClients15Res.push(other);
     }
 
-    console.log('sortedClients15Res', sortedClients15Res);
     setSortedClients15(sortedClients15Res);
   }, [sortedClients]);
 
@@ -69,10 +68,6 @@ export default function ClientUnitsSold({ data }: graphicProps) {
       }
     }
 
-    console.log('sortedDesc', sortedDesc);
-    console.log('sortedByTotalSales', sortedBy);
-    console.log('sortedClientsRes', sortedClientsRes);
-
     other.amountOfSales = 0;
     other.totalSales = 0;
 
@@ -88,12 +83,9 @@ export default function ClientUnitsSold({ data }: graphicProps) {
       sortedClients15Res.push(other);
     }
 
-    console.log('sortedClients15Res', sortedClients15Res);
     setSortedClients15(sortedClients15Res);
     setSortedClients(sortedClientsRes);
   }, [sortedDesc, sortedBy]);
-
-  console.log(sortedClients15.length);
 
   return (
     <ResponsiveContainer width="48%" aspect={2}>

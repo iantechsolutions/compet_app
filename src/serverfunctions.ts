@@ -75,6 +75,7 @@ export async function queryBaseMRPData(cacheTtl?: number) {
     budgets: budgets_bad,
     budget_products,
     crm_clients: crm_clients_bad,
+    stock_movements,
   } = data;
 
   const { budgets, clients, crm_clients } = transformClientsIdsCodes({
@@ -166,6 +167,7 @@ export async function queryBaseMRPData(cacheTtl?: number) {
   return {
     months,
     imports,
+    stock_movements,
     productImports: products_imports,
     products: products
       .map((product) => ({

@@ -208,6 +208,17 @@ export const crmBudgetProductSchema = z.object({
   creation_date: nullableDate,
 });
 
+export const stockMovementSchema = z.object({
+  // cantidad
+  c: z.number(),
+  // product code
+  p: z.string(),
+  // fecha_mov
+  f: z.date(),
+  // tipo (E o S)
+  t: z.string(),
+});
+
 // Export all types inferred from the schema
 export type Product = z.infer<typeof productSchema>;
 export type ProductStockCommited = z.infer<typeof productStockCommitedSchema>;
