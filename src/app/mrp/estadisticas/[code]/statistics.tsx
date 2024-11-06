@@ -51,6 +51,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     minSales: number;
     avgSales: number;
     totalSales: number;
+    totalSaleCount: number;
     medianSales: number | undefined;
   }>();
 
@@ -516,8 +517,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     const maxSales = sortedQuantities.length > 0 ? Math.max(...sortedQuantities) : 0;
     const minSales = sortedQuantities.length > 0 ? Math.min(...sortedQuantities) : 0;
-    const avgSales = sortedQuantities.length > 0 ? (sortedQuantities.reduce((acc, val) => acc + val, 0) / sortedQuantities.length) : 0;
-    const totalSales = sortedQuantities.length;
+    const totalSaleCount = sortedQuantities.length;
+    const totalSales = sortedQuantities.reduce((acc, val) => acc + val, 0);
+    const avgSales = sortedQuantities.length > 0 ? (totalSales / sortedQuantities.length) : 0;
     const medianSales = (sortedQuantities.length % 2 !== 0 ? sortedQuantities[mid] : sortedQuantities[mid - 1]) ?? 0;
 
     const res = {
@@ -525,6 +527,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       minSales,
       avgSales,
       totalSales,
+      totalSaleCount,
       medianSales
     };
 
@@ -701,7 +704,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.totalSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.totalSaleCount ?? 0}</p>
                     <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
                   </TooltipTrigger>
                   <TooltipContent>
