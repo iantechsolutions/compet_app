@@ -508,7 +508,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }; */
 
     // salidas en x fechas
-    const allSales = productStockMovements.filter(v => v.t === 'S' && v.f >= fromDate.getTime() && v.f <= toDate.getTime());
+    // const allSales = productStockMovements.filter(v => v.t === 'S' && v.f >= fromDate.getTime() && v.f <= toDate.getTime());
+    const allSales = productStockMovements
+      .filter(v => v.f >= fromDate.getTime() && v.f <= toDate.getTime())
+      .map(v => v.t !== 'S' ? ({
+        ...v,
+        c: 0
+      }) : v);
+
     console.log('allSales', allSales);
     const sortedQuantities = allSales.map(v => v.c);
     sortedQuantities.sort();
@@ -694,7 +701,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.totalSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.totalSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
                   </TooltipTrigger>
                   <TooltipContent>
