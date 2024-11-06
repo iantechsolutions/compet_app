@@ -107,7 +107,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   }, [products]);
 
   const productStockMovements = useMemo(() => {
-    return stock_movements.filter(v => v.p === params.code);
+    return stock_movements.filter(v => v.p === productCode);
   }, [stock_movements]);
 
   const filteredProviders = useMemo(() => {
@@ -514,9 +514,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     const mid = Math.floor(sortedQuantities.length / 2);
 
-    const maxSales = Math.max(...sortedQuantities);
-    const minSales = Math.min(...sortedQuantities);
-    const avgSales = sortedQuantities.reduce((acc, val) => acc + val, 0) / sortedQuantities.length;
+    const maxSales = sortedQuantities.length > 0 ? Math.max(...sortedQuantities) : 0;
+    const minSales = sortedQuantities.length > 0 ? Math.min(...sortedQuantities) : 0;
+    const avgSales = sortedQuantities.length > 0 ? (sortedQuantities.reduce((acc, val) => acc + val, 0) / sortedQuantities.length) : 0;
     const totalSales = sortedQuantities.length;
     const medianSales = (sortedQuantities.length % 2 !== 0 ? sortedQuantities[mid] : sortedQuantities[mid - 1]) ?? 0;
 
