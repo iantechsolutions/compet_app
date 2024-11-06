@@ -476,7 +476,7 @@ export function getMonolitoByForecast(args: {
       // productSoldAverageMonthlyByCode: Object.fromEntries(forecastData.productSoldAverageMonthlyByCode.entries()),
     },
 
-    stock_movements: data.stock_movements.map(v => ({
+    stock_movements: (data.stock_movements ?? []).map(v => ({
       ...v,
       f: v.f.getTime()
     })),
