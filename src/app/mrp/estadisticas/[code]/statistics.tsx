@@ -516,9 +516,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         c: 0
       }) : v);
 
-    console.log('allSales', allSales);
     const sortedQuantities = allSales.map(v => v.c);
-    sortedQuantities.sort();
+    sortedQuantities.sort((a, b) => a - b);
+    console.log('sortedQuantities', sortedQuantities);
 
     const mid = Math.floor(sortedQuantities.length / 2);
 
