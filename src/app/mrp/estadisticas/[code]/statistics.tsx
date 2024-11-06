@@ -14,13 +14,11 @@ import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
 import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
 import ClientUnitsSold from "~/components/estadisticas/simpleBartChart";
 import { DatePicker } from "~/components/day-picker";
-import dayjs from "dayjs";
 import DataCard from "~/components/ui/dataCard";
 import { ChartNoAxesCombined } from "~/components/icons/chart-combined";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import ListSelectionDialog from "~/components/list-selection-dialog";
 import SimpleBartChartRecuts from "~/components/estadisticas/simpleBartChartRecuts";
-import { api } from "~/trpc/react";
 import { useMRPData } from "~/components/mrp-data-provider";
 
 export default function StatisticsPage(props: { user?: NavUserData }) {
@@ -49,11 +47,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   }>();
   const [soldProportions, setSoldProportions] = useState<{ name: string; totalSales: number; amountOfSales: number }[]>();
   const [generalStatistics, setGeneralStatistics] = useState<{
-    MaximumSales: number;
-    MinimumSales: number;
-    AverageSales: number;
-    TotalSales: number;
-    MedianSales: number | undefined;
+    maxSales: number;
+    minSales: number;
+    avgSales: number;
+    totalSales: number;
+    medianSales: number | undefined;
   }>();
 
   const [cuts, setCuts] = useState<Map<string, number>>();
@@ -76,10 +74,21 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const { data: sold, isLoading: isLoadingSold } = api.db.getMSold.useQuery();
   const loading = isLoadingClients || isLoadingSold || isLoadingBudgets || isLoadingCRMC || isLoadingBID || isLoadingProv || isLoadingProds || isLoadingEvts || isLoadingAssemb || isLoadingBP; */
   const mrpData = useMRPData();
-  const { providers, eventsByProductCode, products, assemblyById, budget_products, budgetsById, clients, crm_clients, budgets, sold } = mrpData;
-  const indexedEvents = mrpData.events ?? [];
+  const {
+    stock_movements,
+    providers,
+    eventsByProductCode,
+    products,
+    assemblyById,
+    budget_products,
+    budgetsById,
+    clients,
+    crm_clients,
+    budgets,
+    sold
+  } = mrpData;
 
-  console.log(`producto ${params.code} stock_movements`, mrpData.stock_movements.filter(v => v.p === params.code));
+  const indexedEvents = mrpData.events ?? [];
 
   ring2.register();
   const productsByProvider = useMemo(() => {
@@ -96,6 +105,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     return map;
   }, [products]);
+
+  const productStockMovements = useMemo(() => {
+    return stock_movements.filter(v => v.p === params.code);
+  }, [stock_movements]);
 
   const filteredProviders = useMemo(() => {
     const start = Date.now();
@@ -424,7 +437,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = sold.filter(
+    /* const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
         new Date(order.emission_date) >= fromDate &&
@@ -491,7 +504,33 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         orderedQuantities.length > 0 ? orderedQuantities.reduce((acc, quantity) => acc + quantity, 0) / orderedQuantities.length : 0,
       TotalSales: orderedQuantities.length > 0 ? orderedQuantities.length : 0,
       MedianSales: orderedQuantities.length > 0 ? median : 0,
+    }; */
+
+    // salidas en x fechas
+    const allSales = productStockMovements.filter(v => v.t === 'S' && v.f >= fromDate.getTime() && v.f <= toDate.getTime());
+    console.log('allSales', allSales);
+    const sortedQuantities = allSales.map(v => v.c);
+    sortedQuantities.sort();
+
+    const mid = Math.floor(sortedQuantities.length / 2);
+
+    const maxSales = Math.max(...sortedQuantities);
+    const minSales = Math.min(...sortedQuantities);
+    const avgSales = sortedQuantities.reduce((acc, val) => acc + val, 0) / sortedQuantities.length;
+    const totalSales = sortedQuantities.length;
+    const medianSales = (sortedQuantities.length % 2 !== 0 ? sortedQuantities[mid] : sortedQuantities[mid - 1]) ?? 0;
+
+    const res = {
+      maxSales,
+      minSales,
+      avgSales,
+      totalSales,
+      medianSales
     };
+
+    console.log('res', res);
+    return res;
+
   }
 
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
@@ -652,7 +691,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.totalSales ?? 0}</p>
                     <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -662,7 +701,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.totalSales ?? 0}</p>
                     <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -672,7 +711,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.MaximumSales ?? 0)}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.maxSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -682,7 +721,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.MinimumSales ?? 0)}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.minSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -692,7 +731,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.AverageSales ?? 0)}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.avgSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">UPP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -702,7 +741,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.MedianSales ?? 0)}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.medianSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
