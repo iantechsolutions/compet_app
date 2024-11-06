@@ -518,7 +518,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
     const sortedQuantities = allSales.map(v => v.c);
     sortedQuantities.sort((a, b) => a - b);
-    console.log('sortedQuantities', sortedQuantities);
 
     const mid = Math.floor(sortedQuantities.length / 2);
 
@@ -540,9 +539,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       medianSales
     };
 
-    console.log('res', res);
     return res;
-
   }
 
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
