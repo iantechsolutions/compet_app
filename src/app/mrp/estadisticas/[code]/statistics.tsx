@@ -527,7 +527,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     const totalSaleCount = sortedQuantities.length;
     const totalSales = sortedQuantities.reduce((acc, val) => acc + val, 0);
     const avgSales = sortedQuantities.length > 0 ? (totalSales / sortedQuantities.length) : 0;
-    const medianSales = (sortedQuantities.length % 2 !== 0 ? sortedQuantities[mid] : sortedQuantities[mid - 1]) ?? 0;
+    const medianSales = (sortedQuantities.length % 2 === 0 ? ((
+      (sortedQuantities[mid - 1] ?? 0) + (sortedQuantities[mid] ?? 0)
+    ) / 2) : sortedQuantities[mid]) ?? 0;
 
     const res = {
       maxSales,
