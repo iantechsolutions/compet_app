@@ -550,22 +550,31 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     possibleSuppliesOf?.map((supplyOfCode) => {
       const semielaborate = products.find((p) => p.code === supplyOfCode);
       const dataSemi = isSemiElaborate(semielaborate);
+
+      console.log('supplyOfCode', supplyOfCode);
+      console.log('dataSemi', dataSemi);
+
       // const longNecesaria = supply.quantity;
       if (dataSemi !== null) {
         const clave = dataSemi.long + " mm";
-        let events = eventsByProductCode?.[supplyOfCode] ?? [];
-        events = events.filter(
-          (event) => event.type != "import" && new Date(event.date) && new Date(event.date) >= fromDate && new Date(event.date) <= toDate,
+        const stockMovements = stock_movements.filter(v =>
+          v.p === supplyOfCode &&
+          v.f >= fromDate.getTime() &&
+          v.f <= toDate.getTime() &&
+          v.t === 'S' &&
+          v.c > 0
         );
-        events.forEach((event) => {
-          mapeoConsumo.set(clave, (event.originalQuantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
-        })
+
+        console.log('stockMovements', stockMovements);
+
+        for (const movement of stockMovements) {
+          mapeoConsumo.set(clave, movement.c + (mapeoConsumo.get(clave) ?? 0));
+        }
       }
     });
 
     return mapeoConsumo;
   }
-
 
   const toggleShowMore = () => {
     setShowMore((showMore) => !showMore);
