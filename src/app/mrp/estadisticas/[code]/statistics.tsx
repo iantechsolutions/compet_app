@@ -551,10 +551,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const semielaborate = products.find((p) => p.code === supplyOfCode);
       const dataSemi = isSemiElaborate(semielaborate);
 
-      console.log('supplyOfCode', supplyOfCode);
-      console.log('dataSemi', dataSemi);
-
-      // const longNecesaria = supply.quantity;
+      // acá no filtramos por tipo de salida
+      // figura todo lo que es armado y ventas
       if (dataSemi !== null) {
         const clave = dataSemi.long + " mm";
         const stockMovements = stock_movements.filter(v =>
@@ -564,8 +562,6 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
           v.t === 'S' &&
           v.c > 0
         );
-
-        console.log('stockMovements', stockMovements);
 
         for (const movement of stockMovements) {
           mapeoConsumo.set(clave, movement.c + (mapeoConsumo.get(clave) ?? 0));
