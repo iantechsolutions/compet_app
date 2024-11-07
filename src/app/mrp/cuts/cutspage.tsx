@@ -13,8 +13,7 @@ import { useState } from "react";
 import { type CutUnits } from "~/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2Icon } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import { Loader2Icon } from "lucide-react";
 import CutsTable from "./cust-table";
 import { useMRPData } from "~/components/mrp-data-provider";
 interface Props {
@@ -25,7 +24,7 @@ export default function CutsPage({ cuts }: Props) {
   const router = useRouter();
 
   // const { data: products, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
-  const { products } = useMRPData();
+  const { products, productsByCode } = useMRPData();
 
   const { mutateAsync: getCutByProd, isLoading: loadingGetByProd } = api.cuts.getByProdId.useMutation();
   const { mutateAsync: addCut, isLoading: loadingCreate } = api.cuts.create.useMutation();
@@ -85,21 +84,20 @@ export default function CutsPage({ cuts }: Props) {
   const cutsLengthSet = new Set<string>()
   cuts.forEach((cut) => cutsLengthSet.add((cut.measure / 1000).toFixed(2).replace(".", ",")))
 
-
-    // creo un Map con los prodId y la cantidad de recortes por longitud
-    const cutsMap = new Map<string, Map<string, number>>()
-    for (const cut of cuts) {
-        if (!cutsMap.has(cut.prodId)) {
-            cutsMap.set(cut.prodId, new Map<string, number>())
-        }
-        const prodMap = cutsMap.get(cut.prodId)
-        if (prodMap && !(prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ",")))) {
-            prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), cut.amount)
-        } else if (prodMap && prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ","))) {
-            const currentAmount = prodMap.get((cut.measure / 1000).toFixed(2).replace(".", ",")) ?? 0;
-            prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), currentAmount + cut.amount);
-        }
-    }
+  // creo un Map con los prodId y la cantidad de recortes por longitud
+  /* const cutsMap = new Map<string, Map<string, number>>()
+  for (const cut of cuts) {
+      if (!cutsMap.has(cut.prodId)) {
+          cutsMap.set(cut.prodId, new Map<string, number>())
+      }
+      const prodMap = cutsMap.get(cut.prodId)
+      if (prodMap && !(prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ",")))) {
+          prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), cut.amount)
+      } else if (prodMap && prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ","))) {
+          const currentAmount = prodMap.get((cut.measure / 1000).toFixed(2).replace(".", ",")) ?? 0;
+          prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), currentAmount + cut.amount);
+      }
+  } */
 
   return (
     <>
@@ -300,8 +298,8 @@ export default function CutsPage({ cuts }: Props) {
                 </Button>
               </Link>
             </div>
-            <CutsTable cutsMap={cutsMap} />
-          
+            <CutsTable cuts={cuts} productsByCode={productsByCode} />
+
           </>
         )}
 
