@@ -316,9 +316,12 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
 
         {finalList && finalList.length > 0 && !isLoading && (
           <>
-            <ListRowContainer style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-5">
+            <ListRowContainer style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-6">
               <div className={cn(headerCellClassName, "flex md:left-0")}>
                 <p>Producto</p>
+              </div>
+              <div className={cn(headerCellClassName, "flex md:left-0")}>
+                <p>Máximo posible</p>
               </div>
               <div className={cn(headerCellClassName, "flex md:left-0")}>
                 <p>Stock Actual</p>
@@ -414,9 +417,22 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
     color = 'bg-gray-500';
   }
 
+  let maxConsumible = "";
+  if (product.maxConsumible !== undefined) {
+    if (typeof product.maxConsumible === 'number') {
+      if (product.maxConsumible < 0) {
+        maxConsumible = "inf";
+      } else {
+        maxConsumible = product.maxConsumible.toString();
+      }
+    } else {
+      maxConsumible = product.maxConsumible.consumed.toString();
+    }
+  }
+
   return (
     <div className="bg-gray-500">
-      <ListRowContainer className={`${color} z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
+      <ListRowContainer className={`${color} z-10 shadow-md grid grid-cols-6 ml-${depth * 4}`}>
         <div className={cn(tableCellClassName, `${color} min-h-16 flex md:left-0 flex-col`)}>
           <p>{product.productCode}</p>
           <div className="md:text-[10px] sm:text-[9px] font-semibold text-center">
@@ -427,7 +443,10 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           </div>
         </div>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
-          <p>{Math.round(product.stock)}</p>
+          <p>{maxConsumible}</p>
+        </div>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
+          <p>{product.stock.toFixed(1)}</p>
         </div>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
           <p>{Math.round(product.consumed)}</p>
