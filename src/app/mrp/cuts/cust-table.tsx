@@ -51,7 +51,7 @@ export default function CutsTable({ cuts, productsByCode }: Props) {
     }
 
     setCutsMap(map);
-  }, []);
+  }, [cuts]);
 
   const cutsMapSorted = useMemo(() => {
     const mapRes = new Map<string, {
@@ -128,7 +128,7 @@ export default function CutsTable({ cuts, productsByCode }: Props) {
     });
 
     return mapRes;
-  }, [cutsMap, sortType, sortDir]);
+  }, [cutsMap, sortType, sortDir, cuts]);
 
   return (
     <Table>
