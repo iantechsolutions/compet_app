@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import * as xlsx from "xlsx";
 import { recRowsFormat, recRowsTransformer } from "~/server/upload/validator";
+import { fromCutVisualMeasure } from "~/lib/utils";
 export const excelCutsDocRouter = createTRPCRouter({
   get: protectedProcedure.input(z.object({ uploadId: z.string() })).query(async ({ input }) => {
     return await db.query.excelCutsDocs.findFirst({
@@ -30,7 +31,7 @@ export const excelCutsDocRouter = createTRPCRouter({
             caja: row.Caja,
             location: row.Ubicación,
             amount: row.Cantidad,
-            measure: (row.Medida * 1000),
+            measure: fromCutVisualMeasure(row.Medida, row.Unidad),
             units: row.Unidad,
             stockPhys: row["Stock Fisico"] ?? "0",
             stockTango: row["Stock Tango"] ?? "0",

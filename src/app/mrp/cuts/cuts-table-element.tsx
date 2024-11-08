@@ -8,6 +8,7 @@ import type { CutsSortDir, CutsSortType } from "./cust-table";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { CutDialog } from "./cuts-cut-dialog";
+import { getCutVisualMeasure } from "~/lib/utils";
 
 export default function CutsTableElement({
   prodId,
@@ -171,7 +172,7 @@ export default function CutsTableElement({
                     <TableCell>{cut.caja}</TableCell>
                     <TableCell>{cut.location}</TableCell>
                     <TableCell>{cut.amount}</TableCell>
-                    <TableCell>{cut.measure / 1000}</TableCell>
+                    <TableCell>{getCutVisualMeasure(cut.measure, cut.units)}</TableCell>
                     <TableCell>{cut.units}</TableCell>
                     <TableCell className="px-1">
                       <CutDialog cut={cut}>

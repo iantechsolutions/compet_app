@@ -5,6 +5,8 @@ import dayjs from "dayjs";
 import { parse, stringify } from "flatted";
 import { twMerge } from "tailwind-merge";
 import { MonolitoProduct } from "../server/api/routers/db";
+import { RouterOutputs } from "~/trpc/shared";
+import { CutUnits } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -124,4 +126,20 @@ export function isSemiElaborate(prod?: { additional_description: string; supplie
   }
 
   return null;
+}
+
+export function getCutVisualMeasure(measure: number, units: NonNullable<RouterOutputs['cuts']['get']>['units']): number {
+  if (units === CutUnits.Meters) {
+    return measure / 1000;
+  } else {
+    return measure;
+  }
+}
+
+export function fromCutVisualMeasure(measure: number, units: NonNullable<RouterOutputs['cuts']['get']>['units']): number {
+  if (units === CutUnits.Meters) {
+    return measure * 1000;
+  } else {
+    return measure;
+  }
 }

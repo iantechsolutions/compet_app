@@ -1,5 +1,5 @@
 "use client"
-import { cn } from "~/lib/utils";
+import { cn, fromCutVisualMeasure, getCutVisualMeasure } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/shared";
 import { ListRowContainer } from "../consulta/consultPage";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -51,7 +51,7 @@ export default function CutsPage({ cuts }: Props) {
           id: Number(selectedCut),
           prodId: selectedProd,
           amount: amount,
-          measure: (measure * 1000),
+          measure: fromCutVisualMeasure(measure, cuts.find(v => v.id === Number(selectedCut))!.units),
         });
         router.refresh();
       } catch (error) {
@@ -67,7 +67,7 @@ export default function CutsPage({ cuts }: Props) {
         caja: caja,
         location: location,
         amount: amount,
-        measure: (measure * 1000),
+        measure: fromCutVisualMeasure(measure, units),
         units: units as CutUnits,
         stockPhys: "0",
         stockTango: "0"
@@ -77,27 +77,13 @@ export default function CutsPage({ cuts }: Props) {
       console.error(error)
     }
   }
+
   const prodIdSet = new Set<string>()
   //obtengo todos los prodId sin repetir
   cuts.forEach((cut) => prodIdSet.add(cut.prodId))
   //obtengo todos las longitudes de recortes sin repetir 
   const cutsLengthSet = new Set<string>()
-  cuts.forEach((cut) => cutsLengthSet.add((cut.measure / 1000).toFixed(2).replace(".", ",")))
-
-  // creo un Map con los prodId y la cantidad de recortes por longitud
-  /* const cutsMap = new Map<string, Map<string, number>>()
-  for (const cut of cuts) {
-      if (!cutsMap.has(cut.prodId)) {
-          cutsMap.set(cut.prodId, new Map<string, number>())
-      }
-      const prodMap = cutsMap.get(cut.prodId)
-      if (prodMap && !(prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ",")))) {
-          prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), cut.amount)
-      } else if (prodMap && prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ","))) {
-          const currentAmount = prodMap.get((cut.measure / 1000).toFixed(2).replace(".", ",")) ?? 0;
-          prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), currentAmount + cut.amount);
-      }
-  } */
+  cuts.forEach((cut) => cutsLengthSet.add((getCutVisualMeasure(cut.measure, cut.units)).toFixed(2).replace(".", ",")))
 
   return (
     <>
@@ -178,7 +164,6 @@ export default function CutsPage({ cuts }: Props) {
                       </SelectTrigger>
                       <SelectContent>
                         {cuts.map((cut) =>
-
                           <SelectItem value={cut.id.toString()}>{cut.measure + " - " + cut.amount}</SelectItem>
                         )}
                       </SelectContent>

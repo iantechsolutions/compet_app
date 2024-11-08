@@ -10,6 +10,7 @@ import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/shared";
 import { useRouter } from "next/navigation";
+import { fromCutVisualMeasure, getCutVisualMeasure } from "~/lib/utils";
 
 export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterOutputs['cuts']['list'][number] }) {
   const cutMut = api.cuts.cut.useMutation();
@@ -30,7 +31,7 @@ export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterO
     cutMut.mutateAsync({
       id: cut.id,
       amount: values.amount,
-      measure: values.measure,
+      measure: fromCutVisualMeasure(values.measure, cut.units),
     }).then(v => {
       if (v.length > 0) {
         console.log('Ok');
@@ -80,7 +81,7 @@ export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterO
                   <FormItem>
                     <FormLabel>Medida</FormLabel>
                     <FormControl>
-                      <Input placeholder={cut.measure.toFixed(0)} {...field} />
+                      <Input placeholder={getCutVisualMeasure(cut.measure, cut.units).toFixed(2)} {...field} />
                     </FormControl>
                     <FormDescription>
                       Esta es la medida de los recortes a hacer ({cut.units})

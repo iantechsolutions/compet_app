@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { RouterOutputs } from "~/trpc/shared";
 import type { Monolito } from "~/server/api/routers/db";
 import CutsTableElement from "./cuts-table-element";
+import { getCutVisualMeasure } from "~/lib/utils";
 
 interface Props {
   cuts: NonNullable<RouterOutputs['cuts']['list']>;
@@ -37,11 +38,13 @@ export default function CutsTable({ cuts, productsByCode }: Props) {
       const prodMap = map.get(cut.prodId)!;
       const measuresMap = prodMap.measuresMap;
 
-      if (measuresMap && !(measuresMap.has((cut.measure / 1000).toFixed(2).replace(".", ",")))) {
-        measuresMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), cut.amount)
-      } else if (measuresMap && measuresMap.has((cut.measure / 1000).toFixed(2).replace(".", ","))) {
-        const currentAmount = measuresMap.get((cut.measure / 1000).toFixed(2).replace(".", ",")) ?? 0;
-        measuresMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), currentAmount + cut.amount);
+      const cutVisualMeasure = getCutVisualMeasure(cut.measure, cut.units);
+
+      if (measuresMap && !(measuresMap.has(cutVisualMeasure.toFixed(2).replace(".", ",")))) {
+        measuresMap.set(cutVisualMeasure.toFixed(2).replace(".", ","), cut.amount)
+      } else if (measuresMap && measuresMap.has(cutVisualMeasure.toFixed(2).replace(".", ","))) {
+        const currentAmount = measuresMap.get(cutVisualMeasure.toFixed(2).replace(".", ",")) ?? 0;
+        measuresMap.set(cutVisualMeasure.toFixed(2).replace(".", ","), currentAmount + cut.amount);
       }
 
       prodMap.cuts.push(cut);
@@ -66,7 +69,6 @@ export default function CutsTable({ cuts, productsByCode }: Props) {
           rA = b;
           rB = a;
         }
-        console.log('cajaaaa', sortType)
 
         switch (sortType) {
           case "caja": {
