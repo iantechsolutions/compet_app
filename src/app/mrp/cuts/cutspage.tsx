@@ -14,7 +14,7 @@ import { type CutUnits } from "~/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2Icon } from "lucide-react";
-import CutsTable from "./cust-table";
+import CutsTable from "./cuts-table";
 import { useMRPData } from "~/components/mrp-data-provider";
 interface Props {
   cuts: RouterOutputs["cuts"]["list"];

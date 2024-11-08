@@ -4,7 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import type { Monolito } from "~/server/api/routers/db";
 import type { RouterOutputs } from "~/trpc/shared";
-import type { CutsSortDir, CutsSortType } from "./cust-table";
+import type { CutsSortDir, CutsSortType } from "./cuts-table";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { CutDialog } from "./cuts-cut-dialog";
