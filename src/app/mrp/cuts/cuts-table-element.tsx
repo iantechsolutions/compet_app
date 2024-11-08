@@ -56,8 +56,8 @@ export default function CutsTableElement({
 
       {open && (
         <TableRow>
-          <TableCell colSpan={3}>
-            <Table>
+          <TableCell colSpan={4}>
+            <Table className="w-full">
               <TableHeader>
                 <TableRow className="bg-[#f7f7f7] text-[#3e3e3e]">
                   <TableHead>
