@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
@@ -17,9 +17,9 @@ export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterO
   const router = useRouter();
 
   const formSchema = z.object({
-    amount: z.number().positive('El número debe ser positivo')
+    amount: z.coerce.number().positive('El número debe ser positivo')
       .int('El número debe ser un entero'),
-    measure: z.number().positive('El número debe ser positivo')
+    measure: z.coerce.number().positive('El número debe ser positivo')
       .max(cut.measure, 'El número no puede ser más grande que la medida del recorte'),
   });
 
@@ -90,14 +90,10 @@ export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterO
                   </FormItem>
                 )}
               />
+              <Button type="submit">Realizar</Button>
             </form>
           </Form>
         </div>
-        <DialogFooter>
-          <Button type="submit" onClick={() => {
-            cutMut
-          }}>Realizar</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
