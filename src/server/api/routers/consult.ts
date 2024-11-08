@@ -36,6 +36,7 @@ export interface ProductWithDependencies {
     importId: string;
   } | null;
   consumed: number;
+  maxConsumible?: number | ProductWithDependencies;
   cuts: ProductWithDependenciesCut[] | null;
   state: "preparable" | "import" | "sinEntrada" | null;
 }
@@ -92,6 +93,144 @@ function setState(entry: ProductWithDependencies) {
     for (const dep of entry.dependencies) {
       setState(dep);
     }
+  }
+}
+
+function initializeProductWDeps(prod: {
+  quantity: number,
+  productCode: string
+}): ProductWithDependencies {
+  return {
+    arrivalData: null,
+    consumed: prod.quantity,
+    dependencies: null,
+    productCode: prod.productCode,
+    description: "",
+    additional_description: "",
+    stock: 0,
+    cuts: [],
+    state: null,
+  };
+}
+
+function mapConsumoWithMax(element: ProductWithDependencies) {
+  if (!element.dependencies) {
+    return;
+  }
+
+  if (typeof element.maxConsumible === 'number') {
+    for (const dep of (element.dependencies ?? [])) {
+      dep.maxConsumible = element.maxConsumible;
+      mapConsumoWithMax(dep);
+    }
+
+    return;
+  } else if (typeof element.maxConsumible !== 'object') {
+    console.error('mapConsumoWithMax llamado sin maxConsumible');
+    return;
+  }
+
+  const maxConDeps = element.maxConsumible.dependencies ?? [];
+  if (element.dependencies.length !== maxConDeps.length) {
+    console.error('mapConsumoWithMax dependiencias.length difiere');
+    console.error('mapConsumoWithMax deps1', element.dependencies);
+    console.error('mapConsumoWithMax deps2', maxConDeps);
+    return;
+  }
+
+  for (let i = 0; i < element.dependencies.length; i++) {
+    if (element.dependencies[i]!.productCode !== maxConDeps[i]!.productCode) {
+      console.error('mapConsumoWithMax dependencia difiere en elemento', element.dependencies[i]!.productCode);
+      console.error('mapConsumoWithMax deps1', element.dependencies);
+      console.error('mapConsumoWithMax deps2', maxConDeps);
+      return;
+    }
+
+    element.dependencies[i]!.maxConsumible = maxConDeps[i]!;
+
+    for (const dep of element.dependencies) {
+      mapConsumoWithMax(dep);
+    }
+  }
+}
+
+function maxConsumoForProductList(
+  resultadoBase: ReturnType<typeof getConsumoForProductList>,
+  curatedProducts: Awaited<ReturnType<typeof queryBaseMRPData>>["products"],
+  eventsByProductCode: Record<string, ProductEvent<number | Date>[]>,
+  productCuts: Map<string, InferSelectModel<typeof schema.cuts>[]>,
+  productsByCode: Awaited<ReturnType<typeof getMonolitoByForecastId>>["productsByCode"],
+) {
+  for (const prodRes of resultadoBase) {
+    let isBestResult = false;
+    let res = prodRes;
+    let cantidad = prodRes.consumed;
+    const incrementar = res.state === 'preparable';
+
+    while (!isBestResult) {
+      if (incrementar) {
+        cantidad += 1;
+      } else {
+        cantidad -= 1;
+      }
+
+      if (cantidad < 1) {
+        console.error(`maxConsumoForProductList dec < 1 ${prodRes.productCode}`);
+        break;
+      }
+
+      const resTmpBase = getConsumoForProductList(
+        [initializeProductWDeps({
+          productCode: prodRes.productCode,
+          quantity: cantidad,
+        })],
+        new Map(),
+        new Map(),
+        curatedProducts,
+        eventsByProductCode,
+        productCuts,
+        productsByCode
+      );
+
+      for (const entry of resTmpBase) {
+        setState(entry);
+      }
+
+      const resTmp = resTmpBase[0]!;
+
+      if (incrementar) {
+        if (resTmp.state !== 'preparable') {
+          isBestResult = true;
+        } else if (cantidad > 10000000) {
+          console.error(`maxConsumoForProductList inc excedidos 10M para ${prodRes.productCode}`);
+          break;
+        } else {
+          res = resTmp;
+        }
+      } else {
+        if (resTmp.state === 'preparable') {
+          res = resTmp;
+          isBestResult = true;
+        } else {
+          res = resTmp;
+        } /* else if (cantidad < 0) {
+          console.error(`maxConsumoForProductList dec < 0 ${prodRes.productCode}`);
+          break;
+        } */
+      }
+    }
+
+    if (isBestResult) {
+      prodRes.maxConsumible = res;
+    } else if (incrementar) {
+      prodRes.maxConsumible = -1;
+    } else {
+      prodRes.maxConsumible = 0;
+    }
+  }
+
+  for (const prodRes of resultadoBase) {
+    mapConsumoWithMax(prodRes);
   }
 }
 
@@ -406,18 +545,7 @@ export const consultRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      const array = input.listado.map((prod) => ({
-        arrivalData: null,
-        consumed: prod.quantity,
-        dependencies: null,
-        productCode: prod.productCode,
-        description: "",
-        additional_description: "",
-        stock: 0,
-        cuts: [],
-        state: null,
-      }));
-
+      const array = input.listado.map((prod) => initializeProductWDeps(prod));
       const [session, allCuts] = await Promise.all([await getServerAuthSession(), await db.query.cuts.findMany()]);
 
       // ordeno por mts o ctd
@@ -475,6 +603,15 @@ export const consultRouter = createTRPCRouter({
       for (const entry of res) {
         setState(entry);
       }
+
+      // res se pasa por referencia
+      maxConsumoForProductList(
+        res,
+        curatedProducts,
+        data.eventsByProductCode,
+        productCuts,
+        data.productsByCode
+      );
 
       // console.dir(res, { depth: 50 });
       return res;
