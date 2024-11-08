@@ -1,5 +1,5 @@
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "~/components/ui/table";
-import { useEffect, useMemo, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from "react";
 import type { RouterOutputs } from "~/trpc/shared";
 import type { Monolito } from "~/server/api/routers/db";
 import CutsTableElement from "./cuts-table-element";
@@ -8,12 +8,20 @@ import { getCutVisualMeasure } from "~/lib/utils";
 interface Props {
   cuts: NonNullable<RouterOutputs['cuts']['list']>;
   productsByCode: Monolito['productsByCode'],
+  filters: CutsFilters
 }
 
 export type CutsSortType = 'cod' | 'desc' | 'lote' | 'caja' | 'ubic' | 'cant' | 'med' | 'un';
 export type CutsSortDir = 'asc' | 'desc';
 
-export default function CutsTable({ cuts, productsByCode }: Props) {
+export type CutsFilters = {
+  prodCode: string;
+  desc: string;
+};
+
+export type CutsFilterDispatch = Dispatch<SetStateAction<CutsFilters>>;
+
+export default function CutsTable({ cuts, productsByCode, filters }: Props) {
   const [sortType, setSortType] = useState<CutsSortType>('lote');
   const [sortDir, setSortDir] = useState<CutsSortDir>('asc');
   const [cutsMap, setCutsMap] = useState<Map<string, {
@@ -130,6 +138,34 @@ export default function CutsTable({ cuts, productsByCode }: Props) {
     return mapRes;
   }, [cutsMap, sortType, sortDir, cuts]);
 
+  const cutsMapSortedFiltered = useMemo(() => {
+    let res = cutsMapSorted;
+
+    const prodLower = filters.prodCode.toLowerCase();
+    const descLower = filters.desc.toLowerCase();
+    const anyFilter = filters.prodCode !== '' || filters.desc !== '';
+
+    if (anyFilter) {
+      res = new Map(
+        [...res]
+          .filter(([k, _v]) => {
+            if (filters.prodCode !== '' && !k.toLowerCase().includes(prodLower)) {
+              return false;
+            } else if (filters.desc !== '') {
+              const desc = productsByCode[k]!.description + " " + productsByCode[k]!.additional_description;
+              if (!desc.toLowerCase().includes(descLower)) {
+                return false;
+              }
+            }
+
+            return true;
+          })
+      );
+    }
+
+    return res;
+  }, [filters, cutsMapSorted]);
+
   return (
     <Table>
       <TableHeader>
@@ -141,7 +177,7 @@ export default function CutsTable({ cuts, productsByCode }: Props) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {Array.from(cutsMapSorted).map(([prodId, prodMap]) =>
+        {Array.from(cutsMapSortedFiltered).map(([prodId, prodMap]) =>
           <CutsTableElement
             key={`a-${prodId}`}
             prodId={prodId}

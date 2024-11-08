@@ -1,7 +1,6 @@
 "use client"
-import { cn, fromCutVisualMeasure, getCutVisualMeasure } from "~/lib/utils";
+import { fromCutVisualMeasure, getCutVisualMeasure } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/shared";
-import { ListRowContainer } from "../consulta/consultPage";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
@@ -13,9 +12,10 @@ import { useState } from "react";
 import { type CutUnits } from "~/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2Icon } from "lucide-react";
+import { FilterIcon, Loader2Icon } from "lucide-react";
 import CutsTable from "./cuts-table";
 import { useMRPData } from "~/components/mrp-data-provider";
+import { CutFiltersDialog } from "./cuts-filters-dialog";
 interface Props {
   cuts: RouterOutputs["cuts"]["list"];
 }
@@ -26,23 +26,25 @@ export default function CutsPage({ cuts }: Props) {
   // const { data: products, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
   const { products, productsByCode } = useMRPData();
 
-  const { mutateAsync: getCutByProd, isLoading: loadingGetByProd } = api.cuts.getByProdId.useMutation();
+  // const { mutateAsync: getCutByProd, isLoading: loadingGetByProd } = api.cuts.getByProdId.useMutation();
   const { mutateAsync: addCut, isLoading: loadingCreate } = api.cuts.create.useMutation();
   const { mutateAsync: editCut, isLoading: loadingEdit } = api.cuts.edit.useMutation();
-  const [lote, setLote] = useState<string>("")
-  const [caja, setCaja] = useState<string>("")
-  const [location, setLocation] = useState<string>("")
-  const [amount, setAmount] = useState<number>(0)
-  const [measure, setMeasure] = useState<number>(0)
-  const [units, setUnits] = useState<string>("")
-  const [selectedProd, setSelectedProd] = useState<string>("")
-  const [selectedCut, setSelectedCut] = useState<string | null>(null)
-  const [cutsOptions, setCutsOptions] = useState<JSX.Element[]>([])
+  const [lote, setLote] = useState<string>("");
+  const [caja, setCaja] = useState<string>("");
+  const [location, setLocation] = useState<string>("");
+  const [amount, setAmount] = useState<number>(0);
+  const [measure, setMeasure] = useState<number>(0);
+  const [units, setUnits] = useState<string>("");
+  const [selectedProd, setSelectedProd] = useState<string>("");
+  const [selectedCut, setSelectedCut] = useState<string | null>(null);
 
-  async function getCutsOptions(prodId: string) {
-    const cutsProd = await getCutByProd({ prodId })
-    return cutsProd.map((cut) => <SelectItem value={cut.id.toString()}>{cut.id}</SelectItem>)
-  }
+  const [filters, setFilters] = useState<{
+    prodCode: string,
+    desc: string,
+  }>({
+    prodCode: '',
+    desc: '',
+  });
 
   async function handleEditCut() {
     if (selectedCut) {
@@ -177,11 +179,18 @@ export default function CutsPage({ cuts }: Props) {
                 </PopoverContent>
               </Popover>
             </div>
-            <Link href="/mrp/excel-upload">
-              <Button className="px-3">
-                Cargar excel
-              </Button>
-            </Link>
+            <div className="flex flex-row">
+              <Link href="/mrp/excel-upload" className="px-2">
+                <Button className="px-3">
+                  Cargar excel
+                </Button>
+              </Link>
+              <CutFiltersDialog setFilters={setFilters} filters={filters}>
+                <Button className="px-3">
+                  <FilterIcon />
+                </Button>
+              </CutFiltersDialog>
+            </div>
           </div>
           <h2 className="font-semibold">No hay recortes para mostrar</h2>
         </div>
@@ -277,13 +286,20 @@ export default function CutsPage({ cuts }: Props) {
                   </PopoverContent>
                 </Popover>
               </div>
-              <Link href="/mrp/excel-upload">
-                <Button className="px-3">
-                  Cargar excel
-                </Button>
-              </Link>
+              <div className="flex flex-row">
+                <Link href="/mrp/excel-upload" className="px-2">
+                  <Button className="px-3">
+                    Cargar excel
+                  </Button>
+                </Link>
+                <CutFiltersDialog setFilters={setFilters} filters={filters}>
+                  <Button className="px-3">
+                    <FilterIcon />
+                  </Button>
+                </CutFiltersDialog>
+              </div>
             </div>
-            <CutsTable cuts={cuts} productsByCode={productsByCode} />
+            <CutsTable cuts={cuts} productsByCode={productsByCode} filters={filters} />
 
           </>
         )}
