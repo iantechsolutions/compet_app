@@ -39,6 +39,7 @@ export default function CutsTableElement({
     <>
       <TableRow key={prodId}>
         <TableCell>{prodId}</TableCell>
+        <TableCell>{productsByCode[prodId]!.description + " " + productsByCode[prodId]!.additional_description}</TableCell>
         <TableCell>{prodMap.measuresMap.size} recortes</TableCell>
         <TableCell>
           {Array.from(prodMap.measuresMap)

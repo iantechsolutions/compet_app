@@ -135,6 +135,7 @@ export default function CutsTable({ cuts, productsByCode }: Props) {
       <TableHeader>
         <TableRow className="bg-[#f7f7f7] text-[#3e3e3e]">
           <TableHead className="w-[400px]">Código producto</TableHead>
+          <TableHead className="w-[400px]">Descripción</TableHead>
           <TableHead>Cantidad de recortes</TableHead>
           <TableHead>Total Metros</TableHead>
         </TableRow>
