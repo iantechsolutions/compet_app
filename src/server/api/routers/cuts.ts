@@ -62,7 +62,7 @@ export const cutsRouter = createTRPCRouter({
         id: z.number(),
       }),
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       await db.delete(schema.cuts).where(eq(schema.cuts.id, input.id));
       return "ok";
     }),

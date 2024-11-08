@@ -5,6 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~
 import type { Monolito } from "~/server/api/routers/db";
 import type { RouterOutputs } from "~/trpc/shared";
 import type { CutsSortDir, CutsSortType } from "./cust-table";
+import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
+import { CutDialog } from "./cuts-cut-dialog";
 
 export default function CutsTableElement({
   prodId,
@@ -27,6 +30,10 @@ export default function CutsTableElement({
   sortDir: CutsSortDir,
 }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const delMut = api.cuts.delete.useMutation();
+
   return (
     <>
       <TableRow key={prodId}>
@@ -166,8 +173,25 @@ export default function CutsTableElement({
                     <TableCell>{cut.amount}</TableCell>
                     <TableCell>{cut.measure / 1000}</TableCell>
                     <TableCell>{cut.units}</TableCell>
-                    <TableCell className="px-1"><Button variant={'ghost'}><ScissorsSquareIcon /></Button></TableCell>
-                    <TableCell className="px-1"><Button variant={'ghost'}><Trash2Icon /></Button></TableCell>
+                    <TableCell className="px-1">
+                      <CutDialog cut={cut}>
+                        <ScissorsSquareIcon />
+                      </CutDialog>
+                    </TableCell>
+                    <TableCell className="px-1">
+                      <Button variant={'ghost'} onClick={() => {
+                        void delMut.mutateAsync({
+                          id: cut.id
+                        }).then(_ => {
+                          console.log('delMut ok for id', cut.id);
+                          router.refresh();
+                        }).catch(e => {
+                          console.error(`delMut failed for id ${cut.id}`, e);
+                        });
+                      }}>
+                        <Trash2Icon />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
