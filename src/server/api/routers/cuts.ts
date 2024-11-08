@@ -62,9 +62,87 @@ export const cutsRouter = createTRPCRouter({
         id: z.number(),
       }),
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       await db.delete(schema.cuts).where(eq(schema.cuts.id, input.id));
       return "ok";
+    }),
+  cut: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      amount: z.number().int().positive(),
+      measure: z.number().nonnegative()
+    }))
+    .mutation(async ({ input }) => {
+      const cut = await db.query.cuts.findFirst({
+        where: eq(schema.cuts.id, input.id),
+      });
+
+      if (!cut) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      if (cut.measure < input.measure) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+
+      const consumidosMeasure = new Map<number, number>();
+      let amountRestante = input.amount;
+      for (let i = 0; i < cut.amount && amountRestante > 0; i++) {
+        let measure = cut.measure;
+        while (measure >= input.measure && amountRestante > 0) {
+          measure -= input.measure;
+          amountRestante -= 1;
+          consumidosMeasure.set(i, (consumidosMeasure.get(i) ?? 0) + input.measure);
+        }
+      }
+
+      if (amountRestante > 0) {
+        return "No alcanzan los recortes";
+      }
+
+      const newRecortes = new Map<number, number>();
+      let consumidosAmount = 0;
+
+      for (const consumido of consumidosMeasure) {
+        const consumidoMeasure = consumido[1];
+        const newMeasure = cut.measure - consumidoMeasure;
+        newRecortes.set(input.measure, (newRecortes.get(input.measure) ?? 0) + (consumidoMeasure / input.measure));
+        newRecortes.set(newMeasure, (newRecortes.get(newMeasure) ?? 0) + 1);
+        consumidosAmount += 1;
+      }
+
+      if (consumidosAmount < cut.amount) {
+        newRecortes.set(cut.measure, cut.amount - consumidosAmount);
+      }
+
+      const createdIds: number[] = [];
+      for (const newRecorte of newRecortes) {
+        if (newRecorte[0] < 0) {
+          console.error(`cut newRecorte[0] invalid measure`, newRecorte);
+        } else if (newRecorte[0] === 0) {
+          continue;
+        }
+
+        (await db.insert(schema.cuts)
+          .values({
+            amount: newRecorte[1],
+            measure: newRecorte[0],
+            prodId: cut.prodId,
+            stockPhys: cut.stockPhys,
+            stockTango: cut.stockTango,
+            units: cut.units,
+            caja: cut.caja,
+            location: cut.location,
+            lote: cut.lote,
+          })
+          .returning())
+          .forEach(v => createdIds.push(v.id));
+      }
+
+      await db.delete(schema.cuts)
+        .where(eq(schema.cuts.id, cut.id));
+
+      return createdIds;
     }),
   edit: protectedProcedure
     .input(
