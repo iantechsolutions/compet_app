@@ -42,10 +42,7 @@ export default function CutsTableElement({
         <TableCell>{productsByCode[prodId]!.description + " " + productsByCode[prodId]!.additional_description}</TableCell>
         <TableCell>{prodMap.measuresMap.size} recortes</TableCell>
         <TableCell>
-          {Array.from(prodMap.measuresMap)
-            .map(x => x)
-            .reduce((acc, [measure, amount]) => acc + (amount * parseFloat(measure)), 0)
-            .toFixed(2)}
+          {prodMap.cuts.reduce((acc, v) => acc + (getCutVisualMeasure(v.measure, v.units) * v.amount), 0).toFixed(2)}
         </TableCell>
         <TableCell>
           <Button
