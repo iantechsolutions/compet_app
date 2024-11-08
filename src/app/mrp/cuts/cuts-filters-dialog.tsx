@@ -42,7 +42,7 @@ export function CutFiltersDialog({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="code" className="text-right">
-              Descripción de producto
+              Descripción
             </Label>
             <Input ref={descFilterRef} id="code" placeholder="AZUL" defaultValue={filters.desc} className="col-span-3" />
           </div>
