@@ -84,16 +84,23 @@ export const ConsultCutsDialog = (props: { product: ProductWithDependencies, cut
   }
 
   let description;
-  if (cutsEntry[1].length > 10) {
-    description = <div className="grid-cols-3 grid gap-x-3">
-      {cutsEntry[1].map(v => <Card className="my-2">
-        <CardContent className="flex flex-auto my-4">
-          <CutCardContent cut={v} />
-        </CardContent>
-      </Card>)}
-    </div>;
-  } else if (cutsEntry[1].length > 5) {
-    description = <div className="grid-cols-2 grid gap-x-3">
+  let gridCols: number | null = null;
+  let minW = "min-w-[580px]";
+
+  if (cutsEntry[1].length >= 20) {
+    gridCols = 5;
+    minW = "min-w-[50%]";
+  } else if (cutsEntry[1].length >= 15) {
+    gridCols = 4;
+    minW = "min-w-[50%]";
+  } else if (cutsEntry[1].length >= 10) {
+    gridCols = 3;
+  } else if (cutsEntry[1].length >= 5) {
+    gridCols = 2;
+  }
+
+  if (gridCols !== null) {
+    description = <div className={`grid-cols-${gridCols} grid gap-x-3`}>
       {cutsEntry[1].map(v => <Card className="my-2">
         <CardContent className="flex flex-auto my-4">
           <CutCardContent cut={v} />
@@ -110,7 +117,7 @@ export const ConsultCutsDialog = (props: { product: ProductWithDependencies, cut
 
   return <Dialog>
     <DialogTrigger asChild>{props.children}</DialogTrigger>
-    <DialogContent className="min-w-[580px]">
+    <DialogContent className={minW}>
       <DialogHeader>
         <DialogTitle>
           <div className="flex flex-col">
