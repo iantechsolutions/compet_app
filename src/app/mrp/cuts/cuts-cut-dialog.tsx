@@ -1,5 +1,5 @@
 "use client";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,6 +15,7 @@ import { fromCutVisualMeasure, getCutVisualMeasure } from "~/lib/utils";
 export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterOutputs['cuts']['list'][number] }) {
   const cutMut = api.cuts.cut.useMutation();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   const formSchema = z.object({
     amount: z.coerce.number().positive('El número debe ser positivo')
@@ -35,6 +36,7 @@ export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterO
     }).then(v => {
       if (v.length > 0) {
         console.log('Ok');
+        setOpen(false);
         router.refresh();
       }
     }).catch(e => {
@@ -44,7 +46,7 @@ export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterO
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>

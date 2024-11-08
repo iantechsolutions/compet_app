@@ -101,10 +101,20 @@ export const cutsRouter = createTRPCRouter({
       }
 
       const newRecortes = new Map<number, number>();
+      let consumidosAmount = 0;
+
       for (const consumido of consumidosMeasure) {
         const consumidoMeasure = consumido[1];
         const newMeasure = cut.measure - consumidoMeasure;
-        newRecortes.set(newMeasure, (newRecortes.get(newMeasure) ?? 0) + 1)
+        console.log(`cons ${input.measure} ${input.measure} ${consumidoMeasure / input.measure}`);
+        console.log(`new ${newMeasure} ${cut.measure} 1`);
+        newRecortes.set(input.measure, (newRecortes.get(input.measure) ?? 0) + (consumidoMeasure / input.measure));
+        newRecortes.set(newMeasure, (newRecortes.get(newMeasure) ?? 0) + 1);
+        consumidosAmount += 1;
+      }
+
+      if (consumidosAmount < cut.amount) {
+        newRecortes.set(cut.measure, cut.amount - consumidosAmount);
       }
 
       const createdIds: number[] = [];
