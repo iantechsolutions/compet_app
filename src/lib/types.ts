@@ -157,7 +157,7 @@ export const orderSoldSchema = z.object({
 
 export const orderProductSoldSchema = z.object({
   product_code: z.string(),
-  // date: dateZodType,
+  date: dateZodType.optional(),
   CANTIDAD: z.number(),
   N_COMP: z.string(),
   // PORC_DTO: z.number().catch(0),
