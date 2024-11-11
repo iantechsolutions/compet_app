@@ -139,7 +139,7 @@ export default function ClientUnitsSold({ data }: graphicProps) {
               {sortedClients15.map((sold) =>
                 <TableRow key={`key-client-${sold.name}-${Math.random().toFixed(4)}`} className='text-base h-[4px]'>
                   <TableCell className={`py-1 h-[4px] ${sold === other ? 'text-gray-400' : ''}`}>{sold.name}</TableCell>
-                  <TableCell className={`py-1 h-[4px] ${sold === other ? 'text-gray-400' : ''}`}>{sold.totalSales}</TableCell>
+                  <TableCell className={`py-1 h-[4px] ${sold === other ? 'text-gray-400' : ''}`}>{Math.floor(sold.totalSales)}</TableCell>
                   <TableCell className={`py-1 h-[4px] ${sold === other ? 'text-gray-400' : ''}`}>{sold.amountOfSales}</TableCell>
                 </TableRow>
               )}
