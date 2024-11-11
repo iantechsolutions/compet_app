@@ -511,10 +511,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     // const allSales = productProductsSold.filter(v => v.t === 'S' && v.f >= fromDate.getTime() && v.f <= toDate.getTime());
     const allSales = productProductsSold
       .filter(v => v.date >= fromDate.getTime() && v.date <= toDate.getTime())
-      /* .map(v => v.t !== 'S' ? ({
+      //.map(v => v.t !== 'S' ? ({
+      .map(v => v.CANTIDAD < 0 ? ({
         ...v,
         c: 0
-      }) : v) */;
+      }) : v);
 
     const sortedQuantities = allSales.map(v => v.CANTIDAD);
     sortedQuantities.sort((a, b) => a - b);
