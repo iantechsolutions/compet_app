@@ -514,7 +514,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       //.map(v => v.t !== 'S' ? ({
       .map(v => v.CANTIDAD < 0 ? ({
         ...v,
-        c: 0
+        CANTIDAD: 0
       }) : v);
 
     const sortedQuantities = allSales.map(v => v.CANTIDAD);
