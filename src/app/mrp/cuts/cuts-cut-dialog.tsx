@@ -11,6 +11,7 @@ import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/shared";
 import { useRouter } from "next/navigation";
 import { fromCutVisualMeasure, getCutVisualMeasure } from "~/lib/utils";
+import { Loader2Icon } from "lucide-react";
 
 export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterOutputs['cuts']['list'][number] }) {
   const cutMut = api.cuts.cut.useMutation();
@@ -92,7 +93,7 @@ export function CutDialog({ children, cut }: { children: ReactNode, cut: RouterO
                   </FormItem>
                 )}
               />
-              <Button type="submit">Realizar</Button>
+              <Button type="submit">Realizar {cutMut.isLoading ? <Loader2Icon className="animate-spin ml-2"/> : <></>}</Button>
             </form>
           </Form>
         </div>
