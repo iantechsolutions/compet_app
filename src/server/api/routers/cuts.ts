@@ -106,7 +106,7 @@ export const cutsRouter = createTRPCRouter({
       for (const consumido of consumidosMeasure) {
         const consumidoMeasure = consumido[1];
         const newMeasure = cut.measure - consumidoMeasure;
-        newRecortes.set(input.measure, (newRecortes.get(input.measure) ?? 0) + (consumidoMeasure / input.measure));
+        // newRecortes.set(input.measure, (newRecortes.get(input.measure) ?? 0) + (consumidoMeasure / input.measure));
         newRecortes.set(newMeasure, (newRecortes.get(newMeasure) ?? 0) + 1);
         consumidosAmount += 1;
       }
