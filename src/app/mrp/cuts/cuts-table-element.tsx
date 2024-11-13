@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ScissorsSquareIcon, Trash2Icon } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Loader2Icon, ScissorsSquareIcon, Trash2Icon } from "lucide-react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
@@ -24,6 +24,8 @@ export default function CutsTableElement({
   prodMap: {
     measuresMap: Map<string, number>,
     cuts: NonNullable<RouterOutputs['cuts']['list']>[number][],
+    stockFis: number,
+    stockTango: number
   },
   setSortType: Dispatch<SetStateAction<CutsSortType>>,
   sortType: CutsSortType,
@@ -31,19 +33,21 @@ export default function CutsTableElement({
   sortDir: CutsSortDir,
 }) {
   const [open, setOpen] = useState(false);
+
   const router = useRouter();
 
   const delMut = api.cuts.delete.useMutation();
+  const prod = productsByCode[prodId]!;
 
   return (
     <>
       <TableRow key={prodId}>
         <TableCell>{prodId}</TableCell>
-        <TableCell>{productsByCode[prodId]!.description + " " + productsByCode[prodId]!.additional_description}</TableCell>
+        <TableCell>{prod.description + " " + prod.additional_description}</TableCell>
         <TableCell>{prodMap.measuresMap.size} recortes</TableCell>
-        <TableCell>
-          {prodMap.cuts.reduce((acc, v) => acc + (getCutVisualMeasure(v.measure, v.units) * v.amount), 0).toFixed(2)}
-        </TableCell>
+        <TableCell>{prodMap.stockFis}</TableCell>
+        <TableCell>{prodMap.stockTango}</TableCell>
+        <TableCell>{Math.round(prodMap.stockFis - prodMap.stockTango)}</TableCell>
         <TableCell>
           <Button
             onClick={() => setOpen(!open)}
@@ -188,7 +192,7 @@ export default function CutsTableElement({
                           console.error(`delMut failed for id ${cut.id}`, e);
                         });
                       }}>
-                        <Trash2Icon />
+                        {delMut.isLoading ? <Loader2Icon className="animate-spin" /> : <Trash2Icon />}
                       </Button>
                     </TableCell>
                   </TableRow>
