@@ -504,6 +504,11 @@ export function getMonolitoByForecast(args: {
       };
     }),
 
+    products_sold: data.products_sold.map((v) => ({
+      ...v,
+      date: v.date?.getTime() ?? 0
+    })),
+
     productsByCode,
     providersByCode,
 

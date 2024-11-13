@@ -746,6 +746,8 @@ export class Database {
     return arraySchema.parse(records).at(0);
   }
 
+
+  // "comprobantes de cuenta corriente" GVA12
   public async getSold(cacheTtl?: number, forceCache = false): Promise<(typeof orderSoldSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();
@@ -762,6 +764,7 @@ export class Database {
     );
   }
 
+  // "renglones de comprobantes de facturación" GVA53
   public async getProductsSold(cacheTtl?: number, forceCache = false): Promise<(typeof orderProductSoldSchema)["_output"][]> {
     if (!env.DB_DIRECT_CONNECTION) {
       const r = await this.readAllDataUT();

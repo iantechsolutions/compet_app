@@ -76,7 +76,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const loading = isLoadingClients || isLoadingSold || isLoadingBudgets || isLoadingCRMC || isLoadingBID || isLoadingProv || isLoadingProds || isLoadingEvts || isLoadingAssemb || isLoadingBP; */
   const mrpData = useMRPData();
   const {
-    stock_movements,
+    products_sold,
     providers,
     eventsByProductCode,
     products,
@@ -107,9 +107,9 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     return map;
   }, [products]);
 
-  const productStockMovements = useMemo(() => {
-    return stock_movements.filter(v => v.p === productCode);
-  }, [stock_movements]);
+  const productProductsSold = useMemo(() => {
+    return products_sold.filter(v => v.product_code === productCode);
+  }, [products_sold]);
 
   const filteredProviders = useMemo(() => {
     const start = Date.now();
@@ -264,13 +264,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    let events = eventsByProductCode?.[productCode] ?? [];
-    let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
+    const tupleToAmountMap = new Map<[string, string], number>();
+    let totalConsumedAmount = 0;
+
+    let events = eventsByProductCode?.[productCode] ?? [];
     events = events.filter(
       (event) => event.type != "import" && new Date(event.date) && new Date(event.date) >= fromDate && new Date(event.date) <= toDate,
     );
-    const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
       const parentEvent = event.parentEventIndex !== undefined ? indexedEvents[event.parentEventIndex]! : undefined;
       const assembliesQuantities =
@@ -508,15 +509,16 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }; */
 
     // salidas en x fechas
-    // const allSales = productStockMovements.filter(v => v.t === 'S' && v.f >= fromDate.getTime() && v.f <= toDate.getTime());
-    const allSales = productStockMovements
-      .filter(v => v.f >= fromDate.getTime() && v.f <= toDate.getTime())
-      .map(v => v.t !== 'S' ? ({
-        ...v,
-        c: 0
-      }) : v);
+    // const allSales = productProductsSold.filter(v => v.t === 'S' && v.f >= fromDate.getTime() && v.f <= toDate.getTime());
+    const allSales = productProductsSold
+      .filter(v => v.date >= fromDate.getTime() && v.date <= toDate.getTime() && v.CANTIDAD > 0);
+    //.map(v => v.t !== 'S' ? ({
+    /* .map(v => v.CANTIDAD < 0 ? ({
+      ...v,
+      CANTIDAD: 0
+    }) : v); */
 
-    const sortedQuantities = allSales.map(v => v.c);
+    const sortedQuantities = allSales.map(v => v.CANTIDAD);
     sortedQuantities.sort((a, b) => a - b);
 
     const mid = Math.floor(sortedQuantities.length / 2);
@@ -555,16 +557,16 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       // figura todo lo que es armado y ventas
       if (dataSemi !== null) {
         const clave = dataSemi.long + " mm";
-        const stockMovements = stock_movements.filter(v =>
-          v.p === supplyOfCode &&
-          v.f >= fromDate.getTime() &&
-          v.f <= toDate.getTime() &&
-          v.t === 'S' &&
-          v.c > 0
+        const stockMovements = products_sold.filter(v =>
+          v.product_code === supplyOfCode &&
+          v.date >= fromDate.getTime() &&
+          v.date <= toDate.getTime() &&
+          // v.t === 'S' &&
+          v.CANTIDAD > 0
         );
 
         for (const movement of stockMovements) {
-          mapeoConsumo.set(clave, movement.c + (mapeoConsumo.get(clave) ?? 0));
+          mapeoConsumo.set(clave, movement.CANTIDAD + (mapeoConsumo.get(clave) ?? 0));
         }
       }
     });
