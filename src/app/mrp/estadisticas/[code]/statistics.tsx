@@ -264,13 +264,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    let events = eventsByProductCode?.[productCode] ?? [];
-    let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
+    const tupleToAmountMap = new Map<[string, string], number>();
+    let totalConsumedAmount = 0;
+
+    let events = eventsByProductCode?.[productCode] ?? [];
     events = events.filter(
       (event) => event.type != "import" && new Date(event.date) && new Date(event.date) >= fromDate && new Date(event.date) <= toDate,
     );
-    const tupleToAmountMap = new Map<[string, string], number>();
     events.forEach((event) => {
       const parentEvent = event.parentEventIndex !== undefined ? indexedEvents[event.parentEventIndex]! : undefined;
       const assembliesQuantities =
@@ -510,12 +511,12 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     // salidas en x fechas
     // const allSales = productProductsSold.filter(v => v.t === 'S' && v.f >= fromDate.getTime() && v.f <= toDate.getTime());
     const allSales = productProductsSold
-      .filter(v => v.date >= fromDate.getTime() && v.date <= toDate.getTime())
-      //.map(v => v.t !== 'S' ? ({
-      .map(v => v.CANTIDAD < 0 ? ({
-        ...v,
-        CANTIDAD: 0
-      }) : v);
+      .filter(v => v.date >= fromDate.getTime() && v.date <= toDate.getTime() && v.CANTIDAD > 0);
+    //.map(v => v.t !== 'S' ? ({
+    /* .map(v => v.CANTIDAD < 0 ? ({
+      ...v,
+      CANTIDAD: 0
+    }) : v); */
 
     const sortedQuantities = allSales.map(v => v.CANTIDAD);
     sortedQuantities.sort((a, b) => a - b);
