@@ -129,7 +129,7 @@ export function isSemiElaborate(prod?: { additional_description: string; supplie
 }
 
 export function getCutVisualMeasure(measure: number, units: NonNullable<RouterOutputs['cuts']['get']>['units']): number {
-  if (units === CutUnits.Meters) {
+  if (units === CutUnits.Meters || units === CutUnits.Piece || units === CutUnits.Quantity || units === CutUnits.Kits) {
     return measure / 1000;
   } else {
     return measure;
@@ -137,7 +137,7 @@ export function getCutVisualMeasure(measure: number, units: NonNullable<RouterOu
 }
 
 export function fromCutVisualMeasure(measure: number, units: NonNullable<RouterOutputs['cuts']['get']>['units']): number {
-  if (units === CutUnits.Meters) {
+  if (units === CutUnits.Meters || units === CutUnits.Piece || units === CutUnits.Quantity || units === CutUnits.Kits) {
     return measure * 1000;
   } else {
     return measure;
