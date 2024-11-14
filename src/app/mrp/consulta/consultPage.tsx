@@ -386,7 +386,15 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
     arrivalDataId = product.arrivalData.importId;
   } else {
     if (product.dependencies) {
-      arrivalDate = "-";
+      if (product.cuts !== null && product.state === 'import') {
+        const dep = product.dependencies[0]!;
+        const arrDate = dep.arrivalData!;
+        arrivalDate = dayjs(arrDate.date.toString()).format("DD-MM-YYYY");
+        arrivalDataId = arrDate.importId;
+        product = dep;
+      } else {
+        arrivalDate = "-";
+      }
     } else {
       if (product.cuts !== null) {
         if (product.cuts.length > 0) {
@@ -446,7 +454,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           <p>{maxConsumible}</p>
         </div>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
-          <p>{product.stock.toFixed(1)}</p>
+          <p>{product.realStock.toFixed(1)}</p>
         </div>
         <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
           <p>{Math.round(product.consumed)}</p>
