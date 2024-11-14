@@ -30,6 +30,7 @@ export interface ProductWithDependencies {
   description: string;
   additional_description: string;
   stock: number;
+  realStock: number;
   dependencies: ProductWithDependencies[] | null;
   arrivalData: {
     date: Date;
@@ -108,6 +109,7 @@ function initializeProductWDeps(prod: {
     description: "",
     additional_description: "",
     stock: 0,
+    realStock: 0,
     cuts: [],
     state: null,
   };
@@ -262,7 +264,8 @@ function getConsumoForProductList(
 
       const commited = expiredNotImportEvents.reduce((sum, event) => sum + event.quantity, 0);
       const consumedTotal = commited + (yaConsumidoLoop.get(pcKey) ?? 0);
-      const inventory = Math.max(0, product.stock - commited);
+      const inventory = Math.max(0, product.stock - consumedTotal);
+      const inventoryReal = Math.max(0, product.stock - commited);
 
       if (semielaborado !== null) {
         const { supply, long: pcMeasure } = semielaborado;
@@ -333,6 +336,7 @@ function getConsumoForProductList(
                 description: "",
                 additional_description: "",
                 stock: 0,
+                realStock: 0,
                 cuts: null,
                 state: null,
               })),
@@ -353,6 +357,7 @@ function getConsumoForProductList(
               description: product.description,
               additional_description: product.additional_description,
               stock: inventory,
+              realStock: inventoryReal,
               cuts: cutsUsed,
               state: null,
             };
@@ -379,6 +384,7 @@ function getConsumoForProductList(
                     description: product.description,
                     additional_description: product.additional_description,
                     stock: inventory,
+                    realStock: inventoryReal,
                     cuts: cutsUsed,
                     state: null,
                   };
@@ -397,6 +403,7 @@ function getConsumoForProductList(
                 productCode: product.code,
                 description: product.description,
                 additional_description: product.additional_description,
+                realStock: inventoryReal,
                 stock: inventory,
                 cuts: [],
                 state: null,
@@ -413,6 +420,7 @@ function getConsumoForProductList(
               return {
                 productCode: v.cut.prodId,
                 stock: v.cut.amount,
+                realStock: v.cut.amount,
                 dependencies: null,
                 arrivalData: null,
                 consumed: v.amount,
@@ -426,6 +434,7 @@ function getConsumoForProductList(
             description: product.description,
             additional_description: product.additional_description,
             stock: inventory,
+            realStock: inventoryReal,
             cuts: cutsUsed,
             state: null,
           };
@@ -445,6 +454,7 @@ function getConsumoForProductList(
                 description: "",
                 additional_description: '',
                 stock: 0,
+                realStock: 0,
                 cuts: null,
                 state: null,
               })),
@@ -465,6 +475,7 @@ function getConsumoForProductList(
               description: product.description,
               additional_description: product.additional_description,
               stock: inventory,
+              realStock: inventoryReal,
               cuts: null,
               state: null,
             };
@@ -492,6 +503,7 @@ function getConsumoForProductList(
                     description: product.description,
                     additional_description: product.additional_description,
                     stock: inventory,
+                    realStock: inventoryReal,
                     cuts: null,
                     state: null,
                   };
@@ -511,6 +523,7 @@ function getConsumoForProductList(
                 description: product.description,
                 additional_description: product.additional_description,
                 stock: inventory,
+                realStock: inventoryReal,
                 cuts: null,
                 state: null,
               };
@@ -528,6 +541,7 @@ function getConsumoForProductList(
             description: product.description,
             additional_description: product.additional_description,
             stock: inventory,
+            realStock: inventoryReal,
             cuts: null,
             state: null,
           };
