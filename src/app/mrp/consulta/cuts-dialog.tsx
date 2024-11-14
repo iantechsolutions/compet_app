@@ -12,7 +12,6 @@ const CutCardContent = (props: { cut: ProductWithDependenciesCut }) => {
     <p>Ubicación: {(v.cut.location?.length ?? 0) === 0 ? '-' : v.cut.location}</p>
     <p>Cantidad: {v.cut.amount}</p>
     <p>Medida: {getCutVisualMeasure(v.cut.measure, v.cut.units)} {v.cut.units}</p>
-    <p>Consumido: {v.amount}</p>
   </div>;
 }
 
@@ -65,7 +64,7 @@ export const ConsultCutsDialog = (props: { product: ProductWithDependencies, cut
           <DialogDescription>
             <p className="text-red-600">{errorMessage}</p>
             {importData !== null ? <>
-              <p>Fecha de entrada: {dayjs(importData.date.toString()).format("YYYY-MM")}</p>
+              <p>Fecha de entrada: {dayjs(importData.date.toString()).format("DD-MM-YYYY")}</p>
               <p>Código de importación: {importData.code}</p>
             </> : <></>}
           </DialogDescription>

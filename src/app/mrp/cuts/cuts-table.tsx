@@ -4,6 +4,7 @@ import type { RouterOutputs } from "~/trpc/shared";
 import type { Monolito } from "~/server/api/routers/db";
 import CutsTableElement from "./cuts-table-element";
 import { getCutVisualMeasure } from "~/lib/utils";
+import { ArrowDown, ArrowUp } from "lucide-react";
 
 interface Props {
   cuts: NonNullable<RouterOutputs['cuts']['list']>;
@@ -22,8 +23,12 @@ export type CutsFilters = {
 export type CutsFilterDispatch = Dispatch<SetStateAction<CutsFilters>>;
 
 export default function CutsTable({ cuts, productsByCode, filters }: Props) {
-  const [sortType, setSortType] = useState<CutsSortType>('lote');
-  const [sortDir, setSortDir] = useState<CutsSortDir>('asc');
+  const [subTableSortType, setSubTableSortType] = useState<CutsSortType>('lote');
+  const [subTableSortDir, setSubTableSortDir] = useState<CutsSortDir>('asc');
+
+  const [sortType, setSortType] = useState<'code' | 'desc' | 'cant' | 'fis' | 'tango' | 'dif'>('code');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
   const [cutsMap, setCutsMap] = useState<Map<string, {
     measuresMap: Map<string, number>,
     cuts: NonNullable<RouterOutputs['cuts']['list']>[number][],
@@ -61,6 +66,7 @@ export default function CutsTable({ cuts, productsByCode, filters }: Props) {
     setCutsMap(map);
   }, [cuts]);
 
+  // este sorting es interno de cada sub-tabla
   const cutsMapSorted = useMemo(() => {
     const mapRes = new Map<string, {
       measuresMap: Map<string, number>,
@@ -70,7 +76,7 @@ export default function CutsTable({ cuts, productsByCode, filters }: Props) {
     cutsMap.forEach((cutMapped, key) => {
       const sorted = cutMapped.cuts.sort((a, b) => {
         let rA: typeof a, rB: typeof a;
-        if (sortDir === 'asc') {
+        if (subTableSortDir === 'asc') {
           rA = a;
           rB = b;
         } else {
@@ -78,7 +84,7 @@ export default function CutsTable({ cuts, productsByCode, filters }: Props) {
           rB = a;
         }
 
-        switch (sortType) {
+        switch (subTableSortType) {
           case "caja": {
             const aNumCaja = Number(rA.caja);
             const bNumCaja = Number(rB.caja);
@@ -136,7 +142,7 @@ export default function CutsTable({ cuts, productsByCode, filters }: Props) {
     });
 
     return mapRes;
-  }, [cutsMap, sortType, sortDir, cuts]);
+  }, [cutsMap, subTableSortType, subTableSortDir, cuts]);
 
   const cutsMapSortedFiltered = useMemo(() => {
     let res = cutsMapSorted;
@@ -166,27 +172,146 @@ export default function CutsTable({ cuts, productsByCode, filters }: Props) {
     return res;
   }, [filters, cutsMapSorted]);
 
+  // este sorting es de la tabla grande en sí
+  const sortedCutsMapSorted = useMemo(() => {
+    const mapped: [string, {
+      measuresMap: Map<string, number>,
+      cuts: NonNullable<RouterOutputs['cuts']['list']>[number][],
+      stockFis: number,
+      stockTango: number
+    }][] = Array.from(cutsMapSortedFiltered).map(prod => [
+      prod[0],
+      {
+        ...prod[1],
+        stockFis: Number(prod[1].cuts.reduce((acc, v) => acc + (getCutVisualMeasure(v.measure, v.units) * v.amount), 0).toFixed(2)),
+        stockTango: Math.round(productsByCode[prod[0]]!.stock)
+      }
+    ])
+
+    return mapped.sort((a, b) => {
+      const rA = sortDir === 'asc' ? a : b;
+      const rB = sortDir === 'asc' ? b : a;
+
+      const productA = productsByCode[rA[0]]!;
+      const productB = productsByCode[rB[0]]!;
+
+      if (sortType === 'fis') {
+        return rA[1].stockFis - rB[1].stockFis;
+      } else if (sortType === 'desc') {
+        return productA.description.localeCompare(productB.description);
+      } else if (sortType === 'tango') {
+        return rA[1].stockTango - rB[1].stockFis;
+      } else if (sortType === 'dif') {
+        return Math.round(rA[1].stockFis - rA[1].stockTango) - Math.round(rB[1].stockFis - rB[1].stockTango);
+      } else if (sortType === 'cant') {
+        return rA[1].measuresMap.size - rB[1].measuresMap.size;
+      } else { // sortType === 'code'
+        return productA.code.localeCompare(productB.code);
+      }
+    });
+  }, [cutsMapSortedFiltered, sortDir, sortType]);
+
   return (
     <Table>
       <TableHeader>
         <TableRow className="bg-[#f7f7f7] text-[#3e3e3e]">
-          <TableHead className="w-[400px]">Código producto</TableHead>
-          <TableHead className="w-[400px]">Descripción</TableHead>
-          <TableHead>Cantidad de recortes</TableHead>
-          <TableHead>Total Metros / Unidades</TableHead>
+          <TableHead>
+            <div className="flex flex-row">
+              <button onClick={() => {
+                if (sortType === 'code') {
+                  setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+                } else {
+                  setSortType('code');
+                  setSortDir('asc');
+                }
+              }}>Código producto</button> {
+                sortType === 'code' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
+              }
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex flex-row">
+              <button onClick={() => {
+                if (sortType === 'desc') {
+                  setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+                } else {
+                  setSortType('desc');
+                  setSortDir('asc');
+                }
+              }}>Descripción</button> {
+                sortType === 'desc' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
+              }
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex flex-row">
+              <button onClick={() => {
+                if (sortType === 'cant') {
+                  setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+                } else {
+                  setSortType('cant');
+                  setSortDir('asc');
+                }
+              }}>Cantidad de recortes</button> {
+                sortType === 'cant' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
+              }
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex flex-row">
+              <button onClick={() => {
+                if (sortType === 'fis') {
+                  setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+                } else {
+                  setSortType('fis');
+                  setSortDir('asc');
+                }
+              }}>Stock físico</button> {
+                sortType === 'fis' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
+              }
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex flex-row">
+              <button onClick={() => {
+                if (sortType === 'tango') {
+                  setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+                } else {
+                  setSortType('tango');
+                  setSortDir('asc');
+                }
+              }}>Stock tango</button> {
+                sortType === 'tango' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
+              }
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex flex-row">
+              <button onClick={() => {
+                if (sortType === 'dif') {
+                  setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+                } else {
+                  setSortType('dif');
+                  setSortDir('asc');
+                }
+              }}>Diferencia</button> {
+                sortType === 'dif' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
+              }
+            </div>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {Array.from(cutsMapSortedFiltered).map(([prodId, prodMap]) =>
+        {sortedCutsMapSorted.map(([prodId, prodMap]) =>
           <CutsTableElement
             key={`a-${prodId}`}
             prodId={prodId}
             prodMap={prodMap}
             productsByCode={productsByCode}
-            setSortDir={setSortDir}
-            setSortType={setSortType}
-            sortDir={sortDir}
-            sortType={sortType}
+            setSortDir={setSubTableSortDir}
+            setSortType={setSubTableSortType}
+            sortDir={subTableSortDir}
+            sortType={subTableSortType}
           />
         )}
       </TableBody>

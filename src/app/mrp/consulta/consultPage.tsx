@@ -382,7 +382,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
   let arrivalDate: string;
   let arrivalDataId: string | null = null;
   if (product.arrivalData) {
-    arrivalDate = dayjs(product.arrivalData.date.toString()).format("YYYY-MM");
+    arrivalDate = dayjs(product.arrivalData.date.toString()).format("DD-MM-YYYY");
     arrivalDataId = product.arrivalData.importId;
   } else {
     if (product.dependencies) {
