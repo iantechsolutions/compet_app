@@ -174,9 +174,9 @@ export async function queryBaseMRPData() {
       const order = ordersByOrderNumber.get(orderProduct.order_number);
       if (!order) return false;
       if (order.state != 2) return false;
-      if (order.delivery_date < dayjs("2020-01-01").toDate()) {
-        return false;
-      }
+      // if (order.delivery_date < dayjs("2020-01-01").toDate()) {
+      //   return false;
+      // }
       return true;
     }),
     clients,

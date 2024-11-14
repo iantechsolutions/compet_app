@@ -262,7 +262,7 @@ function getConsumoForProductList(
 
       const commited = expiredNotImportEvents.reduce((sum, event) => sum + event.quantity, 0);
       const consumedTotal = commited + (yaConsumidoLoop.get(pcKey) ?? 0);
-      const inventory = Math.max(0, product.stock - consumedTotal);
+      const inventory = Math.max(0, product.stock - commited);
 
       if (semielaborado !== null) {
         const { supply, long: pcMeasure } = semielaborado;
@@ -273,6 +273,7 @@ function getConsumoForProductList(
 
         let falta = false;
         let pcValueFaltante = pcValue;
+        let pcValueConsumido = 0;
 
         // si no hay recortes me fijo directo en el supply
         // no pasa nada que el while se ejecute una vez, recorrido va a ser 0
@@ -302,7 +303,9 @@ function getConsumoForProductList(
               /* console.log(
                 `[${cutAmountNeeded}] ${pcMeasure} ${cutAmountUsed} ${maxConsumibleCut} ${pcValueFaltante} ${cut.measure} ${cut.amount}`,
               ); */
-              pcValueFaltante -= (cutAmountUsed * cut.measure) / pcMeasure;
+              const consumido = (cutAmountUsed * cut.measure) / pcMeasure;
+              pcValueConsumido += consumido;
+              pcValueFaltante -= consumido;
               // console.log(`${pcValueFaltante}`);
               recorrido += 1;
             }
@@ -324,7 +327,7 @@ function getConsumoForProductList(
             const cons = getConsumoForProductList(
               product.supplies.map((supply) => ({
                 arrivalData: null,
-                consumed: supply.quantity * (pcValue - Math.max(0, product.stock - consumedTotal)),
+                consumed: supply.quantity * (pcValue - pcValueConsumido),
                 dependencies: null,
                 productCode: supply.supply_product_code,
                 description: "",
@@ -357,8 +360,11 @@ function getConsumoForProductList(
             // no hay supplies, se fija si va a importar
           } else {
             let validAmount = false;
+            const maxDate = new Date();
+            maxDate.setDate(0);
+
             product.imports
-              .filter((impor) => new Date(String(impor.arrival_date)).getTime() > new Date().getTime())
+              .filter((impor) => new Date(String(impor.arrival_date)).getTime() > maxDate.getTime())
               .forEach((impor) => {
                 if (pcValueFaltante < impor.ordered_quantity && !validAmount) {
                   // console.log("recortes entra aca 2", product.code);
@@ -467,8 +473,11 @@ function getConsumoForProductList(
             // no hay supplies, se fija si va a importar
           } else {
             let validAmount = false;
+            const maxDate = new Date();
+            maxDate.setDate(0);
+
             product.imports
-              .filter((impor) => new Date(String(impor.arrival_date)).getTime() > new Date().getTime())
+              .filter((impor) => new Date(String(impor.arrival_date)).getTime() > maxDate.getTime())
               .forEach((impor) => {
                 if (pcValue < product.stock - consumedTotal + impor.ordered_quantity && !validAmount) {
                   console.log("!recortes entra aca 2", product.code);
@@ -613,7 +622,7 @@ export const consultRouter = createTRPCRouter({
         data.productsByCode
       );
 
-      // console.dir(res, { depth: 50 });
+      console.dir(res, { depth: 50 });
       return res;
     }),
   mailNotificacion: protectedProcedure
