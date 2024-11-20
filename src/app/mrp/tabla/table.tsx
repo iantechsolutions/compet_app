@@ -20,6 +20,7 @@ import { Button } from "~/components/ui/button";
 import { Loader2Icon } from "lucide-react";
 import { Monolito, MonolitoProduct } from "~/server/api/routers/db";
 import { useMRPContext, useMRPData } from "~/components/mrp-data-provider";
+import CompetTitle from "~/components/compet-title";
 
 function ProductInfoCell({ product }: { product: MonolitoProduct }) {
   const [currentFocus, setFocus] = useFocus();
@@ -290,7 +291,7 @@ export function Table(props: { user?: NavUserData }) {
 
   return (
     <AppLayout
-      title={<h1>COMPET MRP</h1>}
+      title={<CompetTitle />}
       user={props.user}
       sidenav={<AppSidenav />}
       hideMenuOnDesktop
