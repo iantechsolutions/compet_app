@@ -259,8 +259,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
   const stockOfProductTmp = new Map<string, number>();
 
   for (const product of data.products) {
-    let stock = product.stock - product.commited;
-    stockOfProductTmp.set(product.code, stock);
+    stockOfProductTmp.set(product.code, product.stock);
   }
 
   let index = 0;
