@@ -259,7 +259,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
   const stockOfProductTmp = new Map<string, number>();
 
   for (const product of data.products) {
-    stockOfProductTmp.set(product.code, product.stock - product.commited);
+    stockOfProductTmp.set(product.code, product.stock);
   }
 
   let index = 0;
@@ -275,7 +275,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
       // Actualizamos el stock en el evento
       event.productAccumulativeStock = stock;
     } else if (event.type === "order" || event.type === "forecast" || event.type === "supply") {
-      let newStockAmount = stockOfProductTmp.get(event.productCode)! - event.quantity;
+      let newStockAmount = stockOfProductTmp.get(event.productCode)! - event.quantity - (data.productsByCode.get(event.productCode)?.commited ?? 0);
 
       // Datos del producto
       const product = data.productsByCode.get(event.productCode)!;
