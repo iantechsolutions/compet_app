@@ -261,10 +261,6 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
   for (const product of data.products) {
     let stock = product.stock - product.commited;
     stockOfProductTmp.set(product.code, stock);
-    if (product.code === '05121003 EXT') {
-      console.log('stock', stock);
-      console.log('product', product);
-    }
   }
 
   let index = 0;
@@ -281,10 +277,6 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
       event.productAccumulativeStock = stock;
     } else if (event.type === "order" || event.type === "forecast" || event.type === "supply") {
       let newStockAmount = stockOfProductTmp.get(event.productCode)! - event.quantity;
-      if (event.productCode === '05121003 EXT') {
-        console.log('newStockAmount', newStockAmount);
-        console.log('event', event);
-      }
 
       // Datos del producto
       const product = data.productsByCode.get(event.productCode)!;

@@ -10,6 +10,7 @@ type MappedData = {
   products: {
     code: string;
     stock: number;
+    commited: number;
     supplies?: ProductAssembly[];
   }[];
   forecastData?: {
@@ -286,7 +287,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
   const stockOfProductTmp = new Map<string, number>();
 
   for (const product of data.products) {
-    stockOfProductTmp.set(product.code, product.stock);
+    stockOfProductTmp.set(product.code, product.stock - product.commited);
   }
 
   let index = 0;
