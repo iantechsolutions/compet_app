@@ -12,7 +12,7 @@ import { Client, Import, Order, OrderProduct, Product, ProductAssembly, ProductI
 
 export type ProductEventType = "import" | "order" | "supply" | "forecast";
 
-export type ProductEvent = {
+export type ProductEvent<Date> = {
   type: ProductEventType;
   forecastType?: "sold" | "budget"; // | 'import'
   referenceId: number;
@@ -20,11 +20,12 @@ export type ProductEvent = {
   originalQuantity?: number;
   quantity: number;
   productCode: string;
-  parentEvent?: ProductEvent;
-  childEvents?: ProductEvent[];
+  parentEventIndex?: number;
+  childEventsIndexes?: number[];
   level?: number;
   expired: boolean;
   assemblyId?: number;
+  assemblyQuantity?: number;
   isForecast?: boolean;
   productAccumulativeStock: number;
 };
@@ -45,7 +46,7 @@ function _transformMRPData(rawData: RawMRPData, forecastData: ForecastData | und
 
   // product_id: { month_code: number }
 
-  const eventsOfProductsByMonth = new Map<string, Map<string, ProductEvent[]>>();
+  const eventsOfProductsByMonth = new Map<string, Map<string, ProductEvent<Date>[]>>();
   for (const product of data.products) {
     eventsOfProductsByMonth.set(product.code, eventsOfProductByMonth(eventsByProductCode.get(product.code)!, months));
   }
@@ -189,28 +190,28 @@ export type MRPProduct = MRPData["products"][number];
 
 // Generamos una lista de eventos generales ordenados por fecha
 export function listAllEvents(data: MappedData) {
-  const events: ProductEvent[] = [];
+  const events: ProductEvent<Date>[] = [];
 
   const today = dayjs().startOf("day").toDate();
 
   // Take forecast data and transform it into events that the MRP can understand
-  if (data.forecastData) {
-    for (const event of data.forecastData.events) {
-      // Transform ForecastDataEvent to ProductEvent
-      events.push({
-        type: "forecast", // It indicates that it is a forecast event (not a real life event)
-        forecastType: event.type,
-        referenceId: -1,
-        date: event.date,
-        quantity: event.quantity,
-        productCode: event.product_code,
-        expired: new Date(event.date) < today,
-        productAccumulativeStock: 0,
-        originalQuantity: event.originalQuantity,
-        isForecast: true,
-      });
-    }
+  // if (data.forecastData) {
+  for (const event of data.forecastData!.events) {
+    // Transform ForecastDataEvent to ProductEvent
+    events.push({
+      type: "forecast", // It indicates that it is a forecast event (not a real life event)
+      forecastType: event.type,
+      referenceId: -1,
+      date: event.date,
+      quantity: event.quantity,
+      productCode: event.product_code,
+      expired: new Date(event.date) < today,
+      productAccumulativeStock: 0,
+      originalQuantity: event.originalQuantity,
+      isForecast: true,
+    });
   }
+  // }
 
   // Events from imports
   for (const productImport of data.productImports) {
@@ -251,8 +252,9 @@ export function listAllEvents(data: MappedData) {
 // Les agregamos eventos de suministro para poder calcular el stock de forma correcta
 // Esto sucita cuando se agotan los productos que son armados y se tienen que crear nuevos armados,
 // en estos casos se asocia al pedido la materia prima necesaria para armar el producto
+// debería usarse posteriormente a mapData (supplies!)
 export function listAllEventsWithSupplyEvents(data: MappedData) {
-  let events: ProductEvent[] = [...listAllEvents(data)];
+  let events: ProductEvent<Date>[] = [...listAllEvents(data)];
 
   const stockOfProductTmp = new Map<string, number>();
 
@@ -283,7 +285,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
 
       // Si estamos vendiendo más unidades de las que tenemos en stock y es un armado,
       // significa que podemos armar más unidades
-      if (newStockAmount < 0 && product.supplies.length > 0) {
+      if (newStockAmount < 0 && (product.supplies?.length ?? 0) > 0) {
         // Cantidad de unidades que tenemos que armar
         overflow = -newStockAmount;
         // Si ya había stock negativo
@@ -299,10 +301,10 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
         event.quantity -= overflow;
 
         // Nuevos eventos de summistro
-        const newSupplyEvents: ProductEvent[] = [];
+        const newSupplyEvents: ProductEvent<Date>[] = [];
 
         // Por cada producto que se necesita para armar el producto
-        for (const supply of product.supplies) {
+        for (const supply of product.supplies ?? []) {
           newSupplyEvents.push({
             type: "supply",
             forecastType: event.forecastType,
@@ -311,7 +313,7 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
             productCode: supply.supply_product_code, // Código del suministro
             quantity: supply.quantity * overflow, // Cantidad por armado por cantidad a armar
             assemblyId: supply.id,
-            parentEvent: event,
+            parentEventIndex: index,
             referenceId: event.referenceId, // Referencia al producto de la orden original
             expired: event.expired,
             isForecast: event.isForecast,
@@ -319,11 +321,15 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
           });
         }
 
-        // Referenciamos el evento original a los nuevos eventos de suministro
-        event.childEvents = newSupplyEvents;
+        // (no) Referenciamos el evento original a los nuevos eventos de suministro
+        event.childEventsIndexes = [];
+        for (let k = 0; k < newSupplyEvents.length; k++) {
+          event.childEventsIndexes.push(index + 1 + k);
+        }
 
         // Agregamos los nuevos eventos de suministro a la lista de eventos
         // ES MUY IMPORTANTE RESPETAR EL ORDEN POR FECHA
+        // Obs: esto no rompe parentEventIndex porque los indices previos se mantienen
         events = [...events.slice(0, index + 1), ...newSupplyEvents, ...events.slice(index + 1)];
       }
 
@@ -340,8 +346,8 @@ export function listAllEventsWithSupplyEvents(data: MappedData) {
   return events;
 }
 
-export function listProductsEvents(data: MappedData, events: ProductEvent[]) {
-  const eventsByProductCode = new Map<string, ProductEvent[]>();
+export function listProductsEvents(data: MappedData, events: ProductEvent<Date>[]) {
+  const eventsByProductCode = new Map<string, ProductEvent<Date>[]>();
 
   for (const product of data.products) {
     eventsByProductCode.set(product.code, []);
@@ -356,7 +362,7 @@ export function listProductsEvents(data: MappedData, events: ProductEvent[]) {
   return eventsByProductCode;
 }
 
-export function stockOfProductByMonth(initialStock: number, productEvents: ProductEvent[], months: string[]) {
+export function stockOfProductByMonth(initialStock: number, productEvents: ProductEvent<Date | number>[], months: string[]) {
   const stockByMonth = new Map<string, number>();
 
   let stock = initialStock;
@@ -374,14 +380,14 @@ export function stockOfProductByMonth(initialStock: number, productEvents: Produ
     }
   }
 
-  const eventsByMonth = new Map<string, ProductEvent[]>();
+  const eventsByMonth = new Map<string, ProductEvent<Date | number>[]>();
 
   for (const month of months) {
     eventsByMonth.set(month, []);
   }
 
   for (const event of eventFromToday) {
-    const monthCode = monthCodeFromDate(event.date);
+    const monthCode = monthCodeFromDate(typeof event.date === "number" ? new Date(event.date) : event.date);
     eventsByMonth.get(monthCode)?.push(event);
   }
 
@@ -405,11 +411,11 @@ export function stockOfProductByMonth(initialStock: number, productEvents: Produ
   return stockByMonth;
 }
 
-export function eventsOfProductByMonth(productEvents: ProductEvent[], months: string[]) {
-  const eventsByMonth = new Map<string, ProductEvent[]>();
+export function eventsOfProductByMonth<K>(productEvents: ProductEvent<K>[], months: string[]) {
+  const eventsByMonth = new Map<string, ProductEvent<K>[]>();
 
   for (const event of productEvents) {
-    const monthCode = monthCodeFromDate(event.date);
+    const monthCode = monthCodeFromDate(new Date(event.date as unknown as number | Date));
     eventsByMonth.set(monthCode, [...(eventsByMonth.get(monthCode) ?? []), event]);
   }
 

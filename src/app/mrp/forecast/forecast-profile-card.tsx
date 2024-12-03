@@ -6,23 +6,25 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import type { CrmBudget } from "~/lib/types";
 import { formatStock } from "~/lib/utils";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 export default function ForecastProfileCard(props: {
-  profile: RouterOutputs["forecast"]["listProfiles"][number];
+  profile: Monolito['forecastProfiles'][number];
   handleDeleteProfile: (id: number) => void;
   handleApplyProfile: (id: number) => void;
   isLoading: boolean;
-  monolito: RouterOutputs['db']['getMonolito'];
+  budget_products: NonNullable<Monolito['budget_products']>;
+  budgetsById: NonNullable<Monolito['budgetsById']>;
+  crm_clients: NonNullable<Monolito['crm_clients']>;
+  clientsByCode: NonNullable<Monolito['clientsByCode']>;
 }) {
   const profile = props.profile;
-  const data = props.monolito.data;
 
   const quantityByClient = new Map<string, number>();
   const budgetsByClient = new Map<string, CrmBudget[]>();
 
-  for (const budgetProduct of data.budget_products) {
-    const budget = data.budgetsById.get(budgetProduct.budget_id);
+  for (const budgetProduct of props.budget_products) {
+    const budget = props.budgetsById[budgetProduct.budget_id];
     if (!budget) continue;
 
     let qty = quantityByClient.get(budget.client_id) ?? 0;
@@ -34,13 +36,11 @@ export default function ForecastProfileCard(props: {
     budgetsByClient.set(budget.client_id, budgets);
   }
 
-  const crmClients = data.crm_clients;
-
   const clientsWithBudgets = useMemo(() => {
-    return crmClients.filter(
-      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && data.clientsByCode.has(client.tango_code)),
+    return props.crm_clients.filter(
+      (client) => quantityByClient.has(client.client_id) || (client.tango_code.trim() && props.clientsByCode[client.tango_code]),
     );
-  }, [crmClients, quantityByClient]);
+  }, [props.crm_clients, quantityByClient]);
 
   return (
     <li>
@@ -64,9 +64,8 @@ export default function ForecastProfileCard(props: {
                 options={clientsWithBudgets.map((client) => ({
                   value: client.client_id.toString(),
                   title: client.name || client.business_name,
-                  subtitle: `Presupuestos: ${
-                    budgetsByClient.get(client.client_id)?.length
-                  }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`,
+                  subtitle: `Presupuestos: ${budgetsByClient.get(client.client_id)?.length
+                    }. Total presupuestado: ${formatStock(quantityByClient.get(client.client_id) ?? 0)}.`,
                 }))}
                 title="Clientes incluidos"
                 onApply={() => void 0}

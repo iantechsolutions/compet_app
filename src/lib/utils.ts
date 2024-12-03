@@ -3,11 +3,10 @@
 import { type ClassValue, clsx } from "clsx";
 import dayjs from "dayjs";
 import { parse, stringify } from "flatted";
-import { nanoid } from "nanoid";
 import { twMerge } from "tailwind-merge";
-import { z } from "zod";
-import { MRPData, MRPProduct } from "~/mrp_data/transform_mrp_data";
-import { queryBaseMRPData } from "~/serverfunctions";
+import { MonolitoProduct } from "../server/api/routers/db";
+import { RouterOutputs } from "~/trpc/shared";
+import { CutUnits } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -16,10 +15,6 @@ export function cn(...inputs: ClassValue[]) {
 export function nameInitials(name: string) {
   const [firstName, lastName] = name.split(" ");
   return `${firstName?.[0] ?? ""}${lastName ? lastName[0] : ""}`;
-}
-
-export function createId() {
-  return nanoid();
 }
 
 export const topRightAbsoluteOnDesktopClassName = "md:absolute md:top-0 md:right-0 mr-10 mt-10";
@@ -81,27 +76,32 @@ export function encodeData<T>(data: T) {
         $: "Map",
         value: [...value.entries()],
       };
-    }
-
-    if (value instanceof Date) {
+    } else if (value instanceof Set) {
+      return {
+        $: "Set",
+        value: [...value.values()],
+      };
+    } else if (value instanceof Date) {
       return {
         $: "Date",
         value: value.getTime(),
       };
+    } else {
+      return value;
     }
-
-    return value;
   });
 }
 
-export function decodeData<T>(data: string) {
+export function decodeData<T>(data: string): T {
   return parse(data, (key, value) => {
-    if (value && value.$ === "Map") {
-      return new Map(value.value);
-    }
-
-    if (value && value.$ === "Date") {
-      return new Date(value.value);
+    if (value && typeof value.$ === "string") {
+      if (value.$ === "Map") {
+        return new Map(value.value);
+      } else if (value.$ === "Date") {
+        return new Date(value.value);
+      } else if (value.$ === "Set") {
+        return new Set(value.value);
+      }
     }
 
     return value;
@@ -109,9 +109,9 @@ export function decodeData<T>(data: string) {
 }
 
 //que devuelva longitud de corte
-export function isSemiElaborate(prod: Awaited<ReturnType<typeof queryBaseMRPData>>["products"][0] | undefined): {
+export function isSemiElaborate(prod?: { additional_description: string; supplies?: NonNullable<MonolitoProduct["supplies"]>[0][] }): {
   long: number;
-  supply: MRPData["products"][number]["supplies"][0];
+  supply: NonNullable<MonolitoProduct["supplies"]>[0];
 } | null {
   let long = null;
   let supply = null;
@@ -126,4 +126,20 @@ export function isSemiElaborate(prod: Awaited<ReturnType<typeof queryBaseMRPData
   }
 
   return null;
+}
+
+export function getCutVisualMeasure(measure: number, units: NonNullable<RouterOutputs['cuts']['get']>['units']): number {
+  if (units === CutUnits.Meters || units === CutUnits.Piece || units === CutUnits.Quantity || units === CutUnits.Kits) {
+    return measure / 1000;
+  } else {
+    return measure;
+  }
+}
+
+export function fromCutVisualMeasure(measure: number, units: NonNullable<RouterOutputs['cuts']['get']>['units']): number {
+  if (units === CutUnits.Meters || units === CutUnits.Piece || units === CutUnits.Quantity || units === CutUnits.Kits) {
+    return measure * 1000;
+  } else {
+    return measure;
+  }
 }

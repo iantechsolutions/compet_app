@@ -14,30 +14,25 @@ import { cn } from "~/lib/utils";
 import { excludeProducts } from "~/server/api/constants";
 import { api } from "~/trpc/react";
 import type { ProductWithDependencies } from "~/server/api/routers/consult";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import type { RouterOutputs } from "~/trpc/shared";
+import { useMRPData } from "~/components/mrp-data-provider";
+import type { CrmBudgetProduct } from "~/lib/types";
+import { ConsultCutsDialog } from "./cuts-dialog";
 const tableCellClassName = "flex items-center justify-center h-10 px-2 bg-white";
 
 export default function ConsultsPage(props: { user?: NavUserData }) {
   const { mutateAsync: checkAvailability, isLoading } = api.consults.isConstructionPossible.useMutation();
   const { mutateAsync: notifyEmail, isLoading: isLoadingEmail } = api.consults.mailNotificacion.useMutation();
 
-  interface Product {
-    commited: number;
-    stock_at: Map<string, number>;
-    imported_quantity_by_month: Map<string, number>;
-    ordered_quantity_by_month: Map<string, number>;
-    stock_variation_by_month: Map<string, number>;
-    additional_description: string;
-    code: string;
-    description: string;
-    stock: number;
-    supplies: { product_code: string; quantity: number }[];
-    imports: { arrival_date: Date; ordered_quantity: number }[];
+  // const { data, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
+  // const { data: budgetProductByBudgetId, isLoading: isLoadingBudgets } = api.db.getBudgetProductsByBudgetId.useQuery();
+  const { products: data, budget_products } = useMRPData();
+  const budgetProductByBudgetId = new Map<number, CrmBudgetProduct[]>();
+  for (const budgetProduct of budget_products) {
+    const budgetProducts = budgetProductByBudgetId.get(budgetProduct.budget_id) ?? [];
+    budgetProducts.push(budgetProduct);
+    budgetProductByBudgetId.set(budgetProduct.budget_id, budgetProducts);
   }
-
-  const { data, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
-  const { data: budgets, isLoading: isLoadingBudgets } = api.db.getBudgetProductsByBudgetId.useQuery();
 
   const [products, setProducts] = useState<RouterOutputs['db']['getProducts']>([]);
   const [budgetSelected, setBudgetSelected] = useState<null | string>(null);
@@ -76,17 +71,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
   const size = useWindowSize();
   const [productList, setProductList] = useState<{ productCode: string; quantity: number }[] | null>([{ productCode: "", quantity: 0 }]);
 
-  if (isLoadingProducts || !products || isLoadingBudgets || !budgets) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-        <Button variant="secondary" disabled>
-          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
-        </Button>
-      </div>
-    );
-  }
-
-  console.log(budgets);
+  console.log(budgetProductByBudgetId);
 
   async function handleImportEmail() {
     // if (availabilityResult?.arrivalDatesNull) {
@@ -96,7 +81,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
     // }
     if (finalList) {
       const res = await notifyEmail({
-        listado: finalList.filter(x => !x.arrivalDate && x.stock < x.consumed && !x.dependencies).map((product) => product.productCode),
+        listado: finalList.filter(x => !x.arrivalData && x.stock < x.consumed && !x.dependencies).map((product) => product.productCode),
       });
     }
   }
@@ -163,7 +148,7 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
                     setBudgetSelected(value);
                   }
                 }}
-                options={Array.from(budgets.keys()).map((v) => ({
+                options={Array.from(budgetProductByBudgetId.keys()).map((v) => ({
                   value: v.toString(),
                   label: v.toString(),
                 }))}
@@ -171,19 +156,25 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
             </div>
             <Button onClick={() => {
               if (typeof budgetSelected === 'string' && budgetSelected.length > 0) {
-                const budget = budgets?.get(Number(budgetSelected));
+                const budget = budgetProductByBudgetId?.get(Number(budgetSelected));
                 if (budget === undefined) {
-                  console.error(`budgetSelected ${budgetSelected} undefined`, budgets);
+                  console.error(`budgetSelected ${budgetSelected} undefined`, budgetProductByBudgetId);
                 } else {
-                  setProductList(budget.map(v => {
+                  const prodList = budget.map(v => {
                     return {
                       productCode: v.product_code,
                       quantity: v.quantity
                     }
-                  }));
+                  });
+
+                  const res = prodList.filter(v => {
+                    return prodList.find(k => k.productCode === v.productCode) === v;
+                  })
+
+                  setProductList(res);
                 }
               }
-            }} disabled={budgets?.get(Number(budgetSelected)) === undefined}>Importar presupuesto</Button>
+            }} disabled={budgetProductByBudgetId?.get(Number(budgetSelected)) === undefined}>Importar presupuesto</Button>
           </div>
         </div>
 
@@ -325,9 +316,12 @@ export default function ConsultsPage(props: { user?: NavUserData }) {
 
         {finalList && finalList.length > 0 && !isLoading && (
           <>
-            <ListRowContainer style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-5">
+            <ListRowContainer style={{ overflowX: "hidden" }} className="z-10 shadow-md grid grid-cols-6">
               <div className={cn(headerCellClassName, "flex md:left-0")}>
                 <p>Producto</p>
+              </div>
+              <div className={cn(headerCellClassName, "flex md:left-0")}>
+                <p>Máximo posible</p>
               </div>
               <div className={cn(headerCellClassName, "flex md:left-0")}>
                 <p>Stock Actual</p>
@@ -356,7 +350,6 @@ export function ListRowContainer({
   style,
   id,
   className,
-  columnLength
 }: {
   children: React.ReactNode;
   style?: React.CSSProperties;
@@ -387,11 +380,21 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
   const toggleDependencies = () => setShowDependencies(!showDependencies);
 
   let arrivalDate: string;
-  if (product.arrivalDate) {
-    arrivalDate = dayjs(product.arrivalDate.toString()).format("YYYY-MM");
+  let arrivalDataId: string | null = null;
+  if (product.arrivalData) {
+    arrivalDate = dayjs(product.arrivalData.date.toString()).format("DD-MM-YYYY");
+    arrivalDataId = product.arrivalData.importId;
   } else {
     if (product.dependencies) {
-      arrivalDate = "-";
+      if (product.cuts !== null && product.state === 'import') {
+        const dep = product.dependencies[0]!;
+        const arrDate = dep.arrivalData!;
+        arrivalDate = dayjs(arrDate.date.toString()).format("DD-MM-YYYY");
+        arrivalDataId = arrDate.importId;
+        product = dep;
+      } else {
+        arrivalDate = "-";
+      }
     } else {
       if (product.cuts !== null) {
         if (product.cuts.length > 0) {
@@ -401,7 +404,7 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
           arrivalDate = "No hay suficientes recortes";
         }
       } else {
-        if (product.stock > product.consumed) {
+        if (product.stock >= product.consumed) {
           arrivalDate = "Hay suficiente stock";
         } else {
           arrivalDate = "No hay pedido registrado";
@@ -410,25 +413,66 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
     }
   }
 
+  let color;
+  if (product.state === 'sinEntrada') {
+    color = 'bg-[#f9c3c3]';
+  } else if (product.state === 'import') {
+    color = 'bg-[#fbfcb8]';
+  } else if (product.state === 'preparable') {
+    color = 'bg-[#BEF0BB]';
+  } else {
+    console.error('product.state', product.state);
+    color = 'bg-gray-500';
+  }
+
+  let maxConsumible = "";
+  if (product.maxConsumible !== undefined) {
+    if (typeof product.maxConsumible === 'number') {
+      if (product.maxConsumible < 0) {
+        maxConsumible = "inf";
+      } else {
+        maxConsumible = product.maxConsumible.toString();
+      }
+    } else {
+      maxConsumible = product.maxConsumible.consumed.toString();
+    }
+  }
 
   return (
     <div className="bg-gray-500">
-      <ListRowContainer className={`z-10 shadow-md grid grid-cols-5 ml-${depth * 4}`}>
-        <div className={cn(tableCellClassName, "flex md:left-0")}>
+      <ListRowContainer className={`${color} z-10 shadow-md grid grid-cols-6 ml-${depth * 4}`}>
+        <div className={cn(tableCellClassName, `${color} min-h-16 flex md:left-0 flex-col`)}>
           <p>{product.productCode}</p>
+          <div className="md:text-[10px] sm:text-[9px] font-semibold text-center">
+            <p>{product.description}</p>
+          </div>
+          <div className="md:text-[10px] sm:text-[9px] font-semibold text-center">
+            <p>{product.additional_description}</p>
+          </div>
         </div>
-        <div className={cn(tableCellClassName, "flex md:left-0")}>
-          <p>{Math.round(product.stock)}</p>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
+          <p>{maxConsumible}</p>
         </div>
-        <div className={cn(tableCellClassName, "flex md:left-0")}>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
+          <p>{product.realStock.toFixed(1)}</p>
+        </div>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0`)}>
           <p>{Math.round(product.consumed)}</p>
         </div>
-        <div className={cn(tableCellClassName, "flex md:left-0")}>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0 flex-col`)}>
           <p>{arrivalDate}</p>
+          {arrivalDataId !== null ? <div className="whitespace-nowrap text-xs font-semibold">
+            <p>{arrivalDataId.slice(-4)}</p>
+          </div> : <></>}
         </div>
-        <div className={cn(tableCellClassName, "flex md:left-0 justify-center")}>
-          {product.cuts !== null && product.cuts.length > 0 && (
-            <Popover>
+        <div className={cn(tableCellClassName, `${color} h-full flex md:left-0 justify-center`)}>
+          {product.cuts !== null && (
+            <ConsultCutsDialog product={product} cuts={product.cuts}>
+              <Button variant="link" >?</Button>
+            </ConsultCutsDialog>
+          )}
+
+          {/* <Popover>
               <PopoverTrigger asChild>
                 <Button variant="link" >?</Button>
               </PopoverTrigger>
@@ -443,18 +487,16 @@ const ProductRow: React.FC<{ product: ProductWithDependencies; depth?: number }>
                   </div>
                 </>)}
               </PopoverContent>
-            </Popover>
-          )}
-          {product.dependencies && product.dependencies.length > 0 && (
+            </Popover> */ }
 
-            <Button variant="outline" onClick={toggleDependencies} className=" px-2 my-2">
+          {product.dependencies && product.cuts === null && product.dependencies.length > 0 && (
+            <Button variant="outline" onClick={toggleDependencies} className="bg-white px-2 my-2">
               {showDependencies ?
                 <ChevronUp />
                 :
                 <ChevronDown />
               }
             </Button>
-
           )}
         </div>
 

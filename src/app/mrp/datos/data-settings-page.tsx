@@ -418,8 +418,7 @@ function MailSendingConfiguration(user: NavUserData & { id: string }) {
               Agregar mail
               </Button> */}
         <br />
-        {mailsList &&
-          mailsList.map((mail, index) => (
+        {mailsList?.map((mail, index) => (
             <div key={index} className="mb-4 flex items-center gap-3 p-4">
               <div>
                 <Input

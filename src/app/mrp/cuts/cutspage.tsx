@@ -1,7 +1,6 @@
 "use client"
-import { cn } from "~/lib/utils";
+import { fromCutVisualMeasure, getCutVisualMeasure } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/shared";
-import { ListRowContainer } from "../consulta/consultPage";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
@@ -13,9 +12,10 @@ import { useState } from "react";
 import { type CutUnits } from "~/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2Icon } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
-import CutsTable from "./cust-table";
+import { FilterIcon, Loader2Icon } from "lucide-react";
+import CutsTable from "./cuts-table";
+import { useMRPData } from "~/components/mrp-data-provider";
+import { CutFiltersDialog } from "./cuts-filters-dialog";
 interface Props {
   cuts: RouterOutputs["cuts"]["list"];
 }
@@ -23,35 +23,28 @@ interface Props {
 export default function CutsPage({ cuts }: Props) {
   const router = useRouter();
 
-  const { data: products, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
+  // const { data: products, isLoading: isLoadingProducts } = api.db.getProducts.useQuery();
+  const { products, productsByCode } = useMRPData();
 
-  const { mutateAsync: getCutByProd, isLoading: loadingGetByProd } = api.cuts.getByProdId.useMutation();
+  // const { mutateAsync: getCutByProd, isLoading: loadingGetByProd } = api.cuts.getByProdId.useMutation();
   const { mutateAsync: addCut, isLoading: loadingCreate } = api.cuts.create.useMutation();
   const { mutateAsync: editCut, isLoading: loadingEdit } = api.cuts.edit.useMutation();
-  const [lote, setLote] = useState<string>("")
-  const [caja, setCaja] = useState<string>("")
-  const [location, setLocation] = useState<string>("")
-  const [amount, setAmount] = useState<number>(0)
-  const [measure, setMeasure] = useState<number>(0)
-  const [units, setUnits] = useState<string>("")
-  const [selectedProd, setSelectedProd] = useState<string>("")
-  const [selectedCut, setSelectedCut] = useState<string | null>(null)
-  const [cutsOptions, setCutsOptions] = useState<JSX.Element[]>([])
+  const [lote, setLote] = useState<string>("");
+  const [caja, setCaja] = useState<string>("");
+  const [location, setLocation] = useState<string>("");
+  const [amount, setAmount] = useState<number>(0);
+  const [measure, setMeasure] = useState<number>(0);
+  const [units, setUnits] = useState<string>("");
+  const [selectedProd, setSelectedProd] = useState<string>("");
+  const [selectedCut, setSelectedCut] = useState<string | null>(null);
 
-  if (isLoadingProducts || !products) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-        <Button variant="secondary" disabled>
-          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
-        </Button>
-      </div>
-    );
-  }
-
-  async function getCutsOptions(prodId: string) {
-    const cutsProd = await getCutByProd({ prodId })
-    return cutsProd.map((cut) => <SelectItem value={cut.id.toString()}>{cut.id}</SelectItem>)
-  }
+  const [filters, setFilters] = useState<{
+    prodCode: string,
+    desc: string,
+  }>({
+    prodCode: '',
+    desc: '',
+  });
 
   async function handleEditCut() {
     if (selectedCut) {
@@ -60,7 +53,7 @@ export default function CutsPage({ cuts }: Props) {
           id: Number(selectedCut),
           prodId: selectedProd,
           amount: amount,
-          measure: (measure * 1000),
+          measure: fromCutVisualMeasure(measure, cuts.find(v => v.id === Number(selectedCut))!.units),
         });
         router.refresh();
       } catch (error) {
@@ -76,7 +69,7 @@ export default function CutsPage({ cuts }: Props) {
         caja: caja,
         location: location,
         amount: amount,
-        measure: (measure * 1000),
+        measure: fromCutVisualMeasure(measure, units),
         units: units as CutUnits,
         stockPhys: "0",
         stockTango: "0"
@@ -86,28 +79,13 @@ export default function CutsPage({ cuts }: Props) {
       console.error(error)
     }
   }
+
   const prodIdSet = new Set<string>()
   //obtengo todos los prodId sin repetir
   cuts.forEach((cut) => prodIdSet.add(cut.prodId))
   //obtengo todos las longitudes de recortes sin repetir 
   const cutsLengthSet = new Set<string>()
-  cuts.forEach((cut) => cutsLengthSet.add((cut.measure / 1000).toFixed(2).replace(".", ",")))
-
-
-    // creo un Map con los prodId y la cantidad de recortes por longitud
-    const cutsMap = new Map<string, Map<string, number>>()
-    for (const cut of cuts) {
-        if (!cutsMap.has(cut.prodId)) {
-            cutsMap.set(cut.prodId, new Map<string, number>())
-        }
-        const prodMap = cutsMap.get(cut.prodId)
-        if (prodMap && !(prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ",")))) {
-            prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), cut.amount)
-        } else if (prodMap && prodMap.has((cut.measure / 1000).toFixed(2).replace(".", ","))) {
-            const currentAmount = prodMap.get((cut.measure / 1000).toFixed(2).replace(".", ",")) ?? 0;
-            prodMap.set((cut.measure / 1000).toFixed(2).replace(".", ","), currentAmount + cut.amount);
-        }
-    }
+  cuts.forEach((cut) => cutsLengthSet.add((getCutVisualMeasure(cut.measure, cut.units)).toFixed(2).replace(".", ",")))
 
   return (
     <>
@@ -188,7 +166,6 @@ export default function CutsPage({ cuts }: Props) {
                       </SelectTrigger>
                       <SelectContent>
                         {cuts.map((cut) =>
-
                           <SelectItem value={cut.id.toString()}>{cut.measure + " - " + cut.amount}</SelectItem>
                         )}
                       </SelectContent>
@@ -202,11 +179,18 @@ export default function CutsPage({ cuts }: Props) {
                 </PopoverContent>
               </Popover>
             </div>
-            <Link href="/mrp/excel-upload">
-              <Button className="px-3">
-                Cargar excel
-              </Button>
-            </Link>
+            <div className="flex flex-row">
+              <Link href="/mrp/excel-upload" className="px-2">
+                <Button className="px-3">
+                  Cargar excel
+                </Button>
+              </Link>
+              <CutFiltersDialog setFilters={setFilters} filters={filters}>
+                <Button className="px-3">
+                  <FilterIcon />
+                </Button>
+              </CutFiltersDialog>
+            </div>
           </div>
           <h2 className="font-semibold">No hay recortes para mostrar</h2>
         </div>
@@ -302,14 +286,21 @@ export default function CutsPage({ cuts }: Props) {
                   </PopoverContent>
                 </Popover>
               </div>
-              <Link href="/mrp/excel-upload">
-                <Button className="px-3">
-                  Cargar excel
-                </Button>
-              </Link>
+              <div className="flex flex-row">
+                <Link href="/mrp/excel-upload" className="px-2">
+                  <Button className="px-3">
+                    Cargar excel
+                  </Button>
+                </Link>
+                <CutFiltersDialog setFilters={setFilters} filters={filters}>
+                  <Button className="px-3">
+                    <FilterIcon />
+                  </Button>
+                </CutFiltersDialog>
+              </div>
             </div>
-            <CutsTable cutsMap={cutsMap} />
-          
+            <CutsTable cuts={cuts} productsByCode={productsByCode} filters={filters} />
+
           </>
         )}
 

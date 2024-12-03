@@ -2,10 +2,10 @@
 /* eslint-disable */
 
 import { createContext, useContext, useState } from "react";
-import type { MRPProduct } from "~/mrp_data/transform_mrp_data";
+import { MonolitoProduct } from "~/server/api/routers/db";
 
 export type FocusedContext = {
-  product: MRPProduct;
+  product: MonolitoProduct;
   month?: string;
   elementId: string;
 } | null;
@@ -15,7 +15,7 @@ const focusedContext = createContext<{
   setFocus: (focus: FocusedContext) => void;
 }>({
   focus: null,
-  setFocus: () => {},
+  setFocus: () => { },
 });
 
 export function FocusProvider({ children }: { children: React.ReactNode }) {

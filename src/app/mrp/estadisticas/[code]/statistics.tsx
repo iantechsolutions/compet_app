@@ -12,15 +12,14 @@ import { isSemiElaborate } from "~/lib/utils";
 import { SelectCRMClients } from "../../forecast/select-crm-clients";
 import StackedAreaChart from "~/components/estadisticas/stackedAreaChart";
 import SimpleLineChart from "~/components/estadisticas/simpleLineChart";
-import SimpleBartChart from "~/components/estadisticas/simpleBartChart";
+import ClientUnitsSold from "~/components/estadisticas/simpleBartChart";
 import { DatePicker } from "~/components/day-picker";
-import dayjs from "dayjs";
 import DataCard from "~/components/ui/dataCard";
 import { ChartNoAxesCombined } from "~/components/icons/chart-combined";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import ListSelectionDialog from "~/components/list-selection-dialog";
 import SimpleBartChartRecuts from "~/components/estadisticas/simpleBartChartRecuts";
-import { api } from "~/trpc/react";
+import { useMRPData } from "~/components/mrp-data-provider";
 
 export default function StatisticsPage(props: { user?: NavUserData }) {
   const temporaryDate = new Date();
@@ -46,13 +45,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     salesList: { date: string; totalSales: number }[];
     budgetsList: { date: string; totalBudgets: number }[];
   }>();
-  const [soldProportions, setSoldProportions] = useState<{ name: string | undefined; totalSales: number; amountOfSales: number }[]>();
+  const [soldProportions, setSoldProportions] = useState<{ name: string; totalSales: number; amountOfSales: number }[]>();
   const [generalStatistics, setGeneralStatistics] = useState<{
-    MaximumSales: number;
-    MinimumSales: number;
-    AverageSales: number;
-    TotalSales: number;
-    MedianSales: number | undefined;
+    maxSales: number;
+    minSales: number;
+    avgSales: number;
+    totalSales: number;
+    totalSaleCount: number;
+    medianSales: number | undefined;
   }>();
 
   const [cuts, setCuts] = useState<Map<string, number>>();
@@ -63,51 +63,79 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
   const [showMore, setShowMore] = useState(false);
   const [showMore2, setShowMore2] = useState(false);
 
-  const { data: queryRes, isLoading: isLoadingData } = api.db.getEventsAndForecast.useQuery();
+  /* const { data: providers, isLoading: isLoadingProv } = api.db.getMProviders.useQuery();
+  const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery();
+  const { data: products, isLoading: isLoadingProds } = api.db.getMProductsWSuppliesOf.useQuery();
+  const { data: assemblyById, isLoading: isLoadingAssemb } = api.db.getMAssemblyById.useQuery();
+  const { data: budget_products, isLoading: isLoadingBP } = api.db.getMBudgetProducts.useQuery();
+  const { data: budgetsById, isLoading: isLoadingBID } = api.db.getMBudgetsById.useQuery();
+  const { data: clients, isLoading: isLoadingClients } = api.db.getMClients.useQuery();
+  const { data: crm_clients, isLoading: isLoadingCRMC } = api.db.getMCrmClients.useQuery();
+  const { data: budgets, isLoading: isLoadingBudgets } = api.db.getMBudgets.useQuery();
+  const { data: sold, isLoading: isLoadingSold } = api.db.getMSold.useQuery();
+  const loading = isLoadingClients || isLoadingSold || isLoadingBudgets || isLoadingCRMC || isLoadingBID || isLoadingProv || isLoadingProds || isLoadingEvts || isLoadingAssemb || isLoadingBP; */
+  const mrpData = useMRPData();
+  const {
+    products_sold,
+    providers,
+    eventsByProductCode,
+    products,
+    assemblyById,
+    budget_products,
+    budgetsById,
+    clients,
+    crm_clients,
+    budgets,
+    sold
+  } = mrpData;
+
+  const indexedEvents = mrpData.events ?? [];
 
   ring2.register();
   const productsByProvider = useMemo(() => {
-    if (isLoadingData) {
-      return null;
-    }
-
+    const start = Date.now();
     const map = new Map<string, number>();
 
-    for (const product of queryRes?.data.products ?? []) {
+    for (const product of products) {
       for (const provider of product.providers) {
         map.set(provider.provider_code, (map.get(provider.provider_code) ?? 0) + 1);
       }
     }
 
+    console.log('productsByProvider elapsed', Date.now() - start);
+
     return map;
-  }, [queryRes, isLoadingData]);
+  }, [products]);
+
+  const productProductsSold = useMemo(() => {
+    return products_sold.filter(v => v.product_code === productCode);
+  }, [products_sold]);
 
   const filteredProviders = useMemo(() => {
-    if (isLoadingData) {
-      return null;
-    }
+    const start = Date.now();
+    const res = providers.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
+    console.log('filteredProviders elapsed', Date.now() - start);
 
-    return queryRes?.data.providers.filter((p) => productsByProvider?.get(p.code) ?? 0 > 0);
-  }, [queryRes, productsByProvider, isLoadingData]);
+    return res;
+  }, [providers, productsByProvider]);
 
   const allProviersCodes = useMemo(() => {
-    if (isLoadingData) {
-      return null;
-    }
-
-    return new Set<string>(filteredProviders?.map((p) => p.code));
-  }, [filteredProviders, isLoadingData]);
+    const start = Date.now();
+    const res = new Set<string>(filteredProviders?.map((p) => p.code));
+    console.log('allProviersCodes elapsed', Date.now() - start);
+    return res;
+  }, [filteredProviders]);
 
   const defaultValues = useMemo(() => {
-    if (isLoadingData) {
-      return null;
-    }
-
-    return Array.from(allProviersCodes ?? new Set<string>()).filter((code) => !providersSelected.has(code));
-  }, [allProviersCodes, providersSelected, isLoadingData]);
+    const start = Date.now();
+    const res = Array.from(allProviersCodes ?? new Set<string>()).filter((code) => !providersSelected.has(code));
+    console.log('defaultValues elapsed', Date.now() - start);
+    return res;
+  }, [allProviersCodes, providersSelected]);
 
   useEffect(() => {
-    if (fromDate && toDate && !hasRun && !isLoadingData) {
+    if (fromDate && toDate && !hasRun) {
+      let start = Date.now();
       const {
         list: consumptionStats,
         totalConsumedAmount: totalTemp,
@@ -119,6 +147,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      console.log('useEffect getConsumptionStats elapsed', Date.now() - start);
+      start = Date.now();
       const tempSales = getSalesAndBudgets(
         fromDate ?? new Date("2023-09-04"),
         toDate ?? new Date("2024-09-04"),
@@ -126,6 +156,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      console.log('useEffect getSalesAndBudgets elapsed', Date.now() - start);
+      start = Date.now();
       const tempSoldProportions = getSoldProportions(
         fromDate ?? new Date("2023-09-04"),
         toDate ?? new Date("2024-09-04"),
@@ -133,6 +165,8 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      console.log('useEffect getSoldProportions elapsed', Date.now() - start);
+      start = Date.now();
       const tempGeneral = getGeneralStatistics(
         fromDate ?? new Date("2023-09-04"),
         toDate ?? new Date("2024-09-04"),
@@ -140,7 +174,10 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         Array.from(providersSelected),
         productCode,
       );
+      console.log('useEffect getGeneralStatistics elapsed', Date.now() - start);
+      start = Date.now();
       const tempCuts = getCuts(productCode, fromDate ?? new Date("2023-09-04"), toDate ?? new Date("2024-09-04"));
+      console.log('useEffect getCuts elapsed', Date.now() - start);
       setConsumption(consumptionStats);
       setTotalConsumedAmount(totalTemp);
       setTotalMotiveConsumption(totalMotiveTemp);
@@ -151,7 +188,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       setHasRun(true);
       setIsLoading(false);
     }
-  }, [fromDate, toDate, defaultValues, isLoadingData]);
+  }, [fromDate, toDate, defaultValues]);
 
   useEffect(() => {
     if (handleFiltersStage === 1) {
@@ -163,25 +200,14 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     }
   }, [handleFiltersStage]);
 
-  if (isLoadingData || !queryRes)
-    return (
-      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-        <Button variant="secondary" disabled>
-          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
-        </Button>
-      </div>
-    );
-
+  // necesita budgetsById, crm_clients y budget_products del monolito data
   const crmMonolito = {
-    data: {
-      budget_products: queryRes.data.budget_products,
-      budgetsById: queryRes.data.budgetsById,
-      crm_clients: queryRes.data.crm_clients
-    }
+    budget_products: budget_products,
+    budgetsById: budgetsById,
+    crm_clients: crm_clients
   };
 
-  const { data, eventsByProductCode } = queryRes;
-  const product = data.products.find((p) => p.code === productCode) ?? null;
+  const product = products.find((p) => p.code === productCode) ?? null;
 
   function handleUpdateFilters() {
     if (fromDate && toDate) {
@@ -238,30 +264,32 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    let events = eventsByProductCode.get(productCode) ?? [];
-    let totalConsumedAmount = 0;
     const totalMotiveConsumption = new Map<string, number>();
-    events = events.filter(
-      (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
-    );
     const tupleToAmountMap = new Map<[string, string], number>();
+    let totalConsumedAmount = 0;
+
+    let events = eventsByProductCode?.[productCode] ?? [];
+    events = events.filter(
+      (event) => event.type != "import" && new Date(event.date) && new Date(event.date) >= fromDate && new Date(event.date) <= toDate,
+    );
     events.forEach((event) => {
+      const parentEvent = event.parentEventIndex !== undefined ? indexedEvents[event.parentEventIndex]! : undefined;
       const assembliesQuantities =
-        event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
+        parentEvent?.originalQuantity && parentEvent.originalQuantity - parentEvent.quantity;
       if (event.assemblyId) {
-        const assembly = data?.assemblyById.get(event.assemblyId);
+        const assembly = assemblyById[event.assemblyId];
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         totalConsumedAmount += totalConsumptionOnEvent;
         let day = "";
-        if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
-          day = new Date(String(event.date)).toISOString().slice(0, 10);
+        if (new Date(event.date) instanceof Date && !isNaN(new Date(event.date).getTime())) {
+          day = new Date(event.date).toISOString().slice(0, 10);
         }
 
-        const key: [string, string] = [day, event.parentEvent?.productCode ?? ""];
+        const key: [string, string] = [day, parentEvent?.productCode ?? ""];
         const currentAmount = tupleToAmountMap.get(key) ?? 0;
         tupleToAmountMap.set(key, currentAmount + totalConsumptionOnEvent);
-        const currentMotiveAmount = totalMotiveConsumption.get(event.parentEvent?.productCode ?? "") ?? 0;
-        totalMotiveConsumption.set(event.parentEvent?.productCode ?? "", currentMotiveAmount + totalConsumptionOnEvent);
+        const currentMotiveAmount = totalMotiveConsumption.get(parentEvent?.productCode ?? "") ?? 0;
+        totalMotiveConsumption.set(parentEvent?.productCode ?? "", currentMotiveAmount + totalConsumptionOnEvent);
       }
     });
 
@@ -270,18 +298,18 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       motive: string;
       amount: number;
     }[] = [];
-    const sales = data?.sold.filter(
+    const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.emission_date)) >= fromDate &&
-        new Date(String(order.emission_date)) <= new Date(String(toDate)),
+        new Date(order.emission_date) >= fromDate &&
+        new Date(order.emission_date) <= toDate,
     );
     sales.forEach((sale) => {
       const order_products = sale.products;
       const product = order_products?.find((order_product) => order_product.product_code === productCode);
       if (product) {
         salesList.push({
-          date: new Date(String(sale.emission_date)).toISOString().slice(0, 10),
+          date: new Date(sale.emission_date).toISOString().slice(0, 10),
           motive: "Venta Directa",
           amount: product.CANTIDAD,
         });
@@ -311,56 +339,59 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     productCode: string,
   ) {
     const fromDateCopy = new Date(fromDate);
-    const budgets = data?.budgets.filter(
-      (budget) =>
-        !clientExemptionList?.includes(budget.client_id) &&
-        new Date(String(budget.date)) &&
-        new Date(String(budget.date)) <= toDate &&
-        new Date(String(budget.date)) >= fromDateCopy &&
-        budget.products.filter((product) => product.product_code === productCode).length > 0,
-    );
-    const sales = data?.sold.filter((order) => !clientExemptionList?.includes(order.client_code));
-    const salesList = [];
-    const budgetsList = [];
-    while (fromDateCopy.getTime() <= toDate.getTime()) {
-      const day = fromDateCopy.toISOString().slice(0, 10);
-      const salesOnDay = sales?.filter(
-        (sale) =>
-          new Date(String(sale?.emission_date)) instanceof Date &&
-          !isNaN(new Date(String(sale.emission_date)).getTime()) &&
-          new Date(String(sale.emission_date)).toISOString().slice(0, 10) === day,
-      );
-      const budgetsOnDay = budgets?.filter(
-        (budget) =>
-          new Date(String(budget.date)) instanceof Date &&
-          !isNaN(new Date(String(budget.date)).getTime()) &&
-          new Date(String(budget.date)).toISOString().slice(0, 10) === day,
-      );
-      let totalSales = 0;
-      salesOnDay?.forEach((sale) => {
-        const order_products = sale.products;
-        if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
-          const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
-          totalSales += order_product?.CANTIDAD ?? 0;
-        }
-      });
-      if (totalSales > 0) {
-        salesList.push({ date: day, totalSales });
+    const salesMap = new Map<number, number>();
+    const budgetsMap = new Map<number, number>();
+
+    sold.forEach((sale) => {
+      const emDate = new Date(sale?.emission_date);
+      if (!(emDate instanceof Date) || isNaN(emDate.getTime()) || clientExemptionList?.includes(sale.client_code)) {
+        return;
       }
-      let totalBudgets = 0;
-      budgetsOnDay?.forEach((budget) => {
-        const product = budget.products.find((product) => product.product_code === productCode);
-        if (product) {
-          totalBudgets += product.quantity;
-        }
-      });
-      if (totalBudgets > 0) {
-        budgetsList.push({ date: day, totalBudgets });
+
+      const isValidDate = fromDateCopy <= emDate && emDate <= toDate;
+      if (!isValidDate) {
+        return;
+      }
+
+      const order_products = sale.products;
+      if ((order_products?.filter((order_product) => order_product.product_code === productCode)?.length ?? 0) > 0) {
+        const order_product = order_products?.find((order_product) => order_product.product_code === productCode);
+        salesMap.set(emDate.getTime(), (salesMap.get(emDate.getTime()) ?? 0) + (order_product?.CANTIDAD ?? 0));
+      }
+    });
+
+    budgets.forEach((budget) => {
+      const bDate = budget.date ? new Date(budget.date) : null;
+      if (!(bDate instanceof Date) || isNaN(bDate.getTime()) || clientExemptionList?.includes(budget.client_id)) {
+        return;
+      }
+
+      const isValidDate = fromDateCopy <= bDate && bDate <= toDate;
+      if (!isValidDate) {
+        return;
       }
 
 
-      fromDateCopy.setDate(fromDateCopy.getDate() + 1);
-    }
+      const product = budget.products.find((product) => product.product_code === productCode);
+      if (product) {
+        budgetsMap.set(bDate.getTime(), (budgetsMap.get(bDate.getTime()) ?? 0) + product.quantity);
+      }
+    });
+
+    const salesList = [...salesMap.entries()].sort().map(v => {
+      return {
+        date: (new Date(v[0])).toISOString().slice(0, 10),
+        totalSales: v[1]
+      }
+    });
+
+    const budgetsList = [...budgetsMap.entries()].sort().map(v => {
+      return {
+        date: (new Date(v[0])).toISOString().slice(0, 10),
+        totalBudgets: v[1]
+      }
+    });
+
     return { salesList, budgetsList };
   }
 
@@ -371,11 +402,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.sold.filter(
+    const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.emission_date)) >= fromDate &&
-        new Date(String(order.emission_date)) <= new Date(String(toDate)),
+        new Date(order.emission_date) >= fromDate &&
+        new Date(order.emission_date) <= toDate,
     );
 
     const clientInformation = new Map<string, [number, number]>();
@@ -392,7 +423,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       const [totalSales, amountOfSales] = value;
 
       return {
-        name: data?.clients.find((client) => client.code === key)?.name,
+        name: clients.find((client) => client.code === key)!.name,
         totalSales,
         amountOfSales,
       };
@@ -408,11 +439,11 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
     providerExemptionList: string[] | null,
     productCode: string,
   ) {
-    const sales = data?.sold.filter(
+    /* const sales = sold.filter(
       (order) =>
         !clientExemptionList?.includes(order.client_code) &&
-        new Date(String(order.emission_date)) >= fromDate &&
-        new Date(String(order.emission_date)) <= new Date(String(toDate)),
+        new Date(order.emission_date) >= fromDate &&
+        new Date(order.emission_date) <= toDate,
     );
 
     const validOrderProducts: {
@@ -435,21 +466,22 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
       }
     });
 
-    let events = eventsByProductCode.get(productCode) ?? [];
+    let events = eventsByProductCode?.[productCode] ?? [];
     events = events.filter(
-      (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+      (event) => event.type != "import" && new Date(event.date) && new Date(event.date) >= fromDate && new Date(event.date) <= toDate,
     );
 
     events.forEach((event) => {
       // event.quantity
       if (event.assemblyId) {
+        const parentEvent = event.parentEventIndex !== undefined ? indexedEvents[event.parentEventIndex]! : undefined;
         const assembliesQuantities =
-          event.parentEvent?.originalQuantity && event.parentEvent.originalQuantity - event.parentEvent.quantity;
-        const assembly = data?.assemblyById.get(event.assemblyId);
+          parentEvent?.originalQuantity && parentEvent.originalQuantity - parentEvent.quantity;
+        const assembly = assemblyById[event.assemblyId];
         const totalConsumptionOnEvent = (assembly?.quantity ?? 0) * (assembliesQuantities ?? 1);
         let day = "";
-        if (new Date(String(event.date)) instanceof Date && !isNaN(new Date(String(event.date)).getTime())) {
-          day = new Date(String(event.date)).toISOString().slice(0, 10);
+        if (new Date(event.date) instanceof Date && !isNaN(new Date(event.date).getTime())) {
+          day = new Date(event.date).toISOString().slice(0, 10);
         }
         validOrderProducts.push({
           product_code: productCode,
@@ -474,37 +506,73 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         orderedQuantities.length > 0 ? orderedQuantities.reduce((acc, quantity) => acc + quantity, 0) / orderedQuantities.length : 0,
       TotalSales: orderedQuantities.length > 0 ? orderedQuantities.length : 0,
       MedianSales: orderedQuantities.length > 0 ? median : 0,
+    }; */
+
+    // salidas en x fechas
+    // const allSales = productProductsSold.filter(v => v.t === 'S' && v.f >= fromDate.getTime() && v.f <= toDate.getTime());
+    const allSales = productProductsSold
+      .filter(v => v.date >= fromDate.getTime() && v.date <= toDate.getTime() && v.CANTIDAD > 0);
+    //.map(v => v.t !== 'S' ? ({
+    /* .map(v => v.CANTIDAD < 0 ? ({
+      ...v,
+      CANTIDAD: 0
+    }) : v); */
+
+    const sortedQuantities = allSales.map(v => v.CANTIDAD);
+    sortedQuantities.sort((a, b) => a - b);
+
+    const mid = Math.floor(sortedQuantities.length / 2);
+
+    const maxSales = sortedQuantities.length > 0 ? Math.max(...sortedQuantities) : 0;
+    const minSales = sortedQuantities.length > 0 ? Math.min(...sortedQuantities) : 0;
+    const totalSaleCount = sortedQuantities.length;
+    const totalSales = sortedQuantities.reduce((acc, val) => acc + val, 0);
+    const avgSales = sortedQuantities.length > 0 ? (totalSales / sortedQuantities.length) : 0;
+    const medianSales = (sortedQuantities.length % 2 === 0 ? ((
+      (sortedQuantities[mid - 1] ?? 0) + (sortedQuantities[mid] ?? 0)
+    ) / 2) : sortedQuantities[mid]) ?? 0;
+
+    const res = {
+      maxSales,
+      minSales,
+      avgSales,
+      totalSales,
+      totalSaleCount,
+      medianSales
     };
+
+    return res;
   }
 
   function getCuts(productCode: string, fromDate: Date, toDate: Date) {
-    const prod = data?.products.find((p) => p.code === productCode);
-    const possibleSuppliesOf = prod?.suppliesOf.map(x => x.product_code);
+    const prod = products.find((p) => p.code === productCode)!;
+    const possibleSuppliesOf = (prod.suppliesOf ?? []).map(x => x.product_code);
     const mapeoConsumo = new Map<string, number>();
+
     possibleSuppliesOf?.map((supplyOfCode) => {
-      const semielaborate = data?.products.find((p) => p.code === supplyOfCode);
+      const semielaborate = products.find((p) => p.code === supplyOfCode);
       const dataSemi = isSemiElaborate(semielaborate);
-      // const longNecesaria = supply.quantity;
+
+      // acá no filtramos por tipo de salida
+      // figura todo lo que es armado y ventas
       if (dataSemi !== null) {
         const clave = dataSemi.long + " mm";
-        let events = eventsByProductCode.get(supplyOfCode) ?? [];
-        events = events.filter(
-          (event) => event.type != "import" && new Date(String(event.date)) && new Date(String(event.date)) >= fromDate && new Date(String(event.date)) <= toDate,
+        const stockMovements = products_sold.filter(v =>
+          v.product_code === supplyOfCode &&
+          v.date >= fromDate.getTime() &&
+          v.date <= toDate.getTime() &&
+          // v.t === 'S' &&
+          v.CANTIDAD > 0
         );
-        events.forEach((event) => {
-          console.log("pre", (mapeoConsumo.get(clave) ?? 0))
-          mapeoConsumo.set(clave, (event.originalQuantity ?? 0) + (mapeoConsumo.get(clave) ?? 0));
-          console.log("post", (mapeoConsumo.get(clave) ?? 0))
-        })
-        console.log(events);
+
+        for (const movement of stockMovements) {
+          mapeoConsumo.set(clave, movement.CANTIDAD + (mapeoConsumo.get(clave) ?? 0));
+        }
       }
-    }
-    )
-    console.log("final")
-    console.log(mapeoConsumo);
+    });
+
     return mapeoConsumo;
   }
-
 
   const toggleShowMore = () => {
     setShowMore((showMore) => !showMore);
@@ -639,7 +707,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.totalSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">Ventas Totales</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -649,7 +717,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{generalStatistics?.TotalSales ?? 0}</p>
+                    <p className="text-5xl font-bold text-black">{generalStatistics?.totalSaleCount ?? 0}</p>
                     <p className="text-sm font-medium text-black mt-2">Cantidad de Pedidos</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -659,7 +727,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MaximumSales ?? 0).toFixed(2)}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.maxSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">Máximo UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -669,7 +737,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MinimumSales ?? 0).toFixed(2)}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.minSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">Mínimo UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -679,7 +747,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{(generalStatistics?.AverageSales ?? 0).toFixed(2)}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.avgSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">UPP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -689,7 +757,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
 
                 <Tooltip>
                   <TooltipTrigger className="text-center p-4 bg-[#f1f3f1d0] rounded-lg w-full h-full">
-                    <p className="text-5xl font-bold text-black">{(generalStatistics?.MedianSales ?? 0).toFixed(2)}</p>
+                    <p className="text-5xl font-bold text-black">{Math.round(generalStatistics?.medianSales ?? 0)}</p>
                     <p className="text-sm font-medium text-black mt-2">Mediana UVP</p>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -784,7 +852,7 @@ export default function StatisticsPage(props: { user?: NavUserData }) {
         <DataCard title="GRAFICOS" icon={<AreaChart />}>
           <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
             <StackedAreaChart data={consumption ?? []} />
-            <SimpleBartChart data={soldProportions ?? []} />
+            <ClientUnitsSold data={soldProportions ?? []} />
           </div>
           <div className="flex flex-wrap gap-x-4 mb-12 w-max-[1077px]">
             <SimpleLineChart data={salesAndBudgets} />

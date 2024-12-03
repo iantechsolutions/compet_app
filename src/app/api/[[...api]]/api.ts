@@ -196,6 +196,7 @@ app.get("/individualMail", async (c) => {
         if (!forecastProfile) {
           forecastProfile = nullProfile;
         }
+
         const forecastData = await queryForecastData(forecastProfile, rawdata);
         const data = mapData(rawdata, forecastData);
         const events = listAllEventsWithSupplyEvents(data);
@@ -206,6 +207,7 @@ app.get("/individualMail", async (c) => {
         for (const product of data.products) {
           _stockOfProductsByMonth.set(product.code, stockOfProductByMonth(product.stock, eventsByProductCode.get(product.code)!, months));
         }
+        
         const finalList: {
           productCode: string;
           quantity: number;

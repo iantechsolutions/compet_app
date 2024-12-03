@@ -11,7 +11,6 @@ import AppLayout from "~/components/applayout";
 import type { NavUserData } from "~/components/nav-user-section";
 import { useOnScroll } from "~/lib/hooks";
 import { cn, formatStock } from "~/lib/utils";
-import type { MRPProduct } from "~/mrp_data/transform_mrp_data";
 import { type Filters, FiltersDialog } from "./filters_dialog";
 import { useFocus } from "./focused_provider";
 import { TargetOverlayInfoCard } from "./overlay";
@@ -19,8 +18,11 @@ import { api } from "~/trpc/react";
 import { RouterOutputs } from "~/trpc/shared";
 import { Button } from "~/components/ui/button";
 import { Loader2Icon } from "lucide-react";
+import { Monolito, MonolitoProduct } from "~/server/api/routers/db";
+import { useMRPContext, useMRPData } from "~/components/mrp-data-provider";
+import CompetTitle from "~/components/compet-title";
 
-function ProductInfoCell({ product }: { product: MRPProduct }) {
+function ProductInfoCell({ product }: { product: MonolitoProduct }) {
   const [currentFocus, setFocus] = useFocus();
   const id = `product-info-cell-${product.code}`;
 
@@ -45,7 +47,7 @@ function ProductInfoCell({ product }: { product: MRPProduct }) {
 
 const cellCenterBaseStyles = "border-b border-r flex items-center w-full justify-center";
 
-function StockCommitedCells({ product }: { product: MRPProduct }) {
+function StockCommitedCells({ product }: { product: MonolitoProduct }) {
   const [currentFocus, setFocus] = useFocus();
 
   const idStock = `stock-cell-${product.code}`;
@@ -80,8 +82,8 @@ function StockCommitedCells({ product }: { product: MRPProduct }) {
   );
 }
 
-function StockAtMonthCell({ product, month }: { product: MRPProduct; month: string }) {
-  const stock = product.stock_at.get(month) ?? 0;
+function StockAtMonthCell({ product, month }: { product: MonolitoProduct; month: string }) {
+  const stock = product.stock_at[month] ?? 0;
 
   const [currentFocus, setFocus] = useFocus();
 
@@ -101,12 +103,12 @@ function StockAtMonthCell({ product, month }: { product: MRPProduct; month: stri
       {formatStock(stock)}
 
       <div className="absolute bottom-1 left-1 flex gap-1">
-        {product.imported_quantity_by_month.get(month)! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-green-600"></div>}
-        {product.ordered_quantity_by_month.get(month)! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-blue-600"></div>}
-        {product.used_as_supply_quantity_by_month.get(month)! > 0 && (
+        {product.imported_quantity_by_month[month]! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-green-600"></div>}
+        {product.ordered_quantity_by_month[month]! > 0 && <div className="h-[4px] w-[16px] rounded-full bg-blue-600"></div>}
+        {product.used_as_supply_quantity_by_month[month]! > 0 && (
           <div className="h-[4px] w-[16px] rounded-full bg-black dark:bg-white"></div>
         )}
-        {Math.floor(product.used_as_forecast_quantity_by_month.get(month)!) > 0 && (
+        {Math.floor(product.used_as_forecast_quantity_by_month[month]!) > 0 && (
           <div className="h-[4px] w-[16px] rounded-full bg-orange-900 opacity-25"></div>
         )}
       </div>
@@ -167,7 +169,7 @@ function ListRow({ index, style }: { index: number; style: React.CSSProperties }
 }
 
 const listRowContext = createContext<{
-  filteredProducts: MRPProduct[];
+  filteredProducts: NonNullable<Monolito['products']>;
   months: string[];
 }>({
   filteredProducts: [],
@@ -175,15 +177,79 @@ const listRowContext = createContext<{
 });
 
 export function Table(props: { user?: NavUserData }) {
-  const { data, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
+  /* const { data: months, isLoading: isLoadingMonths } = api.db.getMonths.useQuery();
+  const { data: providers, isLoading: isLoadingProv } = api.db.getMProviders.useQuery();
+  const { data: products, isLoading: isLoadingProds } = api.db.getMProductsWSupplies.useQuery();
+  const { data: productsByCode, isLoading: isLoadingProdCodes } = api.db.getMProductsByCode.useQuery();
+  const { data: forecastProfile, isLoading: isLoadingForeProf } = api.db.getForecastProfile.useQuery();
+  const isLoading = isLoadingProv || isLoadingProds || isLoadingProdCodes || isLoadingForeProf || isLoadingMonths; */
+  const { months, providers, products, productsByCode, forecastData } = useMRPData();
+  const forecastProfile = forecastData.forecastProfile;
 
   const [filters, setFilters] = useFilters();
 
-  const filtered = useFiltered(data, filters);
+  const filtered = useMemo(() => {
+    let list = products;
+    if (filters.hideAllZero) {
+      list = list.filter((product) => {
+        if (product.stock != 0) return true;
+
+        for (const m of months!) {
+          const stock = product.stock_at[m];
+          if (stock != 0) return true;
+        }
+
+        return false;
+      });
+    }
+    if (filters.search) {
+      list = list.filter((product) => {
+        return (
+          product.code.toLowerCase().includes(filters.search.trim().toLowerCase()) ||
+          product.description.toLowerCase().includes(filters.search.trim().toLowerCase())
+        );
+      });
+    }
+    if (filters.hideProviders.size > 0 && !(filters.hideProviders.has("") && filters.hideProviders.size == 1)) {
+      list = list.filter((product) => {
+        for (const provider of product.providers) {
+          if (!filters.hideProviders.has(provider.provider_code)) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+    }
+    if (filters.suppliesOf) {
+      const product = productsByCode![filters.suppliesOf];
+      if (!product) {
+        return [];
+      }
+      let supplies = product.supplies?.map((p) => p.supply_product_code) ?? [];
+      let index = 0;
+
+      while (index < supplies.length) {
+        const prod = productsByCode![supplies[index] ?? ""];
+        console.log(prod);
+        if (prod?.supplies) {
+          supplies = supplies.concat(prod.supplies.map((p) => p.supply_product_code));
+        }
+        index += 1;
+      }
+      const productsIds = new Set(supplies);
+
+      list = list.filter((product) => {
+        return productsIds.has(product.code);
+      });
+    }
+    return list;
+  }, [filters]);
+
   const size = useWindowSize();
 
   const h = (size.height ?? 1000) - 110;
-  const w = size.width ?? window.innerWidth;
+  const w = size.width ?? window?.innerWidth ?? 0;
 
   const headerId = useId();
   const scrollClassName = "scroll-list-div";
@@ -223,25 +289,15 @@ export function Table(props: { user?: NavUserData }) {
     document.getElementsByClassName(scrollClassName)[0]?.scrollTo(0, (window as any).listScroll);
   }, []);
 
-  if (isLoadingData || !data || !filtered) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-        <Button variant="secondary" disabled>
-          <Loader2Icon className="mr-2 animate-spin" /> Cargando datos...
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <AppLayout
-      title={<h1>COMPET MRP</h1>}
+      title={<CompetTitle />}
       user={props.user}
       sidenav={<AppSidenav />}
       hideMenuOnDesktop
       noPadding
       noUserSection
-      actions={<FiltersDialog monolito={data} onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
+      actions={<FiltersDialog products={products} providers={providers} onApply={(f) => setFilters({ ...f })} initialFilters={filters} number={filtered.length} />}
     >
       {currentFocus && !closedOverlay && (
         <TargetOverlayInfoCard
@@ -249,14 +305,14 @@ export function Table(props: { user?: NavUserData }) {
           column={currentFocus.month}
           product={currentFocus.product}
           productHref={`/mrp/productos/${encodeURIComponent(currentFocus.product.code)}`}
-          forecastProfile={data.forecastData.forecastProfile}
+          forecastProfile={forecastProfile!}
           onClose={() => {
             setClosedOverlay(true);
           }}
         />
       )}
 
-      <ListRowContainer id={headerId} months={data.data.months} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
+      <ListRowContainer id={headerId} months={months} style={{ overflowX: "hidden" }} className="z-10 shadow-md">
         <div className={cn(headerCellClassName, "flex justify-start md:sticky md:left-0")}>
           <p>Producto</p>
         </div>
@@ -266,14 +322,14 @@ export function Table(props: { user?: NavUserData }) {
         <div className={cn(headerCellClassName, "text-sm")}>
           <p>Comprometido</p>
         </div>
-        {data.data.months.map((month) => (
+        {months!.map((month) => (
           <div key={month} className={cn(headerCellClassName, "text-sm")}>
             <p>{month}</p>
           </div>
         ))}
       </ListRowContainer>
       <div className="" style={{ height: h, width: w }}>
-        <listRowContext.Provider value={{ filteredProducts: filtered, months: data.data.months }}>
+        <listRowContext.Provider value={{ filteredProducts: filtered, months }}>
           <List onScroll={handleListScroll} className={scrollClassName} height={h} width={w} itemCount={filtered.length} itemSize={57}>
             {ListRow}
           </List>
@@ -333,71 +389,4 @@ function useFilters() {
   }
 
   return [filters, setFilters] as const;
-}
-
-function useFiltered(monolito: RouterOutputs['db']['getMonolito'] | undefined, filters: Filters) {
-  return useMemo(() => {
-    if (!monolito) {
-      return null;
-    }
-
-    const data = monolito.data;
-
-    let list = data.products;
-    const months = data.months;
-    if (filters.hideAllZero) {
-      list = data.products.filter((product) => {
-        if (product.stock != 0) return true;
-
-        for (const m of months) {
-          const stock = product.stock_at.get(m);
-          if (stock != 0) return true;
-        }
-
-        return false;
-      });
-    }
-    if (filters.search) {
-      list = list.filter((product) => {
-        return (
-          product.code.toLowerCase().includes(filters.search.trim().toLowerCase()) ||
-          product.description.toLowerCase().includes(filters.search.trim().toLowerCase())
-        );
-      });
-    }
-    if (filters.hideProviders.size > 0 && !(filters.hideProviders.has("") && filters.hideProviders.size == 1)) {
-      list = list.filter((product) => {
-        for (const provider of product.providers) {
-          if (!filters.hideProviders.has(provider.provider_code)) {
-            return true;
-          }
-        }
-
-        return false;
-      });
-    }
-    if (filters.suppliesOf) {
-      const product = data.productsByCode.get(filters.suppliesOf);
-      if (!product) {
-        return [];
-      }
-      let supplies = product.supplies.map((p) => p.supply_product_code);
-      let index = 0;
-
-      while (index < supplies.length) {
-        const prod = data.productsByCode.get(supplies[index] ?? "");
-        console.log(prod);
-        if (prod?.supplies) {
-          supplies = supplies.concat(prod.supplies.map((p) => p.supply_product_code));
-        }
-        index += 1;
-      }
-      const productsIds = new Set(supplies);
-
-      list = list.filter((product) => {
-        return productsIds.has(product.code);
-      });
-    }
-    return list;
-  }, [monolito, filters]);
 }

@@ -11,32 +11,37 @@ import { ProductEventRow } from "./event_row";
 import { ForecastSupplyEventsRow } from "./forecast_supply_events_row";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
-import { Loader2Icon } from "lucide-react";
-import { api } from "~/trpc/react";
-import AppLayout from "~/components/applayout";
-import { Title } from "~/components/title";
-import AppSidenav from "~/components/app-sidenav";
-import { useSession } from "next-auth/react";
+import { useMRPData } from "~/components/mrp-data-provider";
 
 export default function ProductPage() {
-  const { data: monolito, isLoading: isLoadingData } = api.db.getMonolito.useQuery();
+  /* const { data: eventsByProductCode, isLoading: isLoadingEvts } = api.db.getMEventsByProductCode.useQuery()
+  const { data: products, isLoading: isLoadingProds } = api.db.getMProductsDefault.useQuery();
+  const { data: providersByCode, isLoading: isLoadingProvC } = api.db.getMProvidersByCode.useQuery();
+  const { data: orderProductsById, isLoading: isLoadingOrderProds } = api.db.getMOrderProductsById.useQuery();
+  const { data: ordersByOrderNumber, isLoading: isLoadingOrderNums } = api.db.getMOrdersByOrderNumber.useQuery();
+  const { data: productImportsById, isLoading: isLoadingProdImports } = api.db.getMProductImportsById.useQuery();
+  const { data: importsById, isLoading: isLoadingImports } = api.db.getMImportsById.useQuery();
+  const { data: months, isLoading: isLoadingMonths } = api.db.getMonths.useQuery(); 
+  const isLoadingData = isLoadingMonths || isLoadingProvC || isLoadingOrderProds || isLoadingOrderNums || isLoadingProdImports || isLoadingImports || isLoadingProds || isLoadingEvts;
+  */
+  const mrpData = useMRPData();
+  const { months, importsById, productImportsById, ordersByOrderNumber, orderProductsById, providersByCode, products, eventsByProductCode } = mrpData;
+  const indexedEvents = mrpData.events;
 
   const params = useParams<{ code: string }>();
   const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
 
   const productCode = decodeURIComponent(params?.code ?? "");
-  const product = monolito?.data.products.find(v => v.code === productCode);
-  const auth = useSession();
+  const product = products.find(v => v.code === productCode)!;
 
   const productData = useMemo(() => {
-    if (!monolito || !product) {
+    if (!product) {
       return null;
     }
 
-    const data = monolito.data;
-    const events = data.eventsByProductCode.get(product.code) ?? [];
+    const events = eventsByProductCode?.[product.code] ?? [];
 
-    const dataByMonth = new Map<string, { events: ProductEvent[]; supplyForecastEvents: ProductEvent[] }>();
+    const dataByMonth = new Map<string, { events: ProductEvent<number>[]; supplyForecastEvents: ProductEvent<number>[] }>();
 
     for (const event of events) {
       const month = dayjs(event.date).format("YYYY-MM");
@@ -56,22 +61,7 @@ export default function ProductPage() {
     }
 
     return dataByMonth;
-  }, [product, monolito]);
-
-  if (isLoadingStats || isLoadingData || !monolito) {
-    return <div className="fixed bottom-0 left-0 right-0 top-0 flex items-center justify-center">
-      <Button variant="secondary" disabled>
-        <Loader2Icon className="mr-2 animate-spin" /> {isLoadingStats ? 'Cargando estadísticas' : 'Cargando datos'}
-      </Button>
-    </div>;
-  } else if (!product) {
-    return (
-      <AppLayout title={<h1>Error 404</h1>} user={auth.data?.user} sidenav={<AppSidenav />}>
-        <Title>No se encontró el producto</Title>
-        <p>No encontramos ningún producto con el código "{productCode}".</p>
-      </AppLayout>
-    );
-  }
+  }, [product]);
 
   return (
     <>
@@ -88,7 +78,7 @@ export default function ProductPage() {
             {product?.providers.map((provider, i) => {
               return (
                 <Badge key={i} variant="secondary" className="mr-2">
-                  {monolito.data.providersByCode.get(provider.provider_code)?.name ?? provider.provider_code}
+                  {providersByCode?.[provider.provider_code]?.name ?? provider.provider_code}
                 </Badge>
               );
             })}
@@ -98,7 +88,7 @@ export default function ProductPage() {
           <Button variant="outline">Ver estadisticas</Button>
         </Link>
       </div>
-      <ProductEventsChart key={product.code} product={product} months={monolito.data.months} />
+      <ProductEventsChart key={product.code} product={product} months={months} />
       <div className="max-w-full overflow-x-auto">
         <Table className="min-w-[600px]">
           {/* <TableCaption>Lista de importaciones pedidos y armados</TableCaption> */}
@@ -133,16 +123,16 @@ export default function ProductPage() {
               // const supplyForecastEventsSum = p.supplyForecastEvents.reduce((acc, e) => acc + e.quantity, 0)
 
               // Variación de stock
-              const stockVariation = product.stock_variation_by_month.get(month) ?? 0;
+              const stockVariation = product.stock_variation_by_month[month] ?? 0;
               // Stock al final del mes
-              const finalStock = product.stock_at.get(month) ?? 0;
+              const finalStock = product.stock_at[month] ?? 0;
               // Stock inicial del mes
               const initialStock = finalStock - stockVariation;
 
               // Usado como forecast (no insumo, facturación y presupuesto)
-              // const usedAsForecast = product.used_as_forecast_quantity_by_month.get(month) ?? 0
-              // const usedAsSoldForecast = product.used_as_forecast_type_sold_quantity_by_month.get(month) ?? 0
-              // const usedAsBudgetForecast = product.used_as_forecast_type_budget_quantity_by_month.get(month) ?? 0
+              // const usedAsForecast = product.used_as_forecast_quantity_by_month[month) ?? 0
+              // const usedAsSoldForecast = product.used_as_forecast_type_sold_quantity_by_month[month) ?? 0
+              // const usedAsBudgetForecast = product.used_as_forecast_type_budget_quantity_by_month[month) ?? 0
 
               return (
                 <Fragment key={i}>
@@ -158,11 +148,29 @@ export default function ProductPage() {
                     </TableCell>
                   </TableRow>
                   {forecastEvents.map((event, i) => {
-                    return <ProductEventRow monolito={monolito} key={`row:${month}:f_${i}`} event={event} productCode={productCode} nostock />;
+                    return <ProductEventRow
+                      importsById={importsById}
+                      orderProductsById={orderProductsById}
+                      ordersByOrderNumber={ordersByOrderNumber}
+                      productImportsById={productImportsById}
+                      indexedEvents={indexedEvents}
+                      key={`row:${month}:f_${i}`} event={event} productCode={productCode} nostock />;
                   })}
-                  <ForecastSupplyEventsRow monolito={monolito} events={p.supplyForecastEvents} month={month} key={`forecast_supply_event_row:${month}`} />
+                  <ForecastSupplyEventsRow
+                    importsById={importsById}
+                    orderProductsById={orderProductsById}
+                    ordersByOrderNumber={ordersByOrderNumber}
+                    productImportsById={productImportsById}
+                    events={p.supplyForecastEvents}
+                    indexedEvents={indexedEvents}
+                    month={month} key={`forecast_supply_event_row:${month}`} />
                   {nonForecastEvents.map((event, i) => {
-                    return <ProductEventRow monolito={monolito} key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />;
+                    return <ProductEventRow importsById={importsById}
+                      orderProductsById={orderProductsById}
+                      ordersByOrderNumber={ordersByOrderNumber}
+                      productImportsById={productImportsById}
+                      indexedEvents={indexedEvents}
+                      key={`row:${month}:nf_${i}`} event={event} productCode={productCode} />;
                   })}
                 </Fragment>
               );

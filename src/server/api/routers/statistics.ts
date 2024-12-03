@@ -26,8 +26,8 @@ export const statisticsRouter = createTRPCRouter({
           budget.products.filter((product) => product.product_code === input.productCode).length > 0,
       );
       const sales = data?.orders.filter((order) => !input.clientExemptionList?.includes(order.client_code));
-      let salesList = [];
-      let budgetsList = [];
+      const salesList = [];
+      const budgetsList = [];
       while (fromDateCopy.getTime() <= input.toDate.getTime()) {
         const day = fromDateCopy.toISOString().slice(0, 10);
         const salesOnDay = sales?.filter(
@@ -95,7 +95,7 @@ export const statisticsRouter = createTRPCRouter({
           clientInformation.set(sale.client_code, [totalSales + (order_product?.ordered_quantity ?? 0), amountOfSalse + 1]);
         }
       });
-      let finalArray: {
+      const finalArray: {
         name: string | undefined;
         totalSales: number;
         amountOfSales: number;
@@ -131,7 +131,7 @@ export const statisticsRouter = createTRPCRouter({
           new Date(String(order.order_date)) >= input.fromDate &&
           new Date(String(order.order_date)) <= new Date(String(input.toDate)),
       );
-      let validOrderProducts: {
+      const validOrderProducts: {
         id: number;
         order_number: string;
         product_code: string;

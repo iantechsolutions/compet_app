@@ -1,6 +1,4 @@
 /* eslint-disable */
-import "server-only";
-
 import dayjs from "dayjs";
 import { getSetting } from "~/lib/settings";
 import type {
@@ -163,8 +161,8 @@ export async function queryBaseMRPData() {
         stock: stockCommitedByProduct.get(product.code)?.stock_quantity ?? 0,
         commited: stockCommitedByProduct.get(product.code)?.commited_quantity ?? 0,
         imports: productImportsByProduct.get(product.code) ?? [],
-        supplies: suppliesOfProduct.get(product.code) ?? [],
-        suppliesOf: suppliesOfOfProduct.get(product.code) ?? [],
+        supplies: suppliesOfProduct.get(product.code),
+        suppliesOf: suppliesOfOfProduct.get(product.code),
         providers: productProivderOfProduct.get(product.code) ?? [],
       }))
       .sort((a, b) => a.code.localeCompare(b.code)),
@@ -176,9 +174,9 @@ export async function queryBaseMRPData() {
       const order = ordersByOrderNumber.get(orderProduct.order_number);
       if (!order) return false;
       if (order.state != 2) return false;
-      if (order.delivery_date < dayjs("2020-01-01").toDate()) {
-        return false;
-      }
+      // if (order.delivery_date < dayjs("2020-01-01").toDate()) {
+      //   return false;
+      // }
       return true;
     }),
     clients,

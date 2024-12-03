@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { getSetting } from "~/lib/settings";
+import { getSetting } from "./lib/settings";
 import type {
   CrmBudget,
   CrmBudgetProduct,
@@ -10,8 +10,8 @@ import type {
   ProductImport,
   ProductProvider,
   ProductStockCommited,
-} from "~/lib/types";
-import { decodeData, getMonths } from "~/lib/utils";
+} from "./lib/types";
+import { decodeData, getMonths } from "./lib/utils";
 import { utapi } from "./server/uploadthing";
 import { type DataExport } from "./scripts/lib/database";
 import { getDbInstance } from "./scripts/lib/instance";
@@ -30,7 +30,7 @@ export async function queryBaseMRPDataUT() {
   const exportURL = dataInfo.exportURL;
 
   const dataEncoded = await fetch(exportURL).then((res) => res.text());
-  const data = decodeData(dataEncoded) as DataExport;
+  const data = decodeData<DataExport>(dataEncoded);
 
   return {
     dataInfo,
@@ -40,14 +40,14 @@ export async function queryBaseMRPDataUT() {
 }
 
 // esto vs el otro?? queryBaseMRPData
-export async function queryBaseMRPData() {
+export async function queryBaseMRPData(cacheTtl?: number) {
   let data;
   let exportURL: string;
   let dataInfo;
 
   if (env.DB_DIRECT_CONNECTION) {
     const db = await getDbInstance();
-    data = await db.readAllDataDirect();
+    data = await db.readAllDataDirect(cacheTtl);
     exportURL = "null";
     dataInfo = {
       exportDate: Date.now(),
@@ -75,6 +75,7 @@ export async function queryBaseMRPData() {
     budgets: budgets_bad,
     budget_products,
     crm_clients: crm_clients_bad,
+    stock_movements,
   } = data;
 
   const { budgets, clients, crm_clients } = transformClientsIdsCodes({
@@ -166,6 +167,7 @@ export async function queryBaseMRPData() {
   return {
     months,
     imports,
+    stock_movements,
     productImports: products_imports,
     products: products
       .map((product) => ({
@@ -173,8 +175,8 @@ export async function queryBaseMRPData() {
         stock: stockCommitedByProduct.get(product.code)?.stock_quantity ?? 0,
         commited: stockCommitedByProduct.get(product.code)?.commited_quantity ?? 0,
         imports: productImportsByProduct.get(product.code) ?? [],
-        supplies: suppliesOfProduct.get(product.code) ?? [],
-        suppliesOf: suppliesOfOfProduct.get(product.code) ?? [],
+        supplies: suppliesOfProduct.get(product.code),
+        suppliesOf: suppliesOfOfProduct.get(product.code),
         providers: productProivderOfProduct.get(product.code) ?? [],
       }))
       .sort((a, b) => a.code.localeCompare(b.code)),
@@ -186,9 +188,9 @@ export async function queryBaseMRPData() {
       const order = ordersByOrderNumber.get(orderProduct.order_number);
       if (!order) return false;
       if (order.state != 2) return false;
-      if (order.delivery_date < dayjs("2020-01-01").toDate()) {
-        return false;
-      }
+      // if (order.delivery_date < dayjs("2020-01-01").toDate()) {
+      //   return false;
+      // }
       return true;
     }),
     clients,

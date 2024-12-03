@@ -4,43 +4,48 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/h
 import { TableCell, TableRow } from "~/components/ui/table";
 import { cn, formatStock } from "~/lib/utils";
 import type { ProductEvent } from "~/mrp_data/transform_mrp_data";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 export function ProductEventRow(props: {
-  event: ProductEvent;
+  event: ProductEvent<number>;
+  indexedEvents: ProductEvent<number>[];
   productCode: string;
   nobg?: boolean;
   nostate?: boolean;
   nodate?: boolean;
   nostock?: boolean;
-  monolito: RouterOutputs['db']['getMonolito'];
+  orderProductsById: NonNullable<Monolito['orderProductsById']>;
+  ordersByOrderNumber: NonNullable<Monolito['ordersByOrderNumber']>;
+  productImportsById: NonNullable<Monolito['productImportsById']>;
+  importsById: NonNullable<Monolito['importsById']>;
 }) {
-  const data = props.monolito.data;
+  const { event, indexedEvents, productCode } = props;
 
-  const { event, productCode } = props;
+  const orderProducts = event.type === "order" ? props.orderProductsById[event.referenceId] : undefined;
+  const order = orderProducts ? props.ordersByOrderNumber[orderProducts.order_number] : undefined;
 
-  const orderProducts = event.type === "order" ? data.orderProductsById.get(event.referenceId) : undefined;
-  const order = orderProducts ? data.ordersByOrderNumber.get(orderProducts.order_number) : undefined;
+  const productImport = event.type === "import" ? props.productImportsById[event.referenceId] : undefined;
+  const importation = productImport ? props.importsById[productImport.import_id] : undefined;
 
-  const productImport = event.type === "import" ? data.productImportsById.get(event.referenceId) : undefined;
-  const importation = productImport ? data.importsById.get(productImport.import_id) : undefined;
-
-  const hasChildren = (event.childEvents?.length ?? 0) > 0;
+  const hasChildren = (event.childEventsIndexes?.length ?? 0) > 0;
 
   let childrenHasChildren = false;
 
   if (hasChildren) {
-    for (const e of event.childEvents!) {
-      if ((e.childEvents?.length ?? 0) > 0) {
+    for (const e of event.childEventsIndexes!) {
+      const childEvent = indexedEvents[e];
+      if ((childEvent?.childEventsIndexes?.length ?? 0) > 0) {
         childrenHasChildren = true;
         break;
       }
     }
   }
 
-  const parentProductCode = event.parentEvent?.productCode;
+  const parentEvent = event.parentEventIndex !== undefined ? indexedEvents[event.parentEventIndex]! : undefined;
+  const parentProductCode = parentEvent?.productCode;
 
-  const parentParentProductCode = event.parentEvent?.parentEvent?.productCode;
+  const parentParentEvent = parentEvent?.parentEventIndex !== undefined ? indexedEvents[parentEvent.parentEventIndex]! : undefined;
+  const parentParentProductCode = parentParentEvent?.productCode;
 
   let typeName: React.ReactNode = "";
 
@@ -89,7 +94,7 @@ export function ProductEventRow(props: {
       );
     }
 
-    if (event.parentEvent?.parentEvent) {
+    if (parentEvent?.parentEventIndex !== undefined) {
       typeName = (
         <>
           <span className="font-medium underline">{supplyName}</span>
@@ -134,7 +139,7 @@ export function ProductEventRow(props: {
     orderNumber = order?.order_number;
   }
   if (event.type === "supply") {
-    orderNumber = data.orderProductsById.get(event.referenceId)?.order_number;
+    orderNumber = props.orderProductsById[event.referenceId]?.order_number;
   }
   if (event.type === "forecast") {
     orderNumber = "forecast";
@@ -174,7 +179,7 @@ export function ProductEventRow(props: {
       <TableCell className="whitespace-nowrap">{typeName}</TableCell>
       {!props.nodate && <TableCell className="whitespace-nowrap">{dayjs(event.date).format("YYYY-MM-DD")}</TableCell>}
       <TableCell className="whitespace-nowrap">
-        <EventHoverCard data={data} event={event}>
+        <EventHoverCard event={event} indexedEvents={indexedEvents}>
           <div className="inline-block">
             <ReferenceComponent orderNumber={event.isForecast ? "forecast" : orderNumber} productCode={productCode} />
             {event.type === "import" && importation?.id}
@@ -223,11 +228,10 @@ export function ProductEventRow(props: {
   );
 }
 
-function EventHoverCard(props: { event: ProductEvent; data: RouterOutputs['db']['getMonolito']['data']; children: React.ReactNode }) {
-  const event = props.event;
-  const childEvents = event.childEvents ?? [];
-
-  const parentEvent = event.parentEvent;
+function EventHoverCard(props: { event: ProductEvent<number>; indexedEvents: ProductEvent<number>[]; children: React.ReactNode }) {
+  const { event, indexedEvents } = props;
+  const childEvents = (event.childEventsIndexes ?? []).map(idx => indexedEvents[idx]!);
+  const parentEvent = event.parentEventIndex ? indexedEvents[event.parentEventIndex]! : undefined;
 
   return (
     <HoverCard>

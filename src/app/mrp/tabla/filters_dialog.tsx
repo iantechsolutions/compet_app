@@ -9,7 +9,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { useShortcut } from "~/lib/hooks";
-import type { RouterOutputs } from "~/trpc/shared";
+import type { Monolito } from "~/server/api/routers/db";
 
 export type Filters = {
   search: string;
@@ -22,10 +22,10 @@ export function FiltersDialog(props: {
   initialFilters: Filters;
   onApply: (filters: Filters) => void;
   number: number;
-  monolito: RouterOutputs['db']['getMonolito'],
+  products: NonNullable<Monolito['products']>;
+  providers: NonNullable<Monolito['providers']>;
 }) {
-  const data = props.monolito.data;
-  const products = data.products;
+  const products = props.products;
   const [filters, setFilters] = useState<Filters>(props.initialFilters);
 
   const closeId = useId();
@@ -122,7 +122,7 @@ export function FiltersDialog(props: {
           </label>
         </div>
 
-        <ProvidersFilter onChange={setHideProviders} value={filters.hideProviders} monolito={props.monolito} />
+        <ProvidersFilter onChange={setHideProviders} value={filters.hideProviders} products={props.products} providers={props.providers} />
 
         <DialogFooter>
           <DialogPrimitive.Close id={closeId} asChild>
@@ -141,9 +141,9 @@ function ProviderRow(props: {
   style: React.CSSProperties;
   value: Set<string>;
   onChange: (providers: Set<string>) => void;
-  monolito: RouterOutputs['db']['getMonolito'];
+  monolito: Monolito;
 }) {
-  const providers = props.monolito.data.providers;
+  const providers = props.monolito.providers;
   const provider = providers[props.index]!;
 
   const labelId = "label-" + provider.code;
@@ -188,11 +188,11 @@ function ProviderRow(props: {
 function ProvidersFilter(props: {
   value: Set<string>;
   onChange: (providers: Set<string>) => void;
-  monolito: RouterOutputs['db']['getMonolito'];
+  products: NonNullable<Monolito['products']>;
+  providers: NonNullable<Monolito['providers']>;
 }) {
-  const data = props.monolito.data;
-  const providers = data.providers;
-  const products = data.products;
+  const providers = props.providers;
+  const products = props.products;
 
   const productsByProvider = useMemo(() => {
     const map = new Map<string, number>();
