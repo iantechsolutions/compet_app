@@ -10,6 +10,7 @@ interface Props {
   cuts: NonNullable<RouterOutputs['cuts']['list']>;
   productsByCode: Monolito['productsByCode'],
   filters: CutsFilters
+  stockTangoMap: Map<string, number>,
 }
 
 export type CutsSortType = 'cod' | 'desc' | 'lote' | 'caja' | 'ubic' | 'cant' | 'med' | 'un';
@@ -22,7 +23,7 @@ export type CutsFilters = {
 
 export type CutsFilterDispatch = Dispatch<SetStateAction<CutsFilters>>;
 
-export default function CutsTable({ cuts, productsByCode, filters }: Props) {
+export default function CutsTable({ cuts, productsByCode, filters, stockTangoMap }: Props) {
   const [subTableSortType, setSubTableSortType] = useState<CutsSortType>('lote');
   const [subTableSortDir, setSubTableSortDir] = useState<CutsSortDir>('asc');
 
@@ -179,14 +180,24 @@ export default function CutsTable({ cuts, productsByCode, filters }: Props) {
       cuts: NonNullable<RouterOutputs['cuts']['list']>[number][],
       stockFis: number,
       stockTango: number
-    }][] = Array.from(cutsMapSortedFiltered).map(prod => [
-      prod[0],
-      {
-        ...prod[1],
-        stockFis: Number(prod[1].cuts.reduce((acc, v) => acc + (getCutVisualMeasure(v.measure, v.units) * v.amount), 0).toFixed(2)),
-        stockTango: Math.round(productsByCode[prod[0]]!.stock)
+    }][] = Array.from(cutsMapSortedFiltered).map(prod => {
+      // sacado del excel
+      const defaultStockTango = Math.round(productsByCode[prod[0]]!.stock);
+      const mapTango = stockTangoMap.get(prod[0]);
+
+      if (typeof mapTango !== 'number') {
+        console.warn('no mapTang', mapTango, prod[0]);
       }
-    ])
+
+      return [
+        prod[0],
+        {
+          ...prod[1],
+          stockFis: Number(prod[1].cuts.reduce((acc, v) => acc + (getCutVisualMeasure(v.measure, v.units) * v.amount), 0).toFixed(2)),
+          stockTango: typeof mapTango === 'number' ? mapTango : defaultStockTango,
+        }
+      ];
+    })
 
     return mapped.sort((a, b) => {
       const rA = sortDir === 'asc' ? a : b;

@@ -1,6 +1,10 @@
 # CHANGELOG MRP 
 
-## [1.3.0] - 2024-11-20
+## [1.4.0]
+### Arreglado
+- Stock tango en tabla de recortes ahora se lee de tango
+
+## [1.3.0]
 ### Agregado
 - Loader al realizar recorte.
 - Columnas de stock físico, stock tango y diferencia en la tabla de recortes.
@@ -20,7 +24,7 @@
 - Arreglado un filtrado incorrecto que hacía que algunos pedidos y clientes no aparezcan (ej. DPEC en 08210).
 - Arreglado problema donde las consultas de varios productos no consideraban cuánto se consumiría en total. 
 
-## [1.2.0] - 2024-11-11
+## [1.2.0]
 ### Arreglado
 - Uso de facturaciones en estadísticas generales.
 - Piso/redondeo sobre ventas a clientes.

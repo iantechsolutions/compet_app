@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { ComboboxDemo } from "~/components/combobox";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { type CutUnits } from "~/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -45,6 +45,15 @@ export default function CutsPage({ cuts }: Props) {
     prodCode: '',
     desc: '',
   });
+
+  const stockTangoMap = useMemo(() => {
+    const res = new Map<string, number>();
+    for (const prod of products) {
+      res.set(prod.code, prod.stock);
+    }
+
+    return res;
+  }, [products]);
 
   async function handleEditCut() {
     if (selectedCut) {
@@ -299,8 +308,7 @@ export default function CutsPage({ cuts }: Props) {
                 </CutFiltersDialog>
               </div>
             </div>
-            <CutsTable cuts={cuts} productsByCode={productsByCode} filters={filters} />
-
+            <CutsTable cuts={cuts} productsByCode={productsByCode} filters={filters} stockTangoMap={stockTangoMap} />
           </>
         )}
 
