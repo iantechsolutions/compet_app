@@ -29,6 +29,7 @@ export default function CutsPage({ cuts }: Props) {
   // const { mutateAsync: getCutByProd, isLoading: loadingGetByProd } = api.cuts.getByProdId.useMutation();
   const { mutateAsync: addCut, isLoading: loadingCreate } = api.cuts.create.useMutation();
   const { mutateAsync: editCut, isLoading: loadingEdit } = api.cuts.edit.useMutation();
+
   const [lote, setLote] = useState<string>("");
   const [caja, setCaja] = useState<string>("");
   const [location, setLocation] = useState<string>("");
@@ -40,10 +41,14 @@ export default function CutsPage({ cuts }: Props) {
 
   const [filters, setFilters] = useState<{
     prodCode: string,
+    artCode: string,
+    prodCodes: string[] | null,
     desc: string,
   }>({
     prodCode: '',
+    prodCodes: null,
     desc: '',
+    artCode: '',
   });
 
   const stockTangoMap = useMemo(() => {
@@ -194,7 +199,7 @@ export default function CutsPage({ cuts }: Props) {
                   Cargar excel
                 </Button>
               </Link>
-              <CutFiltersDialog setFilters={setFilters} filters={filters}>
+              <CutFiltersDialog setFilters={setFilters} filters={filters} products={products}>
                 <Button className="px-3">
                   <FilterIcon />
                 </Button>
@@ -301,7 +306,7 @@ export default function CutsPage({ cuts }: Props) {
                     Cargar excel
                   </Button>
                 </Link>
-                <CutFiltersDialog setFilters={setFilters} filters={filters}>
+                <CutFiltersDialog setFilters={setFilters} filters={filters} products={products}>
                   <Button className="px-3">
                     <FilterIcon />
                   </Button>

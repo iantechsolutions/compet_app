@@ -42,6 +42,31 @@ export interface ProductWithDependencies {
   state: "preparable" | "import" | "sinEntrada" | null;
 }
 
+function allProductCutsCodes(res: ReturnType<typeof getConsumoForProductList>): string[] {
+  let codes: string[] = [];
+  for (const prod of res) {
+    if (typeof prod.maxConsumible === 'object') {
+      if (prod.dependencies?.length !== 1) {
+        console.error('semielaborado has no dependencies');
+      } else {
+        codes.push(prod.dependencies[0]!.productCode);
+      }
+    } else {
+      if (prod.cuts !== null) {
+        if (prod.dependencies?.length !== 1) {
+          console.error('semielaborado has no dependencies');
+        } else {
+          codes.push(prod.dependencies[0]!.productCode);
+        }
+      } else if (prod.dependencies !== null) {
+        codes = codes.concat(allProductCutsCodes(prod.dependencies));
+      }
+    }
+  }
+
+  return codes;
+}
+
 function weakestState(entries: ProductWithDependencies[]): "import" | "preparable" | "sinEntrada" {
   let state: "import" | "preparable" | "sinEntrada" = "preparable";
   for (const entry of entries) {
@@ -636,8 +661,82 @@ export const consultRouter = createTRPCRouter({
         data.productsByCode
       );
 
-      console.dir(res, { depth: 50 });
+      // console.dir(res, { depth: 50 });
       return res;
+    }),
+  productDependencies: protectedProcedure
+    .input(z.object({
+      productCode: z.string()
+    })).mutation(async ({ input }) => {
+      const [session, allCuts] = await Promise.all([await getServerAuthSession(), await db.query.cuts.findMany()]);
+
+      // ordeno por mts o ctd
+      allCuts.sort((a, b) => a.measure - b.measure);
+      const productCuts = new Map<string, InferSelectModel<typeof schema.cuts>[]>();
+      for (const cut of allCuts) {
+        if (productCuts.has(cut.prodId)) {
+          productCuts.get(cut.prodId)?.push(cut);
+        } else {
+          productCuts.set(cut.prodId, [cut]);
+        }
+      }
+
+      // Obs: productCuts tiene listas ordenadas de menor a mayor measure
+      // porque allCuts base ya está ordenado
+      const forecastProfileId = await getUserSetting<number>("mrp.current_forecast_profile", session?.user.id ?? "");
+
+      let forecastProfile: ForecastProfile | null =
+        forecastProfileId != null
+          ? ((await db.query.forecastProfiles.findFirst({
+              where: eq(forecastProfiles.id, forecastProfileId),
+            })) ?? null)
+          : null;
+
+      if (!forecastProfile) {
+        forecastProfile = nullProfile;
+      }
+
+      let data;
+      if (forecastProfileId === null) {
+        data = await cachedAsyncFetch(`monolito-fc-null`, defaultCacheTtl, async () => await getMonolitoByForecastId(null));
+      } else {
+        data = await cachedAsyncFetch(
+          `monolito-fc-${forecastProfileId}`,
+          defaultCacheTtl,
+          async () => await getMonolitoByForecastId(forecastProfileId),
+        );
+      }
+
+      const curatedProducts = data.products.filter(
+        (product) => !excludeProducts.some((excludedProduct) => product.code.startsWith(excludedProduct)),
+      );
+
+      const res = getConsumoForProductList(
+        [initializeProductWDeps({ quantity: 1, productCode: input.productCode })],
+        new Map<string, number>(),
+        new Map<number, number>(),
+        curatedProducts,
+        data.eventsByProductCode,
+        productCuts,
+        data.productsByCode,
+      );
+
+      for (const entry of res) {
+        setState(entry);
+      }
+
+      // res se pasa por referencia
+      maxConsumoForProductList(
+        res,
+        curatedProducts,
+        data.eventsByProductCode,
+        productCuts,
+        data.productsByCode
+      );
+
+      const result = allProductCutsCodes(res);
+      console.log('result', result);
+      return result;
     }),
   mailNotificacion: protectedProcedure
     .input(

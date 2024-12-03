@@ -18,6 +18,8 @@ export type CutsSortDir = 'asc' | 'desc';
 
 export type CutsFilters = {
   prodCode: string;
+  artCode: string;
+  prodCodes: string[] | null;
   desc: string;
 };
 
@@ -150,13 +152,15 @@ export default function CutsTable({ cuts, productsByCode, filters, stockTangoMap
 
     const prodLower = filters.prodCode.toLowerCase();
     const descLower = filters.desc.toLowerCase();
-    const anyFilter = filters.prodCode !== '' || filters.desc !== '';
+    const anyFilter = filters.prodCode !== '' || filters.desc !== '' || filters.prodCodes !== null;
 
     if (anyFilter) {
       res = new Map(
         [...res]
           .filter(([k, _v]) => {
-            if (filters.prodCode !== '' && !k.toLowerCase().includes(prodLower)) {
+            if (filters.prodCodes !== null && !filters.prodCodes.includes(k)) {
+              return false;
+            } else if (filters.prodCode !== '' && !k.toLowerCase().includes(prodLower)) {
               return false;
             } else if (filters.desc !== '') {
               const desc = productsByCode[k]!.description + " " + productsByCode[k]!.additional_description;

@@ -1,8 +1,9 @@
 # CHANGELOG MRP 
 
-## [1.4.0]
+## [1.4.0] WIP (acordarse de cambiar versión!!)
 ### Arreglado
 - Stock tango en tabla de recortes ahora se lee de tango
+- Filtrar por artículo (tal cual como aparece en consults menos los que no tienen recortes cargados) en tabla recortes
 
 ## [1.3.0]
 ### Agregado
