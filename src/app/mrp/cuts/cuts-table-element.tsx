@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { CutDialog } from "./cuts-cut-dialog";
 import { getCutVisualMeasure } from "~/lib/utils";
+import dayjs from "dayjs";
 
 export default function CutsTableElement({
   prodId,
@@ -25,7 +26,8 @@ export default function CutsTableElement({
     measuresMap: Map<string, number>,
     cuts: NonNullable<RouterOutputs['cuts']['list']>[number][],
     stockFis: number,
-    stockTango: number
+    stockTango: number,
+    lastDate: number | null
   },
   setSortType: Dispatch<SetStateAction<CutsSortType>>,
   sortType: CutsSortType,
@@ -48,6 +50,7 @@ export default function CutsTableElement({
         <TableCell>{prodMap.stockFis}</TableCell>
         <TableCell>{prodMap.stockTango}</TableCell>
         <TableCell>{Math.round(prodMap.stockFis - prodMap.stockTango)}</TableCell>
+        <TableCell>{prodMap.lastDate === null ? '-' : dayjs(prodMap.lastDate).format("DD/MM/YYYY")}</TableCell>
         <TableCell>
           <Button
             onClick={() => setOpen(!open)}
@@ -57,7 +60,7 @@ export default function CutsTableElement({
 
       {open && (
         <TableRow>
-          <TableCell colSpan={4}>
+          <TableCell colSpan={11}>
             <Table className="w-full">
               <TableHeader>
                 <TableRow className="bg-[#f7f7f7] text-[#3e3e3e]">
@@ -161,6 +164,19 @@ export default function CutsTableElement({
                         sortType === 'un' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
                       } </div>
                   </TableHead>
+                  <TableHead>
+                    <div className="flex flex-row">
+                      <button onClick={() => {
+                        if (sortType === 'dateMod') {
+                          setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+                        } else {
+                          setSortType('dateMod');
+                          setSortDir('asc');
+                        }
+                      }}>Fecha de modificación</button> {
+                        sortType === 'dateMod' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
+                      } </div>
+                  </TableHead>
                   <TableHead></TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -176,6 +192,7 @@ export default function CutsTableElement({
                     <TableCell>{cut.amount}</TableCell>
                     <TableCell>{getCutVisualMeasure(cut.measure, cut.units)}</TableCell>
                     <TableCell>{cut.units}</TableCell>
+                    <TableCell>{cut.modAt === null ? '-' : dayjs(cut.modAt).format("DD/MM/YYYY")}</TableCell>
                     <TableCell className="px-1">
                       <CutDialog cut={cut}>
                         <ScissorsSquareIcon />

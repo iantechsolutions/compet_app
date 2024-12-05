@@ -1,9 +1,16 @@
 # CHANGELOG MRP 
 
 ## [1.4.0] WIP (acordarse de cambiar versión!!)
+### Agregado
+- Última fecha de modificación en tabla de recortes por producto, ordenable
+- Fecha de modificación para cada recorte, ordenable
+
 ### Arreglado
 - Stock tango en tabla de recortes ahora se lee de tango
 - Filtrar por artículo (tal cual como aparece en consults menos los que no tienen recortes cargados) en tabla recortes
+
+### Cambios
+- Optimización interna respecto a base de datos y recortes
 
 ## [1.3.0]
 ### Agregado

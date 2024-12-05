@@ -126,6 +126,7 @@ export const cuts = pgTable("cuts", {
   measure: real("measure").notNull(),
   // tipo de measure (ver en lib/types.ts)
   units: varchar("units", { length: 255 }).notNull(),
+  modAt: timestamp("modAt").defaultNow(),
   stockPhys: varchar("stockPhys").notNull(),
   stockTango: varchar("stockTango").notNull(),
 });

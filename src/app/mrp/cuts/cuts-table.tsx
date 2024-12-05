@@ -13,7 +13,7 @@ interface Props {
   stockTangoMap: Map<string, number>,
 }
 
-export type CutsSortType = 'cod' | 'desc' | 'lote' | 'caja' | 'ubic' | 'cant' | 'med' | 'un';
+export type CutsSortType = 'cod' | 'desc' | 'lote' | 'caja' | 'ubic' | 'cant' | 'med' | 'un' | 'dateMod';
 export type CutsSortDir = 'asc' | 'desc';
 
 export type CutsFilters = {
@@ -29,7 +29,7 @@ export default function CutsTable({ cuts, productsByCode, filters, stockTangoMap
   const [subTableSortType, setSubTableSortType] = useState<CutsSortType>('lote');
   const [subTableSortDir, setSubTableSortDir] = useState<CutsSortDir>('asc');
 
-  const [sortType, setSortType] = useState<'code' | 'desc' | 'cant' | 'fis' | 'tango' | 'dif'>('code');
+  const [sortType, setSortType] = useState<'code' | 'desc' | 'cant' | 'fis' | 'tango' | 'dif' | 'dateMod'>('code');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const [cutsMap, setCutsMap] = useState<Map<string, {
@@ -183,11 +183,19 @@ export default function CutsTable({ cuts, productsByCode, filters, stockTangoMap
       measuresMap: Map<string, number>,
       cuts: NonNullable<RouterOutputs['cuts']['list']>[number][],
       stockFis: number,
-      stockTango: number
+      stockTango: number,
+      lastDate: number | null,
     }][] = Array.from(cutsMapSortedFiltered).map(prod => {
       // sacado del excel
       const defaultStockTango = Math.round(productsByCode[prod[0]]!.stock);
       const mapTango = stockTangoMap.get(prod[0]);
+
+      let lastDate = 0;
+      for (const cut of cuts) {
+        if (typeof cut.modAt !== 'undefined' && cut.modAt !== null && cut.modAt.getTime() > lastDate) {
+          lastDate = cut.modAt.getTime();
+        }
+      }
 
       if (typeof mapTango !== 'number') {
         console.warn('no mapTang', mapTango, prod[0]);
@@ -199,6 +207,7 @@ export default function CutsTable({ cuts, productsByCode, filters, stockTangoMap
           ...prod[1],
           stockFis: Number(prod[1].cuts.reduce((acc, v) => acc + (getCutVisualMeasure(v.measure, v.units) * v.amount), 0).toFixed(2)),
           stockTango: typeof mapTango === 'number' ? mapTango : defaultStockTango,
+          lastDate: lastDate === 0 ? null : lastDate,
         }
       ];
     })
@@ -210,7 +219,9 @@ export default function CutsTable({ cuts, productsByCode, filters, stockTangoMap
       const productA = productsByCode[rA[0]]!;
       const productB = productsByCode[rB[0]]!;
 
-      if (sortType === 'fis') {
+      if (sortType === 'dateMod') {
+        return (rA[1].lastDate ?? 0) - (rB[1].lastDate ?? 0);
+      } if (sortType === 'fis') {
         return rA[1].stockFis - rB[1].stockFis;
       } else if (sortType === 'desc') {
         return productA.description.localeCompare(productB.description);
@@ -311,6 +322,20 @@ export default function CutsTable({ cuts, productsByCode, filters, stockTangoMap
                 }
               }}>Diferencia</button> {
                 sortType === 'dif' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
+              }
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex flex-row">
+              <button onClick={() => {
+                if (sortType === 'dateMod') {
+                  setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+                } else {
+                  setSortType('dateMod');
+                  setSortDir('asc');
+                }
+              }}>Última fecha de modificación</button> {
+                sortType === 'dateMod' ? (sortDir === 'desc' ? <ArrowDown className="pl-2" /> : <ArrowUp className="pl-2" />) : <></>
               }
             </div>
           </TableHead>

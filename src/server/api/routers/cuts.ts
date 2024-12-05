@@ -180,6 +180,7 @@ export const cutsRouter = createTRPCRouter({
           units: input.units ?? cut.units,
           stockPhys: input.stockPhys ?? cut.stockPhys,
           stockTango: input.stockTango ?? cut.stockTango,
+          modAt: new Date(),
         })
         .where(eq(schema.cuts.id, cut.id))
         .returning();
