@@ -5,7 +5,7 @@ import * as schema from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import * as xlsx from "xlsx";
-import { recRowsFormat, recRowsTransformer } from "~/server/upload/validator";
+import { recRowsTransformer } from "~/server/upload/validator";
 import { fromCutVisualMeasure } from "~/lib/utils";
 export const excelCutsDocRouter = createTRPCRouter({
   get: protectedProcedure.input(z.object({ uploadId: z.string() })).query(async ({ input }) => {

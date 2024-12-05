@@ -135,6 +135,9 @@ export default function CutsTable({ cuts, productsByCode, filters, stockTangoMap
           case "un": {
             return rA.units.localeCompare(rB.units);
           }
+          case "dateMod": {
+            return (rA.modAt?.getTime() ?? 0) - (rB.modAt?.getTime() ?? 0);
+          }
         }
       });
 
