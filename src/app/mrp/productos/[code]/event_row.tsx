@@ -24,7 +24,8 @@ export function ProductEventRow(props: {
   const orderProducts = event.type === "order" ? props.orderProductsById[event.referenceId] : undefined;
   const order = orderProducts ? props.ordersByOrderNumber[orderProducts.order_number] : undefined;
 
-  const productImport = event.type === "import" ? props.productImportsById[event.referenceId] : undefined;
+  const productImport = event.type === "import" ? props.productImportsById[String(event.referenceId)] : undefined;
+  console.log('ojo pindonga', productImport, event.referenceId);
   const importation = productImport ? props.importsById[productImport.import_id] : undefined;
 
   const hasChildren = (event.childEventsIndexes?.length ?? 0) > 0;

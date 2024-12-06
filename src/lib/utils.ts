@@ -143,3 +143,8 @@ export function fromCutVisualMeasure(measure: number, units: NonNullable<RouterO
     return measure;
   }
 }
+
+export function onlyUnique<T>(value: T, index: number, array: T[]) {
+  return array.indexOf(value) === index;
+}
+

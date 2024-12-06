@@ -16,6 +16,7 @@ import { FilterIcon, Loader2Icon } from "lucide-react";
 import CutsTable from "./cuts-table";
 import { useMRPData } from "~/components/mrp-data-provider";
 import { CutFiltersDialog } from "./cuts-filters-dialog";
+import { CutExportDialog } from "./cuts-export-dialog";
 interface Props {
   cuts: RouterOutputs["cuts"]["list"];
 }
@@ -199,11 +200,18 @@ export default function CutsPage({ cuts }: Props) {
                   Cargar excel
                 </Button>
               </Link>
-              <CutFiltersDialog setFilters={setFilters} filters={filters} products={products}>
+              <CutExportDialog cuts={cuts} products={products}>
                 <Button className="px-3">
-                  <FilterIcon />
+                  Exportar excel
                 </Button>
-              </CutFiltersDialog>
+              </CutExportDialog>
+              <div className="px-2">
+                <CutFiltersDialog setFilters={setFilters} filters={filters} products={products}>
+                  <Button className="px-3">
+                    <FilterIcon />
+                  </Button>
+                </CutFiltersDialog>
+              </div>
             </div>
           </div>
           <h2 className="font-semibold">No hay recortes para mostrar</h2>
@@ -306,11 +314,18 @@ export default function CutsPage({ cuts }: Props) {
                     Cargar excel
                   </Button>
                 </Link>
-                <CutFiltersDialog setFilters={setFilters} filters={filters} products={products}>
+                <CutExportDialog cuts={cuts} products={products}>
                   <Button className="px-3">
-                    <FilterIcon />
+                    Exportar excel
                   </Button>
-                </CutFiltersDialog>
+                </CutExportDialog>
+                <div className="px-2">
+                  <CutFiltersDialog setFilters={setFilters} filters={filters} products={products}>
+                    <Button className="px-3">
+                      <FilterIcon />
+                    </Button>
+                  </CutFiltersDialog>
+                </div>
               </div>
             </div>
             <CutsTable cuts={cuts} productsByCode={productsByCode} filters={filters} stockTangoMap={stockTangoMap} />

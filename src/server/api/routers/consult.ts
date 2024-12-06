@@ -395,6 +395,11 @@ function getConsumoForProductList(
 
             product.imports
               .filter((impor) => new Date(String(impor.arrival_date)).getTime() > maxDate.getTime())
+              .sort((i1, i2) => {
+                const timeA = typeof i1.arrival_date === 'string' ? (new Date(i1.arrival_date)).getTime() : (i1.arrival_date !== null && typeof i1.arrival_date !== 'undefined' ? i1.arrival_date.getDate() : 0);
+                const timeB = typeof i2.arrival_date === 'string' ? (new Date(i2.arrival_date)).getTime() : (i2.arrival_date !== null && typeof i2.arrival_date !== 'undefined' ? i2.arrival_date.getDate() : 0);
+                return timeA - timeB;
+              })
               .forEach((impor) => {
                 if (pcValueFaltante < impor.ordered_quantity && !validAmount) {
                   // console.log("recortes entra aca 2", product.code);
@@ -514,6 +519,12 @@ function getConsumoForProductList(
 
             product.imports
               .filter((impor) => new Date(String(impor.arrival_date)).getTime() > maxDate.getTime())
+              .sort((i1, i2) => {
+                const timeA = typeof i1.arrival_date === 'string' ? (new Date(i1.arrival_date)).getTime() : (i1.arrival_date !== null && typeof i1.arrival_date !== 'undefined' ? i1.arrival_date.getDate() : 0);
+                const timeB = typeof i2.arrival_date === 'string' ? (new Date(i2.arrival_date)).getTime() : (i2.arrival_date !== null && typeof i2.arrival_date !== 'undefined' ? i2.arrival_date.getDate() : 0);
+                console.log('time', timeA, timeB)
+                return timeA - timeB;
+              })
               .forEach((impor) => {
                 if (pcValue < product.stock - consumedTotal + impor.ordered_quantity && !validAmount) {
                   console.log("!recortes entra aca 2", product.code);
@@ -533,8 +544,11 @@ function getConsumoForProductList(
                     state: null,
                   };
 
+                  console.log('ready impor', impor.import_id)
                   validAmount = true;
                   yaConsumidoLoop.set(pcKey, (yaConsumidoLoop.get(pcKey) ?? 0) + pcValue);
+                } else {
+                  console.log('skipped impor', impor.import_id, pcValue, product.stock, consumedTotal, impor.ordered_quantity, validAmount);
                 }
               });
 
